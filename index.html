@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bundle Builder</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="bundle-builder">
+    <section class="product-grid" id="productGrid">
+      <!-- Products rendered by JS -->
+    </section>
+
+    <aside class="bundle-sidebar">
+      <h2>Your Bundle</h2>
+
+      <div class="progress-container">
+        <div class="progress-bar"></div>
+        <p class="progress-text">0 / 3 Selected</p>
+      </div>
+
+      <div class="selected-list" id="selectedList"></div>
+
+      <div class="price-summary">
+        <p>Subtotal: ₹<span id="subtotal">0</span></p>
+        <p class="discount">Discount (30%): -₹<span id="discount">0</span></p>
+        <p class="total">Total: ₹<span id="total">0</span></p>
+      </div>
+
+      <button id="addToCart" disabled>Add Bundle to Cart</button>
+    </aside>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
