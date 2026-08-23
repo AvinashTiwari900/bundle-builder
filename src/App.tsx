@@ -1,0 +1,205 @@
+import React from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import LoginPage from './pages/Login'
+import RegisterPage from './pages/Register'
+import Dashboard from './pages/Dashboard'
+import JobsPage from './pages/Jobs'
+import JobDetails from './pages/JobDetails'
+import ProfilePage from './pages/Profile'
+import ApplicationsPage from './pages/Applications'
+import InterviewPage from './pages/Interview'
+import InterviewRoom from './pages/InterviewRoom'
+import VoiceScreening from './pages/VoiceScreening'
+import ResumePage from './pages/Resume'
+import NotificationsPage from './pages/Notifications'
+import DocumentsPage from './pages/Documents'
+import AutoApplyPage from './pages/AutoApply'
+import PortfolioPage from './pages/Portfolio'
+import SettingsPage from './pages/Settings'
+import AIAgent from './pages/AIAgent'
+import ProjectsPage from './pages/Projects'
+import InterviewPractice from './pages/InterviewPractice'
+import InterviewSetup from './pages/InterviewSetup'
+import InterviewSession from './pages/InterviewSession'
+import { AuthProvider, useAuth } from './context/auth'
+import Layout from './components/Layout'
+
+function Protected({ children }: { children: JSX.Element }) {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  return <Layout>{children}</Layout>
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+
+        <Route
+          path="/"
+          element={
+            <Protected>
+              <Dashboard />
+            </Protected>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <Protected>
+              <Dashboard />
+            </Protected>
+          }
+        />
+        <Route
+          path="/jobs"
+          element={
+            <Protected>
+              <JobsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/jobs/:id"
+          element={
+            <Protected>
+              <JobDetails />
+            </Protected>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <Protected>
+              <ProfilePage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/resume"
+          element={
+            <Protected>
+              <ResumePage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <Protected>
+              <NotificationsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/documents"
+          element={
+            <Protected>
+              <DocumentsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/auto-apply"
+          element={
+            <Protected>
+              <AutoApplyPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/portfolio"
+          element={
+            <Protected>
+              <PortfolioPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <Protected>
+              <SettingsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/applications"
+          element={
+            <Protected>
+              <ApplicationsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/interview/room/:id"
+          element={
+            <Protected>
+              <InterviewRoom />
+            </Protected>
+          }
+        />
+        <Route
+          path="/interview/:id"
+          element={
+            <Protected>
+              <InterviewPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/voice-screening"
+          element={
+            <Protected>
+              <VoiceScreening />
+            </Protected>
+          }
+        />
+        <Route
+          path="/ai-agent"
+          element={
+            <Protected>
+              <AIAgent />
+            </Protected>
+          }
+        />
+        <Route
+          path="/projects"
+          element={
+            <Protected>
+              <ProjectsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/interview-practice"
+          element={
+            <Protected>
+              <InterviewPractice />
+            </Protected>
+          }
+        />
+        <Route
+          path="/interview-practice/setup"
+          element={
+            <Protected>
+              <InterviewSetup />
+            </Protected>
+          }
+        />
+        <Route
+          path="/interview-practice/session/:id"
+          element={
+            <Protected>
+              <InterviewSession />
+            </Protected>
+          }
+        />
+
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </AuthProvider>
+  )
+}
