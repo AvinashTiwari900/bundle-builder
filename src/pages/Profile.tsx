@@ -15,7 +15,8 @@ import {
   GraduationCap,
   Calendar,
   Clock,
-  Camera
+  Camera,
+  Trash2
 } from 'lucide-react'
 import { profileService } from '../services/profileService'
 import Button from '../components/ui/Button'
