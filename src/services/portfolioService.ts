@@ -8,16 +8,37 @@ export const portfolioService = {
         skills: ['SQL', 'Power BI', 'Python', 'Excel', 'Agile', 'Stakeholder Management', 'ETL', 'Tableau'],
         featuredProjects: [],
         socials: {
-          linkedin: 'https://linkedin.com/in/avinash-tiwari',
-          github: 'https://github.com/avinash-tiwari',
-          portfolioUrl: 'https://avinash-tiwari.dev'
+          linkedin: 'https://www.linkedin.com/in/avinashtiwari626/',
+          github: 'https://github.com/AvinashTiwari900',
+          portfolioUrl: 'https://avinash-tiwari.dev',
+          twitter: '',
+          email: 'avinashtiwari@gmail.com'
         }
       }
     }
     try {
-      return JSON.parse(raw)
+      const parsed = JSON.parse(raw)
+      // Ensure defaults if missing
+      parsed.socials = parsed.socials || {}
+      if (!parsed.socials.github || parsed.socials.github.includes('avinash-tiwari')) {
+        parsed.socials.github = 'https://github.com/AvinashTiwari900'
+      }
+      if (!parsed.socials.linkedin || parsed.socials.linkedin.includes('avinash-tiwari')) {
+        parsed.socials.linkedin = 'https://www.linkedin.com/in/avinashtiwari626/'
+      }
+      return parsed
     } catch {
-      return { intro: '', about: '', skills: [], featuredProjects: [], socials: {} }
+      return {
+        intro: '',
+        about: '',
+        skills: [],
+        featuredProjects: [],
+        socials: {
+          linkedin: 'https://www.linkedin.com/in/avinashtiwari626/',
+          github: 'https://github.com/AvinashTiwari900',
+          portfolioUrl: 'https://avinash-tiwari.dev'
+        }
+      }
     }
   },
 

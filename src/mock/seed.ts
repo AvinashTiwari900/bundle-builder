@@ -18,6 +18,11 @@ export function seedData(force = false) {
       profilePhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
       bio: 'Results-driven Business Analyst with 5+ years of experience transforming complex business problems into high-impact digital and data products. Skilled in SQL, Power BI, Python, Agile workflows, and stakeholder alignment.',
       skills: ['SQL', 'Power BI', 'Business Analysis', 'Python', 'Excel', 'Agile / Scrum', 'Tableau', 'Stakeholder Management', 'Data Modeling'],
+      socials: {
+        github: 'https://github.com/AvinashTiwari900',
+        linkedin: 'https://www.linkedin.com/in/avinashtiwari626/',
+        portfolioUrl: 'https://avinash-tiwari.dev'
+      },
       resumes: [
         {
           id: 'res-1',
@@ -42,7 +47,7 @@ export function seedData(force = false) {
           name: 'Enterprise Revenue Analytics Engine',
           description: 'Designed unified BI reporting dashboards automating revenue forecasting across 12 product lines, cutting report generation time by 75%.',
           technologies: ['Power BI', 'SQL', 'Snowflake', 'Python'],
-          link: 'https://github.com/avinash-tiwari/revenue-analytics',
+          link: 'https://github.com/AvinashTiwari900',
           createdAt: new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString()
         },
         {
@@ -50,7 +55,7 @@ export function seedData(force = false) {
           name: 'Customer Churn Predictor & Retention Portal',
           description: 'Built machine learning model integration predicting customer churn with 89% precision, triggering proactive retention campaigns.',
           technologies: ['Python', 'SQL', 'Scikit-Learn', 'Tableau'],
-          link: 'https://github.com/avinash-tiwari/churn-predictor',
+          link: 'https://github.com/AvinashTiwari900',
           createdAt: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString()
         }
       ],
@@ -174,8 +179,8 @@ export function seedData(force = false) {
       skills: ['SQL', 'Power BI', 'Python', 'Excel', 'Agile', 'Stakeholder Management', 'ETL', 'Tableau'],
       featuredProjects: ['proj-1', 'proj-2'],
       socials: {
-        linkedin: 'https://linkedin.com/in/avinash-tiwari',
-        github: 'https://github.com/avinash-tiwari',
+        linkedin: 'https://www.linkedin.com/in/avinashtiwari626/',
+        github: 'https://github.com/AvinashTiwari900',
         portfolioUrl: 'https://avinash-tiwari.dev'
       }
     }
