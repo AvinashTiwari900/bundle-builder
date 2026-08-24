@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import {
   Sparkles,
   ArrowRight,
+  ArrowLeft,
+  ChevronRight,
   CheckCircle2,
   Plus,
   X,
@@ -19,7 +21,8 @@ import {
   Trash2,
   SkipForward,
   ShieldCheck,
-  Check
+  Check,
+  Save
 } from 'lucide-react'
 import { profileService } from '../services/profileService'
 import { portfolioService } from '../services/portfolioService'
@@ -54,11 +57,21 @@ const AVATAR_PRESETS = [
   'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80'
 ]
 
+const TABS = [
+  { id: 'basics', label: '1. Basic Info & Photo', nextName: 'Skills & Competencies', icon: <User size={14} /> },
+  { id: 'skills', label: '2. Skills & Tags', nextName: 'Academic Education', icon: <Code2 size={14} /> },
+  { id: 'education', label: '3. Education', nextName: 'Work Experience', icon: <GraduationCap size={14} /> },
+  { id: 'experience', label: '4. Experience', nextName: 'Projects & Links', icon: <Briefcase size={14} /> },
+  { id: 'projects', label: '5. Projects & Links', nextName: 'Finalize Portfolio', icon: <Globe size={14} /> }
+] as const
+
+type TabId = (typeof TABS)[number]['id']
+
 export default function PortfolioSetupPage() {
   const nav = useNavigate()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'basics' | 'skills' | 'experience' | 'education' | 'projects' | 'socials'>('basics')
+  const [activeTab, setActiveTab] = useState<TabId>('basics')
 
   // Form states
   const [headline, setHeadline] = useState('')
@@ -93,12 +106,16 @@ export default function PortfolioSetupPage() {
   const [newProjLink, setNewProjLink] = useState('')
 
   // Certifications
-  const [certifications, setCertifications] = useState<string[]>(['AWS Certified Cloud Practitioner', 'Google Data Analytics Professional'])
-  const [newCertInput, setNewCertInput] = useState('')
+  const [certifications, setCertifications] = useState<string[]>([
+    'AWS Certified Cloud Practitioner',
+    'Google Data Analytics Professional'
+  ])
 
   // Achievements
-  const [achievements, setAchievements] = useState<string[]>(['National Hackathon Finalist', 'Top 5% in Analytics Assessment'])
-  const [newAchInput, setNewAchInput] = useState('')
+  const [achievements, setAchievements] = useState<string[]>([
+    'National Hackathon Finalist',
+    'Top 5% in Analytics Assessment'
+  ])
 
   // Socials
   const [linkedin, setLinkedin] = useState('')
@@ -111,15 +128,23 @@ export default function PortfolioSetupPage() {
 
     // Pre-populate fields from registered account
     setHeadline(p.headline || (p.isStudent ? `Student at ${p.college}` : p.role || 'Business Analyst'))
-    setBio(p.bio || `Motivated professional with focus on data-driven product strategy and technical problem solving.`)
+    setBio(
+      p.bio ||
+        `Motivated professional with focus on data-driven product strategy and technical problem solving.`
+    )
     setLocation(p.location || 'Bengaluru, India')
     setExperienceYears(p.experienceYears || (p.isStudent ? 0 : 2))
     setTargetSalary(p.targetSalary || (p.isStudent ? '₹8 - 14 LPA' : '₹18 - 25 LPA'))
     setProfilePhoto(p.profilePhoto || AVATAR_PRESETS[0])
     setSkills(p.skills || ['SQL', 'Python', 'Agile', 'Power BI'])
     setCollegeName(p.college || 'Indian Institute of Technology (IIT) Bombay')
-    setLinkedin(p.socials?.linkedin || `https://www.linkedin.com/in/${(p.name || 'candidate').toLowerCase().replace(/\s+/g, '-')}`)
-    setGithub(p.socials?.github || `https://github.com/${(p.name || 'candidate').toLowerCase().replace(/\s+/g, '')}`)
+    setLinkedin(
+      p.socials?.linkedin ||
+        `https://www.linkedin.com/in/${(p.name || 'candidate').toLowerCase().replace(/\s+/g, '-')}`
+    )
+    setGithub(
+      p.socials?.github || `https://github.com/${(p.name || 'candidate').toLowerCase().replace(/\s+/g, '')}`
+    )
     setPortfolioUrl(p.socials?.portfolioUrl || '')
 
     if (p.experience && p.experience.length > 0) {
@@ -140,6 +165,24 @@ export default function PortfolioSetupPage() {
       setProjects(p.projects)
     }
   }, [])
+
+  const currentTabIndex = TABS.findIndex((t) => t.id === activeTab)
+
+  const handleNextTab = () => {
+    if (currentTabIndex < TABS.length - 1) {
+      setActiveTab(TABS[currentTabIndex + 1].id)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      handleSaveAndComplete()
+    }
+  }
+
+  const handlePrevTab = () => {
+    if (currentTabIndex > 0) {
+      setActiveTab(TABS[currentTabIndex - 1].id)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
 
   // Add Skill
   const handleAddSkill = (skill: string) => {
@@ -200,11 +243,9 @@ export default function PortfolioSetupPage() {
     if (!file) return
     try {
       setLoading(true)
-      // Upload to Cloudinary
       const uploaded = await cloudinaryService.uploadFile(file)
       setProfilePhoto(uploaded.secure_url)
     } catch {
-      // Fallback local reader
       const reader = new FileReader()
       reader.onload = () => {
         if (reader.result) setProfilePhoto(reader.result as string)
@@ -226,7 +267,7 @@ export default function PortfolioSetupPage() {
     setLoading(true)
     try {
       const current = profileService.get() || {}
-      
+
       const updatedProfile = {
         ...current,
         headline,
@@ -279,8 +320,8 @@ export default function PortfolioSetupPage() {
       }
       portfolioService.save(updatedPortfolio)
 
-      // 3. Sync to Firestore
-      await firestoreService.saveCandidateProfile(updatedProfile)
+      // 3. Sync to Firestore (non-blocking)
+      firestoreService.saveCandidateProfile(updatedProfile)
 
       // 4. Mark first-time onboarding completed
       authService.markFirstTimeComplete()
@@ -314,12 +355,12 @@ export default function PortfolioSetupPage() {
               </p>
             </div>
 
-            {/* Skip for Now Action */}
+            {/* Quick Actions in Header */}
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={handleSkipForNow}
-                className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition-all cursor-pointer"
+                className="px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <span>Skip for Now</span>
                 <SkipForward size={14} />
@@ -328,37 +369,43 @@ export default function PortfolioSetupPage() {
           </div>
         </div>
 
-        {/* Tabs Bar */}
+        {/* Tabs Bar with Active Indicator */}
         <div className="bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm flex flex-wrap gap-1">
-          {[
-            { id: 'basics', label: '1. Basic Info & Photo', icon: <User size={14} /> },
-            { id: 'skills', label: '2. Skills & Tags', icon: <Code2 size={14} /> },
-            { id: 'education', label: '3. Education', icon: <GraduationCap size={14} /> },
-            { id: 'experience', label: '4. Experience', icon: <Briefcase size={14} /> },
-            { id: 'projects', label: '5. Projects & Links', icon: <Globe size={14} /> }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer ${
-                activeTab === tab.id
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          ))}
+          {TABS.map((tab, idx) => {
+            const isActive = activeTab === tab.id
+            const isCompleted = idx < currentTabIndex
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20'
+                    : isCompleted
+                    ? 'text-blue-700 bg-blue-50/70 hover:bg-blue-100'
+                    : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+                {isCompleted && <span className="text-[10px] text-blue-600 font-extrabold">✓</span>}
+              </button>
+            )
+          })}
         </div>
 
         {/* Tab 1: Basics & Photo */}
         {activeTab === 'basics' && (
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-150">
-            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <User size={18} className="text-blue-600" />
-              <span>Professional Summary & Photo</span>
-            </h3>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <User size={18} className="text-blue-600" />
+                <span>1. Professional Summary & Photo</span>
+              </h3>
+              <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                Step 1 of 5
+              </span>
+            </div>
 
             {/* Profile Photo Selector */}
             <div>
@@ -471,10 +518,15 @@ export default function PortfolioSetupPage() {
         {/* Tab 2: Skills & Competencies */}
         {activeTab === 'skills' && (
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-150">
-            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <Code2 size={18} className="text-blue-600" />
-              <span>Core Competencies & Technical Skills</span>
-            </h3>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <Code2 size={18} className="text-blue-600" />
+                <span>2. Core Competencies & Technical Skills</span>
+              </h3>
+              <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                Step 2 of 5
+              </span>
+            </div>
 
             {/* Custom skill input */}
             <div className="flex gap-2">
@@ -550,10 +602,15 @@ export default function PortfolioSetupPage() {
         {/* Tab 3: Education */}
         {activeTab === 'education' && (
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-150">
-            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <GraduationCap size={18} className="text-blue-600" />
-              <span>Academic Credentials & Education</span>
-            </h3>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <GraduationCap size={18} className="text-blue-600" />
+                <span>3. Academic Credentials & Education</span>
+              </h3>
+              <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                Step 3 of 5
+              </span>
+            </div>
 
             <div className="space-y-4">
               <div>
@@ -608,12 +665,17 @@ export default function PortfolioSetupPage() {
         {/* Tab 4: Experience */}
         {activeTab === 'experience' && (
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-150">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
                 <Briefcase size={18} className="text-blue-600" />
-                <span>Work Experience & Roles</span>
+                <span>4. Work Experience & Roles</span>
               </h3>
-              <span className="text-xs text-slate-400">Optional for students</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">Optional for students</span>
+                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                  Step 4 of 5
+                </span>
+              </div>
             </div>
 
             {/* Add Experience Card */}
@@ -662,7 +724,9 @@ export default function PortfolioSetupPage() {
                   className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between text-xs"
                 >
                   <div>
-                    <div className="font-bold text-slate-900">{exp.role} · <span className="text-blue-600">{exp.company}</span></div>
+                    <div className="font-bold text-slate-900">
+                      {exp.role} · <span className="text-blue-600">{exp.company}</span>
+                    </div>
                     <div className="text-[11px] text-slate-500">{exp.duration}</div>
                     <div className="text-slate-600 text-xs mt-1">{exp.description}</div>
                   </div>
@@ -682,10 +746,15 @@ export default function PortfolioSetupPage() {
         {/* Tab 5: Projects & Socials */}
         {activeTab === 'projects' && (
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-150">
-            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <Globe size={18} className="text-blue-600" />
-              <span>Projects, Case Studies & Social Links</span>
-            </h3>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <Globe size={18} className="text-blue-600" />
+                <span>5. Projects, Case Studies & Social Links</span>
+              </h3>
+              <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                Step 5 of 5
+              </span>
+            </div>
 
             {/* Social Links Grid */}
             <div className="space-y-3">
@@ -777,29 +846,72 @@ export default function PortfolioSetupPage() {
           </div>
         )}
 
-        {/* Bottom Navigation Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200">
+        {/* Enhanced Bottom Navigation Bar with Back & Next Tab Buttons */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-md flex flex-col sm:flex-row items-center justify-between gap-3">
+          {/* Left: Skip Option */}
           <button
             type="button"
             onClick={handleSkipForNow}
-            className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 py-2 px-4 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+            className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 py-2 px-3 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <SkipForward size={14} />
             <span>Skip for Now (Go to Dashboard)</span>
           </button>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button
-              type="button"
-              size="lg"
-              onClick={handleSaveAndComplete}
-              disabled={loading}
-              className="w-full sm:w-auto font-bold shadow-lg shadow-blue-500/25 flex items-center gap-2"
-            >
-              <CheckCircle2 size={17} />
-              <span>Complete & Save Portfolio</span>
-              <ArrowRight size={16} />
-            </Button>
+          {/* Right: Step Navigation Controls */}
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+            {/* Previous Step Button */}
+            {currentTabIndex > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={handlePrevTab}
+                className="font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <ArrowLeft size={15} />
+                <span>Back</span>
+              </Button>
+            )}
+
+            {/* Next Tab Button (for tabs 1, 2, 3, 4) */}
+            {currentTabIndex < TABS.length - 1 ? (
+              <Button
+                type="button"
+                size="md"
+                onClick={handleNextTab}
+                className="font-bold text-xs shadow-md shadow-blue-500/25 flex items-center gap-2 cursor-pointer"
+              >
+                <span>Next: {TABS[currentTabIndex + 1].label.split('. ')[1]}</span>
+                <ArrowRight size={15} />
+              </Button>
+            ) : (
+              /* Final Tab: Complete & Save Button */
+              <Button
+                type="button"
+                size="md"
+                onClick={handleSaveAndComplete}
+                disabled={loading}
+                className="font-bold text-xs shadow-lg shadow-blue-500/25 flex items-center gap-2 cursor-pointer"
+              >
+                <CheckCircle2 size={16} />
+                <span>Complete & Save Portfolio</span>
+                <ArrowRight size={15} />
+              </Button>
+            )}
+
+            {/* Quick Save & Finish Button (available across all tabs) */}
+            {currentTabIndex < TABS.length - 1 && (
+              <button
+                type="button"
+                onClick={handleSaveAndComplete}
+                className="text-[11px] font-bold text-blue-600 hover:underline px-2 py-1.5 cursor-pointer hidden md:inline-flex items-center gap-1"
+                title="Save portfolio with current details and go to dashboard"
+              >
+                <Save size={13} />
+                <span>Save & Finish</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
