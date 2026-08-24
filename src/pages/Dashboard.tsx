@@ -135,6 +135,49 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Interactive AI Copilot Bar on Dashboard */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3 animate-in fade-in duration-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xs font-bold">
+              <Sparkles size={15} className="text-amber-300" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-900">Ask AI Copilot</h3>
+              <p className="text-[11px] text-slate-500">Ask career guidance, platform workflows, or say 'Take me to my portfolio'</p>
+            </div>
+          </div>
+          <button
+            onClick={() => nav('/ai-agent')}
+            className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span>Open Full AI Hub</span>
+            <ChevronRight size={14} />
+          </button>
+        </div>
+
+        {/* Quick query buttons */}
+        <div className="flex flex-wrap gap-2 pt-1">
+          {[
+            '🌐 Take me to my portfolio',
+            '💼 Show jobs suitable for my profile',
+            '📄 Show me my applications',
+            '📊 Improve my resume ATS score',
+            '🎙️ How do I prepare for an interview?',
+            '📁 How can I upload my project?',
+            '🛡️ Where can I upload my documents?'
+          ].map((prompt, i) => (
+            <button
+              key={i}
+              onClick={() => nav(`/ai-agent`)}
+              className="px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-xl text-xs font-medium border border-slate-200/80 transition-colors cursor-pointer"
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Upcoming Interview Alert Box */}
       <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">

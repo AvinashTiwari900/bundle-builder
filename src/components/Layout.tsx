@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Bell, Sparkles, User, X, CheckCircle2, ChevronDown } from 'lucide-react'
+import { Search, Bell, Sparkles, User, X, CheckCircle2, ChevronDown, Bot } from 'lucide-react'
 import { notificationService } from '../services/notificationService'
 import { profileService } from '../services/profileService'
 import Sidebar from './Sidebar'
+import AICopilotDrawer from './AICopilotDrawer'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const nav = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
+  const [showCopilot, setShowCopilot] = useState(false)
+  const [copilotInitialQuery, setCopilotInitialQuery] = useState<string | undefined>()
 
   useEffect(() => {
     setNotifications(notificationService.list())
@@ -24,7 +27,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
-      nav(`/jobs?q=${encodeURIComponent(searchQuery.trim())}`)
+      // If user asks a question, open Copilot
+      const isQuestion = /how|where|what|why|show|take me|can i|prepare/i.test(searchQuery)
+      if (isQuestion) {
+        setCopilotInitialQuery(searchQuery.trim())
+        setShowCopilot(true)
+        setSearchQuery('')
+      } else {
+        nav(`/jobs?q=${encodeURIComponent(searchQuery.trim())}`)
+      }
     }
   }
 
@@ -46,7 +57,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <input
               id="global-search"
               aria-label="Search jobs, skills, companies"
-              placeholder="Search jobs, skills, companies (Press Enter)..."
+              placeholder="Ask Copilot or search jobs... (e.g. 'Take me to my portfolio')"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearch}
@@ -63,6 +74,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Actions on right */}
           <div className="topbar-actions relative">
+            {/* Ask AI Copilot Header Trigger */}
+            <button
+              onClick={() => {
+                setCopilotInitialQuery(undefined)
+                setShowCopilot(true)
+              }}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-blue-700 hover:bg-blue-100 text-xs font-bold transition-all cursor-pointer"
+            >
+              <Sparkles size={14} className="text-amber-500" />
+              <span>Ask Copilot</span>
+            </button>
+
             {/* Notifications Button & Dropdown */}
             <div className="relative">
               <button
@@ -165,13 +188,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Floating AI Copilot Trigger */}
         <button
-          onClick={() => nav('/ai-agent')}
+          onClick={() => {
+            setCopilotInitialQuery(undefined)
+            setShowCopilot(true)
+          }}
           title="Ask RAP AI Copilot"
           className="floating-ai-btn group"
         >
           <Sparkles size={18} className="animate-spin-slow text-amber-300" />
           <span>Ask AI Copilot</span>
         </button>
+
+        {/* Slide-out AI Copilot Drawer */}
+        <AICopilotDrawer
+          isOpen={showCopilot}
+          onClose={() => setShowCopilot(false)}
+          initialQuery={copilotInitialQuery}
+        />
       </div>
     </div>
   )
