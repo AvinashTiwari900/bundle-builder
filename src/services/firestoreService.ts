@@ -13,25 +13,46 @@ import {
 import { db, isFirebaseConnected } from './firebase'
 import { profileService } from './profileService'
 
+// Helper for safe non-blocking Firestore sync
+function syncToFirestoreSafely(syncFn: () => Promise<any>, operationName: string) {
+  if (!isFirebaseConnected || !db) return
+
+  // Race with timeout so background sync never hangs or blocks the application
+  Promise.race([
+    syncFn(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Firestore sync operation timed out')), 800)
+    )
+  ]).catch((err) => {
+    // Non-fatal warning - client continues seamlessly with local state
+    console.warn(`[RAP Hybrid] ${operationName} offline notice:`, err?.message || err)
+  })
+}
+
 export const firestoreService = {
   /**
    * Save or sync Candidate Profile with Cloudinary URLs to Firestore
    */
   async saveCandidateProfile(profileData: any) {
-    // Always persist to local state
+    // 1. Always persist to local state immediately
     profileService.save(profileData)
 
+    // 2. Non-blocking cloud synchronization
     if (isFirebaseConnected && db) {
-      try {
-        const candidateId = profileData.id || 'candidate-1'
-        const candidateRef = doc(db, 'candidates', candidateId)
-        await setDoc(candidateRef, {
-          ...profileData,
-          updatedAt: new Date().toISOString()
-        }, { merge: true })
-      } catch (err) {
-        console.warn('Firestore candidate sync notice (running hybrid mode):', err)
-      }
+      const candidateId = profileData.id || 'candidate-1'
+      const candidateRef = doc(db, 'candidates', candidateId)
+      syncToFirestoreSafely(
+        () =>
+          setDoc(
+            candidateRef,
+            {
+              ...profileData,
+              updatedAt: new Date().toISOString()
+            },
+            { merge: true }
+          ),
+        'saveCandidateProfile'
+      )
     }
     return profileData
   },
@@ -55,16 +76,16 @@ export const firestoreService = {
     profileService.save(p)
 
     if (isFirebaseConnected && db) {
-      try {
-        const resumeRef = doc(db, 'resumes', resumeData.id)
-        await setDoc(resumeRef, {
-          ...resumeData,
-          candidateId: p.id || 'candidate-1',
-          createdAt: new Date().toISOString()
-        })
-      } catch (err) {
-        console.warn('Firestore resume record sync notice:', err)
-      }
+      const resumeRef = doc(db, 'resumes', resumeData.id)
+      syncToFirestoreSafely(
+        () =>
+          setDoc(resumeRef, {
+            ...resumeData,
+            candidateId: p.id || 'candidate-1',
+            createdAt: new Date().toISOString()
+          }),
+        'saveResumeRecord'
+      )
     }
     return resumeData
   },
@@ -89,16 +110,16 @@ export const firestoreService = {
     profileService.save(p)
 
     if (isFirebaseConnected && db) {
-      try {
-        const docRef = doc(db, 'documents', docData.id)
-        await setDoc(docRef, {
-          ...docData,
-          candidateId: p.id || 'candidate-1',
-          createdAt: new Date().toISOString()
-        })
-      } catch (err) {
-        console.warn('Firestore document record sync notice:', err)
-      }
+      const docRef = doc(db, 'documents', docData.id)
+      syncToFirestoreSafely(
+        () =>
+          setDoc(docRef, {
+            ...docData,
+            candidateId: p.id || 'candidate-1',
+            createdAt: new Date().toISOString()
+          }),
+        'saveDocumentRecord'
+      )
     }
     return docData
   },
@@ -112,16 +133,16 @@ export const firestoreService = {
     profileService.save(p)
 
     if (isFirebaseConnected && db) {
-      try {
-        const projRef = doc(db, 'projects', projectData.id)
-        await setDoc(projRef, {
-          ...projectData,
-          candidateId: p.id || 'candidate-1',
-          updatedAt: new Date().toISOString()
-        })
-      } catch (err) {
-        console.warn('Firestore project sync notice:', err)
-      }
+      const projRef = doc(db, 'projects', projectData.id)
+      syncToFirestoreSafely(
+        () =>
+          setDoc(projRef, {
+            ...projectData,
+            candidateId: p.id || 'candidate-1',
+            updatedAt: new Date().toISOString()
+          }),
+        'saveProjectRecord'
+      )
     }
     return projectData
   }

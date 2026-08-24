@@ -226,8 +226,22 @@ export default function RegisterPage() {
   // Complete Registration Final Action
   const handleCompleteRegistration = async () => {
     setError('')
-    if (!emailVerified || !mobileVerified) {
-      return setError('Please verify both Email OTP and Mobile OTP before completing registration.')
+
+    let isEmailOk = emailVerified
+    let isMobileOk = mobileVerified
+
+    // Auto-verify if matching code was entered even if button wasn't clicked
+    if (!isEmailOk && pendingOtp && emailOtpInput.trim() === pendingOtp.emailOtp) {
+      isEmailOk = true
+      setEmailVerified(true)
+    }
+    if (!isMobileOk && pendingOtp && mobileOtpInput.trim() === pendingOtp.mobileOtp) {
+      isMobileOk = true
+      setMobileVerified(true)
+    }
+
+    if (!isEmailOk || !isMobileOk) {
+      return setError('Please enter and verify both Email OTP and Mobile OTP before completing registration.')
     }
 
     setLoading(true)
@@ -247,8 +261,8 @@ export default function RegisterPage() {
       // Immediately redirect first-time registered candidate to Portfolio Setup page
       nav('/portfolio-setup')
     } catch (err: any) {
+      console.error('Registration error:', err)
       setError(err.message || 'Registration failed. Please try again.')
-    } finally {
       setLoading(false)
     }
   }
@@ -723,11 +737,20 @@ export default function RegisterPage() {
                 type="button"
                 size="lg"
                 onClick={handleCompleteRegistration}
-                disabled={!emailVerified || !mobileVerified || loading}
-                className="w-full font-bold shadow-lg shadow-blue-500/25"
+                disabled={(!emailVerified && emailOtpInput !== pendingOtp?.emailOtp) || (!mobileVerified && mobileOtpInput !== pendingOtp?.mobileOtp) || loading}
+                className="w-full font-bold shadow-lg shadow-blue-500/25 cursor-pointer"
               >
-                <span>Complete Registration</span>
-                <ArrowRight size={16} />
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <RefreshCw size={16} className="animate-spin" />
+                    <span>Creating Account & Launching Portfolio...</span>
+                  </span>
+                ) : (
+                  <>
+                    <span>Complete Registration</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
               </Button>
               <p className="text-center text-[11px] text-slate-400 mt-2">
                 Upon registration, you will be redirected to the First-Time Portfolio Setup page.
