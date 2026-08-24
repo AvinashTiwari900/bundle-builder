@@ -15,6 +15,7 @@ import NotificationsPage from './pages/Notifications'
 import DocumentsPage from './pages/Documents'
 import AutoApplyPage from './pages/AutoApply'
 import PortfolioPage from './pages/Portfolio'
+import PortfolioSetupPage from './pages/PortfolioSetup'
 import SettingsPage from './pages/Settings'
 import AIAgent from './pages/AIAgent'
 import ProjectsPage from './pages/Projects'
@@ -30,12 +31,26 @@ function Protected({ children }: { children: JSX.Element }) {
   return <Layout>{children}</Layout>
 }
 
+function ProtectedStandalone({ children }: { children: JSX.Element }) {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  return children
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/portfolio-setup"
+          element={
+            <ProtectedStandalone>
+              <PortfolioSetupPage />
+            </ProtectedStandalone>
+          }
+        />
 
         <Route
           path="/"

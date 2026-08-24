@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { authService } from '../services/authService'
+import { authService, CandidateRegistrationInput } from '../services/authService'
 
 export type User = {
   id: string
@@ -11,7 +11,7 @@ export type User = {
 type AuthContextType = {
   user: User | null
   login: (email: string, password: string, remember?: boolean) => Promise<User>
-  register: (name: string, email: string, phone: string, headline?: string) => Promise<User>
+  register: (data: CandidateRegistrationInput) => Promise<User>
   logout: () => void
   refresh: () => void
 }
@@ -36,8 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return u
   }
 
-  const register = async (name: string, email: string, phone: string, headline?: string) => {
-    const u = await authService.register(name, email, phone, headline)
+  const register = async (data: CandidateRegistrationInput) => {
+    const u = await authService.register(data)
     setUser(u)
     return u
   }
