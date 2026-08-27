@@ -1,4 +1,4 @@
-# Recruitment-Automation-Platform (RAS) — Candidate Portal
+# Recruitment-Automation-Software (RAS) — Candidate Portal
 
 > **AI-Powered Recruitment Automation Software (RAS) — Full-Lifecycle Candidate & Career Portal**
 
