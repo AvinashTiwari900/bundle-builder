@@ -143,7 +143,7 @@ export default function PortfolioSetupPage() {
         `https://www.linkedin.com/in/${(p.name || 'candidate').toLowerCase().replace(/\s+/g, '-')}`
     )
     setGithub(
-      p.socials?.github || `https://github.com/${(p.name || 'candidate').toLowerCase().replace(/\s+/g, '')}`
+      p.socials?.github || 'https://github.com/AvinashTiwari900'
     )
     setPortfolioUrl(p.socials?.portfolioUrl || '')
 
@@ -243,7 +243,7 @@ export default function PortfolioSetupPage() {
     if (!file) return
     try {
       setLoading(true)
-      const uploaded = await cloudinaryService.uploadFile(file)
+      const uploaded = await cloudinaryService.upload(file)
       setProfilePhoto(uploaded.secure_url)
     } catch {
       const reader = new FileReader()

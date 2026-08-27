@@ -35,6 +35,7 @@ import Input from '../components/ui/Input'
 
 const CATEGORIES = [
   'All Posts',
+  'Saved Posts',
   'Company Hiring',
   'Candidate Showcase',
   'Interview Experience',
@@ -74,7 +75,9 @@ export default function PostsPage() {
   useEffect(() => {
     loadPosts()
     const tagParam = searchParams.get('tag')
+    const viewParam = searchParams.get('view')
     if (tagParam) setActiveTag(tagParam)
+    if (viewParam === 'saved') setSelectedCategory('Saved Posts')
   }, [searchParams])
 
   const loadPosts = () => {
@@ -173,10 +176,15 @@ export default function PostsPage() {
     setLinkUrl2('')
   }
 
+  const savedPosts = posts.filter((p) => p.isBookmarked)
+  const savedCount = savedPosts.length
+
   // Filtered Posts
   const filteredPosts = posts.filter((p) => {
-    // Category match
-    if (selectedCategory !== 'All Posts' && p.category !== selectedCategory) {
+    // Saved Posts match
+    if (selectedCategory === 'Saved Posts') {
+      if (!p.isBookmarked) return false
+    } else if (selectedCategory !== 'All Posts' && p.category !== selectedCategory) {
       return false
     }
     // Tag filter match
@@ -208,17 +216,52 @@ export default function PostsPage() {
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 text-white rounded-3xl p-7 sm:p-9 shadow-xl relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
+          <div className="space-y-3 max-w-xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-bold text-amber-300">
               <Flame size={14} />
-              <span>RAS Career Community Feed</span>
+              <span>Gettin Career Community Feed</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Posts & Recruitment Feeds
             </h1>
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
-              Discover official company hiring drives, explore candidate project showcases, read verified interview experiences, and share your own achievements.
+              Discover official company hiring drives, explore candidate project showcases, read verified interview experiences, and bookmark posts for quick reference.
             </p>
+
+            {/* Quick Toggle Pill: All Posts vs Saved Posts */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                onClick={() => {
+                  setSelectedCategory('All Posts')
+                  setActiveTag(null)
+                  setSearchParams({})
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  selectedCategory !== 'Saved Posts'
+                    ? 'bg-white text-blue-900 shadow-md shadow-black/10'
+                    : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                }`}
+              >
+                <Flame size={13} className={selectedCategory !== 'Saved Posts' ? 'text-amber-500' : 'text-amber-300'} />
+                <span>All Community Feeds</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setSelectedCategory('Saved Posts')
+                  setActiveTag(null)
+                  setSearchParams({ view: 'saved' })
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  selectedCategory === 'Saved Posts'
+                    ? 'bg-amber-400 text-amber-950 shadow-md shadow-amber-500/30 ring-2 ring-amber-300'
+                    : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                }`}
+              >
+                <Bookmark size={13} className={selectedCategory === 'Saved Posts' ? 'fill-amber-950 text-amber-950' : 'fill-amber-300 text-amber-300'} />
+                <span>Saved Posts ({savedCount})</span>
+              </button>
+            </div>
           </div>
 
           <Button
@@ -234,26 +277,45 @@ export default function PostsPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-sm space-y-4">
+      <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-4 backdrop-blur-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Category Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full text-xs font-bold">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => {
-                  setSelectedCategory(cat)
-                  setActiveTag(null)
-                }}
-                className={`px-3.5 py-2 rounded-xl transition-colors shrink-0 ${
-                  selectedCategory === cat && !activeTag
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+            {CATEGORIES.map((cat) => {
+              const isSavedTab = cat === 'Saved Posts'
+              const isActive = selectedCategory === cat && !activeTag
+              return (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    setSelectedCategory(cat)
+                    setActiveTag(null)
+                    if (isSavedTab) {
+                      setSearchParams({ view: 'saved' })
+                    } else {
+                      setSearchParams({})
+                    }
+                  }}
+                  className={`px-3.5 py-2 rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                    isActive
+                      ? isSavedTab
+                        ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20 font-extrabold'
+                        : 'bg-blue-600 text-white shadow-sm shadow-blue-500/20 font-extrabold'
+                      : isSavedTab
+                        ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 hover:bg-amber-500/20'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {isSavedTab && <Bookmark size={13} className={isActive ? 'fill-white' : 'fill-amber-500 text-amber-500'} />}
+                  <span>{cat}</span>
+                  {isSavedTab && (
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${isActive ? 'bg-white/20 text-white' : 'bg-amber-500/20 text-amber-900 dark:text-amber-200'}`}>
+                      {savedCount}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
 
           {/* Search Input */}
@@ -316,22 +378,50 @@ export default function PostsPage() {
         {/* Left: Feed Posts (8 Cols) */}
         <div className="lg:col-span-8 space-y-5">
           {filteredPosts.length === 0 ? (
-            <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-3">
-              <MessageSquare size={36} className="mx-auto text-slate-300" />
-              <h3 className="text-base font-bold text-slate-800">No posts found</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                No community posts match your selected filter or search term. Be the first to share an update!
-              </p>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setShowAddModal(true)}
-                className="font-bold text-xs mt-2"
-              >
-                <Plus size={14} />
-                <span>Create New Post</span>
-              </Button>
-            </div>
+            selectedCategory === 'Saved Posts' ? (
+              <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-10 sm:p-14 text-center space-y-4 shadow-sm backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto border border-amber-500/20 shadow-inner">
+                  <Bookmark size={32} className="fill-amber-500/30 text-amber-500" />
+                </div>
+                <div className="space-y-1.5 max-w-md mx-auto">
+                  <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">No Saved Posts Yet</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    You haven't bookmarked any posts yet. Click the bookmark icon <Bookmark size={12} className="inline fill-amber-500 text-amber-500 mx-0.5" /> on any post in the community feed to save important hiring notices, interview guides, and project showcases here for instant reference.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedCategory('All Posts')
+                      setSearchParams({})
+                    }}
+                    className="font-bold text-xs"
+                  >
+                    <Flame size={14} />
+                    <span>Explore Community Feeds</span>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-12 text-center space-y-3 backdrop-blur-sm">
+                <MessageSquare size={36} className="mx-auto text-slate-300 dark:text-slate-600" />
+                <h3 className="text-base font-bold text-slate-800 dark:text-white">No posts found</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  No community posts match your selected filter or search term. Be the first to share an update!
+                </p>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowAddModal(true)}
+                  className="font-bold text-xs mt-2"
+                >
+                  <Plus size={14} />
+                  <span>Create New Post</span>
+                </Button>
+              </div>
+            )
           ) : (
             filteredPosts.map((post) => {
               const isCompany = post.authorType === 'company'
@@ -340,10 +430,10 @@ export default function PostsPage() {
               return (
                 <div
                   key={post.id}
-                  className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm hover:shadow-md transition-all space-y-4"
+                  className="bg-white/95 dark:bg-slate-900/95 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm hover:shadow-md dark:hover:shadow-2xl dark:hover:shadow-blue-500/5 transition-all space-y-4 backdrop-blur-sm"
                 >
                   {/* Post Author Header */}
-                  <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
+                  <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-3">
                       <img
                         src={
@@ -351,53 +441,61 @@ export default function PostsPage() {
                           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
                         }
                         alt={post.authorName}
-                        className="w-12 h-12 rounded-2xl object-cover border border-slate-200 shadow-xs shrink-0"
+                        className="w-12 h-12 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shadow-xs shrink-0"
                       />
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-extrabold text-sm text-slate-900">{post.authorName}</h3>
+                          <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">{post.authorName}</h3>
                           {isCompany ? (
-                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-[10px] font-bold">
+                            <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 rounded-full text-[10px] font-bold border border-blue-200/60 dark:border-blue-800">
                               🏢 Verified Company
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold">
+                            <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 rounded-full text-[10px] font-bold border border-emerald-200/60 dark:border-emerald-800">
                               👤 Candidate
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-500 font-medium">{post.authorRole}</p>
-                        <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1.5">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{post.authorRole}</p>
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1.5">
                           <Clock size={10} />
                           <span>{new Date(post.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                           {post.companyRating && (
                             <>
                               <span>•</span>
-                              <span className="text-amber-600 font-bold">{post.companyRating} ★ Employer Rating</span>
+                              <span className="text-amber-600 dark:text-amber-400 font-bold">{post.companyRating} ★ Employer Rating</span>
                             </>
                           )}
                         </div>
                       </div>
                     </div>
 
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-700">
-                      {post.category}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {post.isBookmarked && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                          <Bookmark size={10} className="fill-amber-500 text-amber-500" />
+                          <span>Saved</span>
+                        </span>
+                      )}
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                        {post.category}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Post Title & Description */}
                   <div className="space-y-2">
-                    <h2 className="text-base sm:text-lg font-extrabold text-slate-900 leading-snug">
+                    <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-snug">
                       {post.title}
                     </h2>
-                    <div className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line font-normal">
+                    <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line font-normal">
                       {post.description}
                     </div>
                   </div>
 
                   {/* Attached Image */}
                   {post.imageUrl && (
-                    <div className="rounded-2xl overflow-hidden border border-slate-200 max-h-80 bg-slate-950">
+                    <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-80 bg-slate-950">
                       <img
                         src={post.imageUrl}
                         alt="Post media"
@@ -408,8 +506,8 @@ export default function PostsPage() {
 
                   {/* Attached Action Links */}
                   {post.links && post.links.length > 0 && (
-                    <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
-                      <div className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                    <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/70 space-y-2">
+                      <div className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
                         <LinkIcon size={12} />
                         <span>Attached Resources & Verified Links:</span>
                       </div>
@@ -426,7 +524,7 @@ export default function PostsPage() {
                                 nav(link.url)
                               }
                             }}
-                            className="px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 hover:text-blue-800 rounded-xl text-xs font-bold border border-blue-200/80 flex items-center gap-1.5 transition-all shadow-xs"
+                            className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:text-blue-800 rounded-xl text-xs font-bold border border-blue-200/80 dark:border-blue-800/80 flex items-center gap-1.5 transition-all shadow-xs"
                           >
                             {link.iconType === 'github' ? (
                               <Github size={13} />
@@ -453,7 +551,7 @@ export default function PostsPage() {
                           setActiveTag(tag)
                           setSelectedCategory('All Posts')
                         }}
-                        className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50/70 hover:bg-indigo-100 px-2.5 py-0.5 rounded-md transition-colors"
+                        className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/50 hover:bg-indigo-100 px-2.5 py-0.5 rounded-md transition-colors border border-indigo-100/60 dark:border-indigo-900/50 cursor-pointer"
                       >
                         {tag}
                       </button>
@@ -461,15 +559,15 @@ export default function PostsPage() {
                   </div>
 
                   {/* Interactive Action Bar: Likes, Comments, Bookmark, Share */}
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       {/* Like Button */}
                       <button
                         onClick={() => handleLike(post.id)}
-                        className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all ${
+                        className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                           post.hasLiked
-                            ? 'bg-rose-50 text-rose-600 border border-rose-200'
-                            : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/80'
+                            ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
+                            : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
                         }`}
                       >
                         <Heart
@@ -484,7 +582,7 @@ export default function PostsPage() {
                         onClick={() =>
                           setActiveCommentPostId(isCommentOpen ? null : post.id)
                         }
-                        className="px-3 py-1.5 rounded-xl font-bold bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/80 flex items-center gap-1.5 transition-colors"
+                        className="px-3 py-1.5 rounded-xl font-bold bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
                       >
                         <MessageSquare size={14} />
                         <span>{post.comments.length} Comments</span>
@@ -495,10 +593,10 @@ export default function PostsPage() {
                       {/* Bookmark Button */}
                       <button
                         onClick={() => handleBookmark(post.id)}
-                        className={`p-2 rounded-xl border transition-colors ${
+                        className={`p-2 rounded-xl border transition-all cursor-pointer ${
                           post.isBookmarked
-                            ? 'bg-amber-50 text-amber-600 border-amber-300'
-                            : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 border-slate-200/80'
+                            ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700 shadow-xs'
+                            : 'bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-slate-200/80 dark:border-slate-700'
                         }`}
                         title={post.isBookmarked ? 'Saved to bookmarks' : 'Save post'}
                       >
@@ -514,7 +612,7 @@ export default function PostsPage() {
                           navigator.clipboard?.writeText(window.location.href)
                           showToast('Post link copied to clipboard!')
                         }}
-                        className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 border border-slate-200/80 transition-colors"
+                        className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
                         title="Share post"
                       >
                         <Share2 size={15} />
@@ -524,14 +622,14 @@ export default function PostsPage() {
 
                   {/* Collapsible Comments Section */}
                   {isCommentOpen && (
-                    <div className="pt-3 border-t border-slate-100 space-y-3 animate-in fade-in duration-150">
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3 animate-in fade-in duration-150">
                       {/* Existing comments */}
                       {post.comments.length > 0 && (
                         <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
                           {post.comments.map((c) => (
                             <div
                               key={c.id}
-                              className="p-3 bg-slate-50 rounded-2xl border border-slate-200/70 text-xs space-y-1"
+                              className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/70 dark:border-slate-700 text-xs space-y-1"
                             >
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -540,8 +638,8 @@ export default function PostsPage() {
                                     alt={c.authorName}
                                     className="w-6 h-6 rounded-full object-cover"
                                   />
-                                  <span className="font-bold text-slate-900">{c.authorName}</span>
-                                  <span className="text-[10px] text-slate-400 font-medium">
+                                  <span className="font-bold text-slate-900 dark:text-white">{c.authorName}</span>
+                                  <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
                                     • {c.authorRole}
                                   </span>
                                 </div>
@@ -549,7 +647,7 @@ export default function PostsPage() {
                                   {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               </div>
-                              <p className="text-slate-700 font-normal pl-8">{c.content}</p>
+                              <p className="text-slate-700 dark:text-slate-300 font-normal pl-8">{c.content}</p>
                             </div>
                           ))}
                         </div>
@@ -565,7 +663,7 @@ export default function PostsPage() {
                             if (e.key === 'Enter') handleAddComment(post.id)
                           }}
                           placeholder="Write a comment or ask a question..."
-                          className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                          className="flex-1 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
                         />
                         <Button
                           variant="primary"
@@ -585,13 +683,84 @@ export default function PostsPage() {
           )}
         </div>
 
-        {/* Right Sidebar: Guidelines, Top Tags, Quick Actions (4 Cols) */}
+        {/* Right Sidebar: Saved Posts Quick Widget, Guidelines, Top Tags, Quick Actions (4 Cols) */}
         <div className="lg:col-span-4 space-y-6">
+          {/* Saved Posts Quick Access Card */}
+          <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-3.5 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 font-extrabold text-sm text-slate-900 dark:text-white">
+                <Bookmark size={16} className="fill-amber-500 text-amber-500" />
+                <span>My Saved Posts</span>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
+                {savedCount} {savedCount === 1 ? 'Post' : 'Posts'}
+              </span>
+            </div>
+
+            {savedCount === 0 ? (
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                No bookmarked posts yet. Click the bookmark icon 🔖 on any post in the feed to save it for quick access.
+              </p>
+            ) : (
+              <div className="space-y-2 pt-1">
+                {savedPosts.slice(0, 3).map((sp) => (
+                  <div
+                    key={sp.id}
+                    className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700/60 hover:border-amber-400/60 transition-all space-y-1.5 group cursor-pointer"
+                    onClick={() => {
+                      setSelectedCategory('Saved Posts')
+                      setSearchParams({ view: 'saved' })
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                        {sp.category}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleBookmark(sp.id)
+                        }}
+                        className="text-amber-600 dark:text-amber-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors p-1"
+                        title="Remove bookmark"
+                      >
+                        <Bookmark size={13} className="fill-amber-500" />
+                      </button>
+                    </div>
+                    <h5 className="font-bold text-xs text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {sp.title}
+                    </h5>
+                    <div className="text-[10px] text-slate-400">
+                      By {sp.authorName}
+                    </div>
+                  </div>
+                ))}
+
+                {savedCount > 3 && (
+                  <p className="text-[11px] text-slate-400 font-semibold text-center pt-1">
+                    +{savedCount - 3} more saved items
+                  </p>
+                )}
+
+                <button
+                  onClick={() => {
+                    setSelectedCategory('Saved Posts')
+                    setSearchParams({ view: 'saved' })
+                  }}
+                  className="w-full mt-2 py-2 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Bookmark size={13} className="fill-amber-500 text-amber-500" />
+                  <span>View All Saved Posts ({savedCount})</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Post Creation Quick Widget */}
           <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-3xl p-6 shadow-xl space-y-4">
             <div className="flex items-center gap-2 text-amber-300 text-xs font-bold">
               <Sparkles size={15} />
-              <span>Showcase on RAS</span>
+              <span>Showcase on Gettin</span>
             </div>
             <h3 className="text-lg font-extrabold">Boost Recruiter Visibility</h3>
             <p className="text-xs text-slate-300 leading-relaxed">
@@ -609,23 +778,23 @@ export default function PostsPage() {
           </div>
 
           {/* Guidelines Card */}
-          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-3 text-xs">
-            <h4 className="font-extrabold text-slate-900 flex items-center gap-2">
-              <Award size={15} className="text-blue-600" />
+          <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-3 text-xs backdrop-blur-sm">
+            <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <Award size={15} className="text-blue-600 dark:text-blue-400" />
               <span>Community Guidelines</span>
             </h4>
-            <ul className="space-y-2 text-slate-600 leading-relaxed font-medium">
+            <ul className="space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
               <li className="flex items-start gap-2">
-                <CheckCircle2 size={13} className="text-emerald-600 shrink-0 mt-0.5" />
+                <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <span>Include quantifiable outcomes in project descriptions (e.g. % speed, ₹ savings).</span>
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle2 size={13} className="text-emerald-600 shrink-0 mt-0.5" />
+                <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <span>Attach working GitHub and live demo URLs to your posts.</span>
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle2 size={13} className="text-emerald-600 shrink-0 mt-0.5" />
-                <span>Contact privacy is always protected — companies communicate via RAS portal.</span>
+                <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <span>Contact privacy is always protected — companies communicate via Gettin portal.</span>
               </li>
             </ul>
           </div>

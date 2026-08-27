@@ -11,16 +11,21 @@ import {
   Zap,
   Key,
   Cloud,
-  Check
+  Check,
+  Sun,
+  Moon,
+  Monitor
 } from 'lucide-react'
 import { profileService } from '../services/profileService'
 import { authService } from '../services/authService'
 import { isFirebaseConnected } from '../services/firebase'
 import { cloudinaryService } from '../services/cloudinaryService'
+import { useTheme } from '../context/ThemeContext'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 
 export default function SettingsPage() {
+  const { theme, setTheme, toggleTheme } = useTheme()
   const [autoApplyThreshold, setAutoApplyThreshold] = useState(85)
   const [emailAlerts, setEmailAlerts] = useState(true)
   const [smsAlerts, setSmsAlerts] = useState(false)
@@ -57,8 +62,73 @@ export default function SettingsPage() {
           Platform Configuration & Integrations
         </h1>
         <p className="text-xs text-slate-500 mt-0.5">
-          Manage Cloudinary storage, Firebase Firestore sync, AI interview proctoring thresholds, and automation
+          Manage theme appearance, Cloudinary storage, Firebase Firestore sync, and automation
         </p>
+      </div>
+
+      {/* Theme Appearance Mode Card */}
+      <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+            {theme === 'dark' ? <Moon size={18} className="text-blue-500" /> : <Sun size={18} className="text-amber-500" />}
+            <span>Interface Theme & Visual Appearance</span>
+          </h3>
+          <span className="text-xs font-bold text-slate-400">
+            Active: <span className="capitalize text-blue-600 font-extrabold">{theme} Mode</span>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Light Option */}
+          <button
+            type="button"
+            onClick={() => {
+              setTheme('light')
+              showToast('Switched to Crisp Light Mode ☀️')
+            }}
+            className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+              theme === 'light'
+                ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-sm'
+                : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
+                <Sun size={20} />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-slate-900">Light Mode</div>
+                <div className="text-xs text-slate-500">Crisp slate background with high readability</div>
+              </div>
+            </div>
+            {theme === 'light' && <Check size={18} className="text-blue-600 shrink-0" />}
+          </button>
+
+          {/* Dark Option */}
+          <button
+            type="button"
+            onClick={() => {
+              setTheme('dark')
+              showToast('Switched to Sleek Dark Mode 🌙')
+            }}
+            className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+              theme === 'dark'
+                ? 'border-blue-500 bg-blue-900/20 ring-2 ring-blue-500/20 shadow-sm'
+                : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-slate-900 text-blue-400 flex items-center justify-center font-bold border border-slate-700">
+                <Moon size={20} />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-slate-900">Dark Mode</div>
+                <div className="text-xs text-slate-500">Deep obsidian background for night focus</div>
+              </div>
+            </div>
+            {theme === 'dark' && <Check size={18} className="text-blue-500 shrink-0" />}
+          </button>
+        </div>
       </div>
 
       {/* Cloud Integrations Status Card */}

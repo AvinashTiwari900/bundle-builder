@@ -165,6 +165,7 @@ export default function PortfolioPage() {
     p.profilePhoto = form.avatar
     p.skills = form.skills
     p.projects = form.featuredProjects
+    p.socials = form.socials || {}
     p.privacy = { ...p.privacy, maskContactInfo }
     profileService.save(p)
 
@@ -255,7 +256,7 @@ export default function PortfolioPage() {
             </h1>
             <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold flex items-center gap-1">
               <ShieldCheck size={12} />
-              <span>RAS Verified Credentials</span>
+              <span>Verified Credentials</span>
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -328,7 +329,7 @@ export default function PortfolioPage() {
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-0.5">
-              Hides your direct email and phone number from companies to prevent unsolicited external calls. Recruiters message & schedule interviews directly inside RAS.
+              Hides your direct email and phone number from companies to prevent unsolicited external calls. Recruiters message & schedule interviews directly inside Gettin Candidates.
             </p>
           </div>
         </div>
@@ -465,6 +466,54 @@ export default function PortfolioPage() {
                   />
                 </span>
               ))}
+            </div>
+          </div>
+
+          {/* Public Social Profiles */}
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+              Social Profiles & Portfolio Links
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 mb-1">LinkedIn Profile</label>
+                <Input
+                  value={form.socials?.linkedin || ''}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      socials: { ...(form.socials || {}), linkedin: e.target.value }
+                    })
+                  }
+                  placeholder="https://linkedin.com/in/..."
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 mb-1">GitHub Profile</label>
+                <Input
+                  value={form.socials?.github || 'https://github.com/AvinashTiwari900'}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      socials: { ...(form.socials || {}), github: e.target.value }
+                    })
+                  }
+                  placeholder="https://github.com/AvinashTiwari900"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 mb-1">Personal Portfolio / Website</label>
+                <Input
+                  value={form.socials?.portfolioUrl || ''}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      socials: { ...(form.socials || {}), portfolioUrl: e.target.value }
+                    })
+                  }
+                  placeholder="https://your-portfolio.dev"
+                />
+              </div>
             </div>
           </div>
 
@@ -608,7 +657,7 @@ export default function PortfolioPage() {
             </div>
             {maskContactInfo && (
               <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                🔒 Direct personal contact is protected. Panel members communicate, send inquiries, and schedule live interviews directly through the RAS Candidate Portal.
+                🔒 Direct personal contact is protected. Panel members communicate, send inquiries, and schedule live interviews directly through the Gettin platform.
               </p>
             )}
           </div>
@@ -621,7 +670,7 @@ export default function PortfolioPage() {
                   <Building2 size={14} />
                   <span>Recruiter & Panel Evaluation Actions:</span>
                 </span>
-                <span className="text-[11px] text-purple-700">Interview Candidate on RAS</span>
+                <span className="text-[11px] text-purple-700">Interview Candidate on Gettin</span>
               </div>
 
               <div className="flex flex-wrap gap-2">

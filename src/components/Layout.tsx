@@ -1,18 +1,31 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Bell, Sparkles, User, X, CheckCircle2, ChevronDown, Bot } from 'lucide-react'
+import { Search, Bell, Sparkles, User, X, CheckCircle2, ChevronDown, Bot, Menu, ChevronLeft, ChevronRight, Sun, Moon } from 'lucide-react'
 import { notificationService } from '../services/notificationService'
 import { profileService } from '../services/profileService'
+import { useTheme } from '../context/ThemeContext'
 import Sidebar from './Sidebar'
 import AICopilotDrawer from './AICopilotDrawer'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const nav = useNavigate()
+  const { theme, toggleTheme } = useTheme()
   const [searchQuery, setSearchQuery] = useState('')
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
   const [showCopilot, setShowCopilot] = useState(false)
   const [copilotInitialQuery, setCopilotInitialQuery] = useState<string | undefined>()
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('rap_sidebar_collapsed') === 'true'
+  })
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev
+      localStorage.setItem('rap_sidebar_collapsed', String(next))
+      return next
+    })
+  }
 
   useEffect(() => {
     setNotifications(notificationService.list())
@@ -46,30 +59,43 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell">
-      <Sidebar />
+      <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
 
       <div className="main-panel">
         {/* Topbar */}
         <header className="topbar" role="banner">
-          {/* Global Search Bar */}
-          <div className="search-wrap">
-            <Search size={17} className="text-slate-400 shrink-0" />
-            <input
-              id="global-search"
-              aria-label="Search jobs, skills, companies"
-              placeholder="Ask Copilot or search jobs... (e.g. 'Take me to my portfolio')"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleSearch}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X size={14} />
-              </button>
-            )}
+          {/* Left search wrap with sidebar toggle */}
+          <div className="flex items-center gap-3 flex-1 max-w-xl">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors shadow-xs cursor-pointer shrink-0 flex items-center justify-center"
+              title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+              aria-label="Toggle Sidebar"
+            >
+              {isSidebarCollapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}
+            </button>
+
+            {/* Global Search Bar */}
+            <div className="search-wrap flex-1">
+              <Search size={17} className="text-slate-400 shrink-0" />
+              <input
+                id="global-search"
+                aria-label="Search jobs, skills, companies"
+                placeholder="Ask Copilot or search jobs... (e.g. 'Take me to my portfolio')"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearch}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Actions on right */}
@@ -84,6 +110,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             >
               <Sparkles size={14} className="text-amber-500" />
               <span>Ask Copilot</span>
+            </button>
+
+            {/* Theme Toggle Button (Light / Dark) */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="icon-btn transition-transform hover:scale-105 active:scale-95"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label="Toggle Theme"
+            >
+              {theme === 'dark' ? (
+                <Sun size={18} className="text-amber-400 animate-in spin-in-180 duration-200" />
+              ) : (
+                <Moon size={18} className="text-slate-600 animate-in spin-in-180 duration-200" />
+              )}
             </button>
 
             {/* Notifications Button & Dropdown */}
@@ -163,20 +204,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {/* Profile Avatar Pill */}
             <button
               onClick={() => nav('/profile')}
-              className="user-pill"
+              className="user-pill dark:!bg-black/90 dark:!border-slate-800 dark:hover:!bg-slate-900"
               aria-label="Open profile"
             >
               <img src={avatar} alt="avatar" />
               <div className="text-left hidden sm:block">
-                <span className="block text-xs font-bold text-slate-800 leading-tight">
+                <span className="block text-xs font-bold text-slate-800 dark:text-white leading-tight">
                   {name.split(' ')[0]}
                 </span>
-                <span className="block text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                <span className="block text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
                   Active
                 </span>
               </div>
-              <ChevronDown size={14} className="text-slate-400" />
+              <ChevronDown size={14} className="text-slate-400 dark:text-slate-400" />
             </button>
           </div>
         </header>
@@ -192,8 +233,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             setCopilotInitialQuery(undefined)
             setShowCopilot(true)
           }}
-          title="Ask RAS AI Copilot"
-          className="floating-ai-btn group"
+          className="floating-ai-btn"
+          title="Ask Gettin AI Copilot"
+          aria-label="Open AI Career Copilot Assistant"
         >
           <Sparkles size={18} className="animate-spin-slow text-amber-300" />
           <span>Ask AI Copilot</span>

@@ -30,17 +30,17 @@ import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 
 export const KANBAN_STAGES = [
-  { id: 'Application Submitted', label: 'Application Submitted', color: 'border-blue-300 bg-blue-50/40 text-blue-700' },
-  { id: 'Resume Screening', label: 'Resume Screening', color: 'border-slate-300 bg-slate-50/40 text-slate-700' },
-  { id: 'AI Screening', label: 'AI Screening', color: 'border-purple-300 bg-purple-50/40 text-purple-700' },
-  { id: 'Shortlisted', label: 'Shortlisted', color: 'border-indigo-300 bg-indigo-50/40 text-indigo-700' },
-  { id: 'Interview Scheduled', label: 'Interview Scheduled', color: 'border-amber-300 bg-amber-50/40 text-amber-700' },
-  { id: 'Interview in Progress', label: 'Interview in Progress', color: 'border-rose-300 bg-rose-50/40 text-rose-700 animate-pulse' },
-  { id: 'Interview Completed', label: 'Interview Completed', color: 'border-teal-300 bg-teal-50/40 text-teal-700' },
-  { id: 'Under Review', label: 'Under Review', color: 'border-cyan-300 bg-cyan-50/40 text-cyan-700' },
-  { id: 'Selected', label: 'Selected / Offer', color: 'border-emerald-300 bg-emerald-50/40 text-emerald-700' },
-  { id: 'Rejected', label: 'Rejected', color: 'border-rose-300 bg-rose-50/40 text-rose-700' },
-  { id: 'On Hold', label: 'On Hold', color: 'border-slate-300 bg-slate-50/40 text-slate-700' }
+  { id: 'Application Submitted', label: 'Application Submitted', color: 'border-blue-300 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300' },
+  { id: 'Resume Screening', label: 'Resume Screening', color: 'border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300' },
+  { id: 'AI Screening', label: 'AI Screening', color: 'border-purple-300 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300' },
+  { id: 'Shortlisted', label: 'Shortlisted', color: 'border-indigo-300 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300' },
+  { id: 'Interview Scheduled', label: 'Interview Scheduled', color: 'border-amber-300 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300' },
+  { id: 'Interview in Progress', label: 'Interview in Progress', color: 'border-rose-300 dark:border-rose-800 bg-rose-50/60 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 animate-pulse' },
+  { id: 'Interview Completed', label: 'Interview Completed', color: 'border-teal-300 dark:border-teal-800 bg-teal-50/60 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300' },
+  { id: 'Under Review', label: 'Under Review', color: 'border-cyan-300 dark:border-cyan-800 bg-cyan-50/60 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300' },
+  { id: 'Selected', label: 'Selected / Offer', color: 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' },
+  { id: 'Rejected', label: 'Rejected', color: 'border-rose-300 dark:border-rose-800 bg-rose-50/60 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300' },
+  { id: 'On Hold', label: 'On Hold', color: 'border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300' }
 ]
 
 export default function ApplicationsPage() {

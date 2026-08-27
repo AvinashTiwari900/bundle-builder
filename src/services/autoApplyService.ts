@@ -115,12 +115,12 @@ export const autoApplyService = {
               htmlContent: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; rounded: 16px;">
                   <div style="background: #2563eb; padding: 16px 20px; border-radius: 12px; color: #ffffff; margin-bottom: 20px;">
-                    <h2 style="margin: 0; font-size: 18px;">⚡ RAS Auto-Apply Engine Alert</h2>
-                    <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.9;">Recruitment Automation Software Confirmation</p>
+                    <h2 style="margin: 0; font-size: 18px;">⚡ Gettin Candidates Auto-Apply Alert</h2>
+                    <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.9;">AI-Powered Job Application Confirmation</p>
                   </div>
                   <p style="font-size: 14px; color: #1e293b;">Dear <strong>${profile.name || 'Candidate'}</strong>,</p>
                   <p style="font-size: 13px; color: #475569; line-height: 1.6;">
-                    The <strong>RAS Auto-Apply Engine</strong> has matched your candidate profile with a high-compatibility opportunity and automatically submitted your verified application.
+                    The <strong>Gettin Candidates Auto-Apply Engine</strong> has matched your candidate profile with a high-compatibility opportunity and automatically submitted your verified application.
                   </p>
                   <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; margin: 20px 0;">
                     <div style="font-size: 15px; font-weight: bold; color: #0f172a;">${j.title}</div>
@@ -143,8 +143,8 @@ export const autoApplyService = {
             },
             whatsapp: {
               to: candidatePhone,
-              from: 'RAS Talent Bot (+91 80000 12345)',
-              text: `🤖 *RAS Auto-Apply Alert*\n\nHello *${profile.name?.split(' ')[0] || 'Candidate'}*! Your profile has been automatically applied to:\n\n📌 *Position:* ${j.title}\n🏢 *Company:* ${j.company}\n📍 *Location:* ${j.location} (${j.workMode})\n🎯 *AI Compatibility:* ${match}%\n📅 *Application Date:* ${new Date().toLocaleDateString()}\n⚡ *Hiring Period:* ${j.hiringPeriod || 'Immediate'}\n\n✅ *Status:* Application Submitted (Under 24h Recruiter SLA)\n📄 *Resume:* ${primaryResume}\n\n🔗 *Track Live Application:* https://ras-portal.ai/applications\n_Reply STOP to pause auto-apply alerts._`
+              from: 'Gettin Talent Bot (+91 80000 12345)',
+              text: `🤖 *Gettin Candidates Auto-Apply Alert*\n\nHello *${profile.name?.split(' ')[0] || 'Candidate'}*! Your profile has been automatically applied to:\n\n📌 *Position:* ${j.title}\n🏢 *Company:* ${j.company}\n📍 *Location:* ${j.location} (${j.workMode})\n🎯 *AI Compatibility:* ${match}%\n📅 *Application Date:* ${new Date().toLocaleDateString()}\n⚡ *Hiring Period:* ${j.hiringPeriod || 'Immediate'}\n\n✅ *Status:* Application Submitted (Under 24h Recruiter SLA)\n📄 *Resume:* ${primaryResume}\n\n🔗 *Track Live Application:* https://gettin-candidates.ai/applications\n_Reply STOP to pause auto-apply alerts._`
             }
           }
 
@@ -212,8 +212,8 @@ export const autoApplyService = {
       },
       whatsapp: {
         to: candidatePhone,
-        from: 'RAS Talent Bot (+91 80000 12345)',
-        text: `🤖 *RAS Auto-Apply Alert*\n\nHello *${profile.name?.split(' ')[0] || 'Candidate'}*! Your profile has been automatically applied to:\n\n📌 *Position:* ${job.title}\n🏢 *Company:* ${job.company}\n📍 *Location:* ${job.location} (${job.workMode})\n🎯 *AI Compatibility:* ${match}%\n📅 *Application Date:* ${new Date().toLocaleDateString()}\n⚡ *Hiring Period:* ${job.hiringPeriod || 'Immediate'}\n\n✅ *Status:* Application Submitted (Under 24h Recruiter SLA)\n📄 *Resume:* ${primaryResume}\n\n🔗 *Track Live Application:* https://ras-portal.ai/applications`
+        from: 'Gettin Talent Bot (+91 80000 12345)',
+        text: `🤖 *Gettin Candidates Auto-Apply Alert*\n\nHello *${profile.name?.split(' ')[0] || 'Candidate'}*! Your profile has been automatically applied to:\n\n📌 *Position:* ${job.title}\n🏢 *Company:* ${job.company}\n📍 *Location:* ${job.location} (${job.workMode})\n🎯 *AI Compatibility:* ${match}%\n📅 *Application Date:* ${new Date().toLocaleDateString()}\n⚡ *Hiring Period:* ${job.hiringPeriod || 'Immediate'}\n\n✅ *Status:* Application Submitted (Under 24h Recruiter SLA)\n📄 *Resume:* ${primaryResume}\n\n🔗 *Track Live Application:* https://gettin-candidates.ai/applications`
       }
     }
 

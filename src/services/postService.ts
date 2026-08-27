@@ -361,5 +361,13 @@ export const postService = {
     const posts = this.getPosts()
     const updated = posts.filter((p) => p.id !== postId)
     this.savePosts(updated)
+  },
+
+  getSavedPosts(): Post[] {
+    return this.getPosts().filter((p) => p.isBookmarked)
+  },
+
+  getSavedPostsCount(): number {
+    return this.getPosts().filter((p) => p.isBookmarked).length
   }
 }

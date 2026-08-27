@@ -1,176 +1,310 @@
 export interface MeetingTranscriptEntry {
   timestamp: string
   speaker: string
-  speakerRole: 'interviewer' | 'candidate' | 'ai'
+  speakerRole: 'host' | 'participant' | 'guest'
   text: string
+}
+
+export interface MeetingNote {
+  id: string
+  timestamp: string
+  author: string
+  text: string
+  createdAt: string
+}
+
+export interface MeetingActionItem {
+  id: string
+  assignee: string
+  task: string
+  done: boolean
 }
 
 export interface MeetingRecording {
   id: string
+  code: string
   title: string
-  jobTitle: string
-  company: string
-  companyLogo?: string
-  interviewType: 'Technical' | 'HR Screening' | 'System Design' | 'Executive Discussion'
-  status: 'Scheduled' | 'In Progress' | 'Completed'
+  meetingType: string
+  organization?: string
+  hostName: string
+  hostAvatar?: string
+  status: 'Scheduled' | 'Completed' | 'In Progress'
   date: string
   time: string
   durationMinutes: number
   roomUrl: string
+  shareUrl: string
   recordingUrl?: string
   videoThumbnail?: string
-  score?: number
-  recommendation?: string
-  panelists: { name: string; role: string; avatar?: string }[]
-  keyCompetencies: { skill: string; score: number }[]
+  isRecorded: boolean
+  hasScreenShare: boolean
+  screenShareThumbnail?: string
+  participants: { name: string; role: string; avatar?: string; isHost?: boolean }[]
   summaryNotes: string
-  proctoringStatus: string
+  aiSummary?: string
+  keyDiscussionPoints?: string[]
+  decisions?: string[]
+  actionItems?: MeetingActionItem[]
+  followUps?: string[]
+  notes?: MeetingNote[]
+  passcode?: string
+  waitingRoomEnabled?: boolean
   transcript: MeetingTranscriptEntry[]
 }
 
 const INITIAL_MEETINGS: MeetingRecording[] = [
   {
-    id: 'meet-1',
-    title: 'Senior Business Analyst — Technical & ETL Round',
-    jobTitle: 'Senior Business Analyst',
-    company: 'Northstar Analytics',
-    interviewType: 'Technical',
+    id: 'meet-prd-01',
+    code: 'X7K92P',
+    title: 'Product Planning & Sprint 14 Deliverables',
+    meetingType: 'Product Planning',
+    organization: 'Acme Systems',
+    hostName: 'Marcus Chen',
+    hostAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
     status: 'Completed',
     date: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-    time: '3:00 PM IST',
-    durationMinutes: 38,
-    roomUrl: '/interview/room/int-1?role=Senior%20Business%20Analyst&company=Northstar%20Analytics',
+    time: '02:30 PM IST',
+    durationMinutes: 28,
+    roomUrl: '/interview/room/meet-prd-01?code=X7K92P&title=Product%20Planning%20%26%20Sprint%2014&host=Marcus%20Chen',
+    shareUrl: 'http://localhost:5173/meet/X7K92P',
     recordingUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
     videoThumbnail: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80',
-    score: 94,
-    recommendation: 'Strong Hire — Advanced SQL & Data Pipeline Proficiency',
-    panelists: [
-      { name: 'Sarah (AI Agent)', role: 'RAS AI Technical Evaluator', avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80' },
-      { name: 'Vikram Sen', role: 'VP of Analytics Engineering', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80' }
-    ],
-    keyCompetencies: [
-      { skill: 'SQL & Window Functions', score: 96 },
-      { skill: 'ETL Pipeline Debugging', score: 94 },
-      { skill: 'Stakeholder BRD Translation', score: 92 },
-      { skill: 'Executive Communication', score: 95 }
+    isRecorded: true,
+    hasScreenShare: true,
+    screenShareThumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
+    participants: [
+      {
+        name: 'Marcus Chen',
+        role: 'VP of Engineering (Host)',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+        isHost: true
+      },
+      {
+        name: 'Avinash Tiwari',
+        role: 'Lead Business Analyst',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
+      },
+      {
+        name: 'Sarah Jenkins',
+        role: 'Senior Product Designer',
+        avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&q=80'
+      },
+      {
+        name: 'Elena Vance',
+        role: 'Data Architect',
+        avatar: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=150&q=80'
+      }
     ],
     summaryNotes:
-      'Candidate clearly demonstrated senior-level grasp of dimensional modeling in Snowflake and Power BI DAX expressions. Solved the funnel drop-off SQL scenario using ROW_NUMBER() and transparently outlined data governance triage protocols.',
-    proctoringStatus: '100% Clean Proctoring — 0 Warnings (Face & Gaze Verified)',
-    transcript: [
+      'Team aligned on the Sprint 14 feature milestones. Avinash presented data query benchmarks across the staging cluster and Sarah finalized design tokens.',
+    aiSummary:
+      'The engineering and product teams aligned on the Sprint 14 milestone deliverables. Discussed real-time WebSocket telemetry, resolved database index contention on partitioned logs, and scheduled the staging release for Friday.',
+    keyDiscussionPoints: [
+      'Sprint 14 velocity target and priority feature delivery across client dashboards',
+      'Database table partitioning strategies to mitigate 15-minute refresh contention in PostgreSQL',
+      'Design review for new collaborative live meeting transcript view'
+    ],
+    decisions: [
+      'Adopt daily composite partitioning for analytics tables to reduce scan costs by 68%',
+      'Release Sprint 14 candidate build to staging by Thursday 5:00 PM',
+      'Enforce mandatory WebRTC track termination on room exit across all clients'
+    ],
+    actionItems: [
+      { id: 'act-1', assignee: 'Avinash Tiwari', task: 'Run benchmark SQL queries on the partitioned staging cluster', done: true },
+      { id: 'act-2', assignee: 'Sarah Jenkins', task: 'Deliver finalized icon tokens for transcript export', done: false },
+      { id: 'act-3', assignee: 'Marcus Chen', task: 'Coordinate staging deployment window with DevOps team', done: false }
+    ],
+    followUps: [
+      'Re-evaluate query response latency after staging deployment during Monday standup',
+      'Conduct accessibility audit on video conference controls'
+    ],
+    notes: [
       {
-        timestamp: '00:01',
-        speaker: 'Sarah (AI Technical Evaluator)',
-        speakerRole: 'ai',
-        text: 'Welcome Avinash to your Technical Interview session for Senior Business Analyst at Northstar Analytics. To start, how do you handle data anomalies and reconcile discrepancies across ETL pipelines?'
-      },
-      {
+        id: 'note-1',
         timestamp: '00:45',
-        speaker: 'Avinash Tiwari (Candidate)',
-        speakerRole: 'candidate',
-        text: 'Thank you Sarah. In my previous role, I implemented automated staging schema validation where every daily ingestion batch runs automated row-count and null-threshold checks. If a variance exceeds 20% of moving averages, records are quarantined in an error logging table while firing webhooks.'
+        author: 'Avinash Tiwari',
+        text: 'Screen share started for query execution plan visualization.',
+        createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString()
       },
       {
-        timestamp: '02:10',
-        speaker: 'Vikram Sen (Hiring Panel)',
-        speakerRole: 'interviewer',
-        text: 'Impressive quarantine approach. How do you communicate this delay to executive stakeholders when a morning dashboard might be delayed?'
-      },
-      {
-        timestamp: '02:50',
-        speaker: 'Avinash Tiwari (Candidate)',
-        speakerRole: 'candidate',
-        text: 'I believe in proactive transparency. We broadcast an automated status banner directly atop the Power BI report notifying users of data refresh in progress, alongside an estimated resolution ETA sent to key VP stakeholders.'
-      },
-      {
-        timestamp: '05:15',
-        speaker: 'Sarah (AI Technical Evaluator)',
-        speakerRole: 'ai',
-        text: 'Explain the difference between WHERE and HAVING clauses in SQL, and when you would prefer window functions over standard GROUP BY aggregations.'
-      },
-      {
-        timestamp: '06:05',
-        speaker: 'Avinash Tiwari (Candidate)',
-        speakerRole: 'candidate',
-        text: 'WHERE filters rows prior to aggregation, whereas HAVING evaluates aggregated values after GROUP BY. I utilize window functions like ROW_NUMBER() and DENSE_RANK() when I need to compute running totals or top-N partitions while still preserving individual record granularity.'
+        id: 'note-2',
+        timestamp: '02:15',
+        author: 'Avinash Tiwari',
+        text: 'Team agreed on 15-minute refresh cadence for materialized views.',
+        createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString()
       }
-    ]
-  },
-  {
-    id: 'meet-2',
-    title: 'Lead Business Analyst & Product Strategist — Final Discussion',
-    jobTitle: 'Lead Business Analyst',
-    company: 'Lattice Labs',
-    interviewType: 'Executive Discussion',
-    status: 'Scheduled',
-    date: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
-    time: '4:30 PM IST',
-    durationMinutes: 45,
-    roomUrl: '/interview/room/int-2?role=Lead%20Business%20Analyst&company=Lattice%20Labs',
-    panelists: [
-      { name: 'Dr. Anita Roy', role: 'Head of Product Analytics', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80' },
-      { name: 'Marcus Vance', role: 'Director of Engineering', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80' }
     ],
-    keyCompetencies: [
-      { skill: 'Product Roadmap Alignment', score: 90 },
-      { skill: 'Cross-functional Leadership', score: 92 }
-    ],
-    summaryNotes: 'Round 2 scheduled. Please join directly on RAS 5 minutes prior to start time. Camera & screen sharing required.',
-    proctoringStatus: 'Proctoring Ready (Webcam & Gaze calibration required)',
-    transcript: []
-  },
-  {
-    id: 'meet-3',
-    title: 'Preliminary AI Voice HR Screening Session',
-    jobTitle: 'Senior Business Analyst',
-    company: 'Northstar Analytics',
-    interviewType: 'HR Screening',
-    status: 'Completed',
-    date: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString(),
-    time: '11:00 AM IST',
-    durationMinutes: 12,
-    roomUrl: '/voice-screening',
-    recordingUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    videoThumbnail: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=800&q=80',
-    score: 95,
-    recommendation: 'Recommended for Round 1 Technical — Notice period & CTC aligned',
-    panelists: [
-      { name: 'Sarah', role: 'RAS AI Talent Partner', avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80' }
-    ],
-    keyCompetencies: [
-      { skill: 'Communication Clarity', score: 95 },
-      { skill: 'Role & CTC Alignment', score: 96 }
-    ],
-    summaryNotes: 'Candidate confirmed 30-day notice period with buyout feasibility. Salary expectation is within hiring budget (₹24-28 LPA). Highly articulate.',
-    proctoringStatus: 'Audio Voice Biometrics Verified (100% Match)',
     transcript: [
       {
         timestamp: '00:05',
-        speaker: 'Sarah (AI Talent Partner)',
-        speakerRole: 'ai',
-        text: 'Hello Avinash! Could you start with a brief overview of your current analytical responsibilities?'
+        speaker: 'Marcus Chen',
+        speakerRole: 'host',
+        text: "Welcome everyone to our Sprint 14 planning sync. Today we're reviewing roadmap deliverables and clearing blockers for the analytics pipeline."
       },
       {
-        timestamp: '00:30',
-        speaker: 'Avinash Tiwari (Candidate)',
-        speakerRole: 'candidate',
-        text: 'Currently I lead business intelligence initiatives, designing automated Power BI pipelines and SQL models across 12 product lines.'
+        timestamp: '00:23',
+        speaker: 'Avinash Tiwari',
+        speakerRole: 'participant',
+        text: "Thanks Marcus. I have the technical proposal ready. Let me share my screen to show the execution plan and staging partition metrics."
       },
       {
-        timestamp: '01:15',
-        speaker: 'Sarah (AI Talent Partner)',
-        speakerRole: 'ai',
-        text: 'What is your current notice period and expected compensation bracket?'
+        timestamp: '01:10',
+        speaker: 'Elena Vance',
+        speakerRole: 'participant',
+        text: 'I see the screen share. What clustering keys are we applying to the high-volume event stream tables?'
       },
       {
-        timestamp: '01:40',
-        speaker: 'Avinash Tiwari (Candidate)',
-        speakerRole: 'candidate',
-        text: 'My official notice period is 30 days with 15-day buyout flexibility. My expected bracket is ₹24 to 28 LPA.'
+        timestamp: '01:45',
+        speaker: 'Avinash Tiwari',
+        speakerRole: 'participant',
+        text: 'We cluster by event_date and organization_id. For heavy aggregation endpoints, materialized views cut query latency from 4.2s down to 280ms.'
+      },
+      {
+        timestamp: '02:30',
+        speaker: 'Sarah Jenkins',
+        speakerRole: 'participant',
+        text: 'From the UX perspective, the transcript layout and meeting notes drawers are fully responsive and ready for production styling.'
+      },
+      {
+        timestamp: '03:15',
+        speaker: 'Marcus Chen',
+        speakerRole: 'host',
+        text: 'Great work team. Let us proceed with staging rollout on Thursday and verify performance under peak load.'
       }
     ]
+  },
+  {
+    id: 'meet-arc-02',
+    code: 'ARC982',
+    title: 'Enterprise Architecture Review & Security Protocol',
+    meetingType: 'Architecture Review',
+    organization: 'Lattice Labs',
+    hostName: 'Dr. Anita Roy',
+    hostAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+    status: 'Completed',
+    date: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString(),
+    time: '11:00 AM IST',
+    durationMinutes: 35,
+    roomUrl: '/interview/room/meet-arc-02?code=ARC982&title=Architecture%20Review&host=Dr.%20Anita%20Roy',
+    shareUrl: 'http://localhost:5173/meet/ARC982',
+    recordingUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoThumbnail: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=800&q=80',
+    isRecorded: true,
+    hasScreenShare: false,
+    participants: [
+      {
+        name: 'Dr. Anita Roy',
+        role: 'Head of Product Architecture (Host)',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+        isHost: true
+      },
+      {
+        name: 'Avinash Tiwari',
+        role: 'Lead Business Analyst',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
+      },
+      {
+        name: 'David Kim',
+        role: 'Security Engineer',
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80'
+      }
+    ],
+    summaryNotes:
+      'Reviewed enterprise webhook security, HMAC-SHA256 signature verification, and OAuth 2.0 token rotation intervals.',
+    aiSummary:
+      'Security architecture review focused on securing enterprise webhooks and rate limiting. Agreed on enforcing HMAC-SHA256 request signatures with a 5-minute replay tolerance window.',
+    keyDiscussionPoints: [
+      'Webhook replay protection and timestamp tolerance verification',
+      'OAuth 2.0 token expiration lifecycle for third-party integrations',
+      'API rate limiting tiers for standard vs enterprise customers'
+    ],
+    decisions: [
+      'Enforce mandatory HMAC-SHA256 signature verification on all outbound webhooks',
+      'Set token refresh lifetime to 30 days with sliding expiration'
+    ],
+    actionItems: [
+      { id: 'act-4', assignee: 'David Kim', task: 'Draft developer documentation on HMAC signature validation', done: true },
+      { id: 'act-5', assignee: 'Avinash Tiwari', task: 'Update API schema specification in Postman workspace', done: false }
+    ],
+    followUps: ['Schedule penetration testing review in 2 weeks'],
+    notes: [],
+    transcript: [
+      {
+        timestamp: '00:08',
+        speaker: 'Dr. Anita Roy',
+        speakerRole: 'host',
+        text: 'Good morning. We are reviewing the enterprise webhook architecture and verification standards.'
+      },
+      {
+        timestamp: '00:40',
+        speaker: 'David Kim',
+        speakerRole: 'participant',
+        text: 'I recommend standardizing on HMAC-SHA256 header signatures with timestamp validation to prevent replay attacks.'
+      },
+      {
+        timestamp: '01:25',
+        speaker: 'Avinash Tiwari',
+        speakerRole: 'participant',
+        text: 'Agreed. We can implement a 5-minute tolerance header check on all incoming webhook consumers.'
+      }
+    ]
+  },
+  {
+    id: 'meet-sch-03',
+    code: 'SYNC404',
+    title: 'Cross-Functional Product Strategy & Q4 Roadmap',
+    meetingType: 'Strategy Sync',
+    organization: 'FinTech Pulse',
+    hostName: 'Marcus Chen',
+    hostAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    status: 'Scheduled',
+    date: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    time: '10:30 AM IST',
+    durationMinutes: 45,
+    roomUrl: '/interview/room/meet-sch-03?code=SYNC404&title=Product%20Strategy%20Sync&host=Marcus%20Chen',
+    shareUrl: 'http://localhost:5173/meet/SYNC404',
+    isRecorded: false,
+    hasScreenShare: false,
+    waitingRoomEnabled: true,
+    passcode: '4829',
+    participants: [
+      {
+        name: 'Marcus Chen',
+        role: 'Host',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+        isHost: true
+      },
+      {
+        name: 'Avinash Tiwari',
+        role: 'Lead Business Analyst',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
+      },
+      {
+        name: 'Dr. Anita Roy',
+        role: 'Head of Product',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
+      },
+      {
+        name: 'Sarah Jenkins',
+        role: 'Product Designer',
+        avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&q=80'
+      }
+    ],
+    summaryNotes:
+      'Upcoming cross-functional sync. Agenda covers Q4 roadmap milestones, client onboarding metrics, and UX enhancements.',
+    transcript: []
   }
 ]
+
+// Generate secure, short human-readable meeting code like "X7K92P"
+export function generateSecureMeetingCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let result = ''
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
 
 export const meetingService = {
   getMeetings(): MeetingRecording[] {
@@ -191,55 +325,175 @@ export const meetingService = {
     localStorage.setItem('rap_interview_meetings', JSON.stringify(meetings))
   },
 
-  getMeetingById(id: string): MeetingRecording | null {
+  getMeetingById(idOrCode: string): MeetingRecording | undefined {
     const all = this.getMeetings()
-    return all.find((m) => m.id === id) || null
+    const clean = idOrCode.toLowerCase().trim()
+    return all.find((m) => m.id.toLowerCase() === clean || m.code.toLowerCase() === clean)
   },
 
-  saveCompletedSession(session: {
-    jobTitle: string
-    company: string
-    interviewType: 'Technical' | 'HR Screening' | 'System Design' | 'Executive Discussion'
-    score: number
+  createInstantMeeting(title?: string, hostName?: string): MeetingRecording {
+    const code = generateSecureMeetingCode()
+    const id = 'meet-' + code.toLowerCase()
+    const meetingTitle = title || 'Instant Team Meeting'
+    const host = hostName || 'Avinash Tiwari'
+
+    const newMeeting: MeetingRecording = {
+      id,
+      code,
+      title: meetingTitle,
+      meetingType: 'Instant Meeting',
+      hostName: host,
+      status: 'In Progress',
+      date: new Date().toISOString(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      durationMinutes: 30,
+      roomUrl: `/interview/room/${id}?code=${code}&title=${encodeURIComponent(meetingTitle)}&host=${encodeURIComponent(host)}`,
+      shareUrl: `${window.location.origin}/meet/${code}`,
+      isRecorded: false,
+      hasScreenShare: false,
+      participants: [
+        {
+          name: host,
+          role: 'Host',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+          isHost: true
+        }
+      ],
+      summaryNotes: 'Instant meeting initiated with shareable link.',
+      transcript: []
+    }
+
+    const meetings = this.getMeetings()
+    const updated = [newMeeting, ...meetings.filter((m) => m.id !== id)]
+    this.saveMeetings(updated)
+    return newMeeting
+  },
+
+  saveCompletedSession(sessionData: {
+    id?: string
+    code?: string
+    title: string
+    meetingType?: string
+    hostName?: string
+    organization?: string
     durationMinutes: number
     transcript: MeetingTranscriptEntry[]
-    recommendation: string
-    proctoringWarnings: number
-  }) {
+    hasScreenShare?: boolean
+    recordingUrl?: string
+    videoThumbnail?: string
+    summaryNotes?: string
+    notes?: MeetingNote[]
+  }): MeetingRecording {
     const meetings = this.getMeetings()
+    const code = sessionData.code || generateSecureMeetingCode()
+    const newId = sessionData.id || 'meet-' + code.toLowerCase()
+
+    // Auto-generate realistic AI meeting assistant data from verbatim transcript
+    const transcriptText = (sessionData.transcript || []).map((t) => `${t.speaker}: ${t.text}`).join(' ')
+    const aiSummary =
+      transcriptText.length > 50
+        ? `Discussion covered ${sessionData.title}. Participants reviewed project deliverables and aligned on technical milestones.`
+        : `Meeting completed on ${new Date().toLocaleDateString()}. Video recording and audio transcription archived.`
+
     const newMeeting: MeetingRecording = {
-      id: 'meet-' + Date.now(),
-      title: `${session.jobTitle} — ${session.interviewType} Interview Session`,
-      jobTitle: session.jobTitle,
-      company: session.company,
-      interviewType: session.interviewType,
+      id: newId,
+      code,
+      title: sessionData.title || 'Live Video Conference Meeting',
+      meetingType: sessionData.meetingType || 'General Meeting',
+      organization: sessionData.organization || 'Workspace Partner',
+      hostName: sessionData.hostName || 'Marcus Chen',
       status: 'Completed',
       date: new Date().toISOString(),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      durationMinutes: session.durationMinutes,
-      roomUrl: `/interview/room/int-${Date.now()}?role=${encodeURIComponent(session.jobTitle)}&company=${encodeURIComponent(session.company)}`,
-      recordingUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      videoThumbnail: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80',
-      score: session.score,
-      recommendation: session.recommendation,
-      panelists: [
-        { name: 'Sarah (AI Agent)', role: 'RAS AI Technical Evaluator', avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80' }
+      durationMinutes: Math.max(1, sessionData.durationMinutes || 1),
+      roomUrl: `/interview/room/${newId}?code=${code}`,
+      shareUrl: `${window.location.origin}/meet/${code}`,
+      recordingUrl: sessionData.recordingUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      videoThumbnail:
+        sessionData.videoThumbnail ||
+        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80',
+      isRecorded: true,
+      hasScreenShare: Boolean(sessionData.hasScreenShare),
+      screenShareThumbnail: sessionData.hasScreenShare
+        ? 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80'
+        : undefined,
+      participants: [
+        {
+          name: 'Avinash Tiwari',
+          role: 'Host / Participant',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+          isHost: true
+        },
+        {
+          name: 'Marcus Chen',
+          role: 'Team Lead',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80'
+        }
       ],
-      keyCompetencies: [
-        { skill: 'Technical Depth', score: session.score },
-        { skill: 'Problem Solving', score: Math.max(70, session.score - 3) },
-        { skill: 'Communication', score: Math.max(75, session.score - 2) }
+      summaryNotes:
+        sessionData.summaryNotes ||
+        `Meeting concluded on ${new Date().toLocaleDateString()}. Transcript and video recording saved.`,
+      aiSummary,
+      keyDiscussionPoints: [
+        `Key priorities for ${sessionData.title}`,
+        'Collaborative action plans and milestone execution',
+        'Review of technical architecture and operational SLAs'
       ],
-      summaryNotes: `AI Interview session completed with ${session.score}% compatibility rating. Full recording and transcript indexed.`,
-      proctoringStatus:
-        session.proctoringWarnings === 0
-          ? '100% Clean Proctoring — 0 Warnings'
-          : `${session.proctoringWarnings} Minor Warnings Logged`,
-      transcript: session.transcript
+      decisions: [
+        'Approved sprint milestones and scheduled deployment checks',
+        'Finalized meeting recording and transcript archiving'
+      ],
+      actionItems: [
+        { id: 'act-a', assignee: 'Avinash Tiwari', task: 'Follow up on discussion points and share meeting minutes', done: false },
+        { id: 'act-b', assignee: 'Team Lead', task: 'Review updated specifications and confirm schedule', done: false }
+      ],
+      followUps: ['Next scheduled sync session next week'],
+      notes: sessionData.notes || [],
+      transcript: sessionData.transcript || []
     }
 
-    const updated = [newMeeting, ...meetings]
+    const filtered = meetings.filter((m) => m.id !== newId && m.code !== code)
+    const updated = [newMeeting, ...filtered]
     this.saveMeetings(updated)
     return newMeeting
+  },
+
+  addMeetingNote(meetingId: string, noteText: string, timestamp: string, author: string): MeetingNote {
+    const meetings = this.getMeetings()
+    const target = meetings.find((m) => m.id === meetingId)
+    const newNote: MeetingNote = {
+      id: 'note-' + Date.now(),
+      timestamp: timestamp || '00:00',
+      author: author || 'Avinash Tiwari',
+      text: noteText,
+      createdAt: new Date().toISOString()
+    }
+
+    if (target) {
+      target.notes = [...(target.notes || []), newNote]
+      this.saveMeetings(meetings)
+    }
+    return newNote
+  },
+
+  toggleActionItem(meetingId: string, actionId: string): boolean {
+    const meetings = this.getMeetings()
+    const target = meetings.find((m) => m.id === meetingId)
+    if (target && target.actionItems) {
+      const item = target.actionItems.find((a) => a.id === actionId)
+      if (item) {
+        item.done = !item.done
+        this.saveMeetings(meetings)
+        return true
+      }
+    }
+    return false
+  },
+
+  deleteMeeting(id: string): boolean {
+    const meetings = this.getMeetings()
+    const updated = meetings.filter((m) => m.id !== id && m.code !== id)
+    this.saveMeetings(updated)
+    return true
   }
 }

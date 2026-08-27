@@ -24,6 +24,7 @@ import InterviewSetup from './pages/InterviewSetup'
 import InterviewSession from './pages/InterviewSession'
 import PostsPage from './pages/Posts'
 import MeetingsPage from './pages/Meetings'
+import PreJoinPage from './pages/PreJoin'
 import { AuthProvider, useAuth } from './context/auth'
 import Layout from './components/Layout'
 
@@ -168,11 +169,19 @@ export default function App() {
         />
         <Route
           path="/interview/room/:id"
-          element={
-            <Protected>
-              <InterviewRoom />
-            </Protected>
-          }
+          element={<InterviewRoom />}
+        />
+        <Route
+          path="/meeting/room/:id"
+          element={<InterviewRoom />}
+        />
+        <Route
+          path="/meet/:code"
+          element={<PreJoinPage />}
+        />
+        <Route
+          path="/meet/join/:code"
+          element={<PreJoinPage />}
         />
         <Route
           path="/interview/:id"

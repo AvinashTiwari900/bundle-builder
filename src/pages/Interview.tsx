@@ -20,6 +20,7 @@ import {
   X
 } from 'lucide-react'
 import Button from '../components/ui/Button'
+import { mediaStreamManager } from '../services/mediaStreamManager'
 
 export default function InterviewPage() {
   const { id } = useParams()
@@ -64,6 +65,7 @@ export default function InterviewPage() {
       streamRef.current.getTracks().forEach((t) => {
         try {
           t.stop()
+          t.enabled = false
         } catch (e) {
           console.warn('Error stopping track:', e)
         }
@@ -74,11 +76,23 @@ export default function InterviewPage() {
       stream.getTracks().forEach((t) => {
         try {
           t.stop()
+          t.enabled = false
         } catch (e) {
           console.warn('Error stopping track:', e)
         }
       })
       setStream(null)
+    }
+    try {
+      mediaStreamManager.stopAll()
+    } catch (e) {}
+
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause()
+        videoRef.current.srcObject = null
+        videoRef.current.load()
+      } catch (e) {}
     }
   }
 
@@ -100,6 +114,16 @@ export default function InterviewPage() {
       console.warn('Unable to enumerate devices:', e)
     }
   }
+
+  useEffect(() => {
+    window.addEventListener('beforeunload', releaseActiveTracks)
+    window.addEventListener('popstate', releaseActiveTracks)
+    return () => {
+      window.removeEventListener('beforeunload', releaseActiveTracks)
+      window.removeEventListener('popstate', releaseActiveTracks)
+      releaseActiveTracks()
+    }
+  }, [])
 
   // Robust Multi-tier progressive hardware camera connector
   const startCamera = async (videoId?: string, audioId?: string) => {

@@ -9,7 +9,14 @@ export const profileService = {
       return after ? JSON.parse(after) : null
     }
     try {
-      return JSON.parse(raw)
+      const parsed = JSON.parse(raw)
+      if (parsed) {
+        parsed.socials = parsed.socials || {}
+        if (!parsed.socials.github || parsed.socials.github.includes('avinash-tiwari') || parsed.socials.github.includes('candidate')) {
+          parsed.socials.github = 'https://github.com/AvinashTiwari900'
+        }
+      }
+      return parsed
     } catch {
       seedData(true)
       return JSON.parse(localStorage.getItem('rap_profile')!)

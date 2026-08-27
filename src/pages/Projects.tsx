@@ -63,7 +63,7 @@ export default function ProjectsPage() {
         .map((s) => s.trim())
         .filter(Boolean),
       link: link.trim(),
-      githubUrl: githubUrl.trim() || 'https://github.com/avinash-tiwari',
+      githubUrl: githubUrl.trim() || 'https://github.com/AvinashTiwari900',
       createdAt: new Date().toISOString()
     }
 
@@ -314,7 +314,7 @@ export default function ProjectsPage() {
                 </div>
 
                 {/* AI Review Card if analyzed */}
-                {aiCritique?.id === proj.id && (
+                {aiCritique && aiCritique.id === proj.id && (
                   <div className="p-3.5 bg-indigo-50/80 border border-indigo-100 rounded-xl text-xs space-y-2 text-indigo-950 animate-in fade-in duration-150">
                     <div className="font-extrabold flex items-center justify-between text-indigo-900">
                       <span className="flex items-center gap-1.5">

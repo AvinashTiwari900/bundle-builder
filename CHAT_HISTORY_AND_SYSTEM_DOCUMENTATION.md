@@ -115,7 +115,78 @@ The application is built with **React 18**, **TypeScript**, **Vite 5**, and **Ta
 - **User Prompt**:
   > *"Save all the chats"*
 - **Agent Action**:
-  - Compiling this comprehensive archive document containing all prompts, responses, architecture blueprints, data models, issue logs, and test verification details into `CHAT_HISTORY_AND_SYSTEM_DOCUMENTATION.md` and saving an artifact.
+  - Compiled and saved complete system documentation into `CHAT_HISTORY_AND_SYSTEM_DOCUMENTATION.md`.
+
+---
+
+### 💬 Turn 5: TypeScript Type Mismatch in JobDetails
+- **User Prompt**:
+  > *"Explain what this problem is and help me fix it: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'. @[JobDetails.tsx:L60]"*
+- **Agent Action & Fix**:
+  - Diagnosed strict typing requirement on `showToast(msg: string)` vs optional `message?: string` return from `jobService.applyToJob`.
+  - Added fallback default: `showToast(res.message || 'Failed to submit application')`.
+
+---
+
+### 💬 Turn 6: Workspace Type Safety & Bug Check
+- **User Prompt**:
+  > *"fix the bug"*
+- **Agent Action & Fix**:
+  - Ran `npx tsc --noEmit` and resolved all 7 compiler errors across `JobDetails.tsx`, `Dashboard.tsx`, `Jobs.tsx`, `PortfolioSetup.tsx`, `Projects.tsx`, and `aiCopilotService.ts`. Verified with clean build.
+
+---
+
+### 💬 Turn 7 & 8: PreJoin Hardware & Room Access Bug Audit
+- **User Prompt**:
+  > *"find out how many bugs are there?"* &rarr; *"yes"* (apply fixes)
+- **Agent Action & Fix**:
+  - Fixed persistent black video preview on camera toggle, guest room authentication lock on `/interview/room/:id`, unrendered permission error banner, and Web Audio API suspension in `src/pages/PreJoin.tsx` and `src/App.tsx`.
+
+---
+
+### 💬 Turn 9: Collapsible Module Sidebar Panel
+- **User Prompt**:
+  > *"Upon clicking on RAS, or provide something there that upon clicking on that the module pannel get close."*
+- **Agent Action & Fix**:
+  - Implemented collapsible sidebar in `Sidebar.tsx`, `Layout.tsx`, and `style.css` with clickable header, topbar toggle button, 76px compact icon-only view, and `localStorage` state persistence.
+
+---
+
+### 💬 Turn 10 & 11: Brand Name Customization ("Gettin Candidates")
+- **User Prompt**:
+  > *"Change RAS Candiates Recruitment automation as Getting Candidates The candidates should be in second line below the Getting"* &rarr; *"Gettin not getting"*
+- **Agent Action & Fix**:
+  - Updated `Sidebar.tsx`, `Login.tsx`, and `index.html` to display **Gettin** (line 1) and **Candidates** (line 2) with logo mark **`G`**.
+
+---
+
+### 💬 Turn 12: Backend Architecture & Engineering Blueprint
+- **User Prompt**:
+  > *"Now i have to make backend for this first guide me how we will make, prepare a proper doucmentation"*
+- **Agent Action & Fix**:
+  - Created comprehensive `backend_architecture_and_roadmap.md` artifact covering Node/NestJS + PostgreSQL Prisma schema, 11-stage pipeline state machine, WebRTC Socket.io signaling, AI LLM routing, and 5-phase engineering roadmap.
+
+---
+
+### 💬 Turn 13: Master Implementation Plan & Complete Chat Archive
+- **User Prompt**:
+  > *"First what ever we have done in front please save those chats in implementation plan, and this should contain all the things, chats, discussion in that which we have done till now form the starting day"*
+- **Agent Action & Fix**:
+  - Created master implementation plan artifact [implementation_plan.md](file:///C:/Users/tiwar/.gemini/antigravity-ide/brain/6bb8b67a-a7ad-48a6-9031-a66b4478b906/implementation_plan.md) and synchronized workspace documentation.
+
+---
+
+### 💬 Turn 14: Dark / Light Mode Theme System
+- **User Prompt**:
+  > *"there should be a theme option, upon clicking on that the color changes to dark or light"*
+- **Agent Action & Implementation**:
+  - Built `ThemeContext` ([`src/context/ThemeContext.tsx`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/context/ThemeContext.tsx)) with persistent `localStorage` storage (`rap_theme`), system preference fallback, and `document.documentElement` class management.
+  - Enabled `darkMode: 'class'` in [`tailwind.config.cjs`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/tailwind.config.cjs).
+  - Added comprehensive dark mode CSS tokens and styling overrides in [`style.css`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/style.css).
+  - Added 1-click **Sun/Moon theme toggle button** in the Topbar ([`Layout.tsx`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/components/Layout.tsx)).
+  - Added quick theme toggle button in the Sidebar footer ([`Sidebar.tsx`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/components/Sidebar.tsx)).
+  - Added interactive **Theme Appearance Preference Card** in Settings ([`Settings.tsx`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/pages/Settings.tsx)).
+  - Verified `npx tsc --noEmit` and production build with 0 errors.
 
 ---
 
@@ -437,8 +508,156 @@ Open **`http://localhost:5173/`** in any web browser.
    - Switch to **"Triggered Email & WhatsApp Dispatches"**.
    - Click **"View Formatted Email & WhatsApp Message Previews →"** to inspect the HTML email and WhatsApp green chat bubbles.
    - Click **"Simulate Trigger Alert"** to generate new test alerts on demand.
-6. **11 Application Lifecycle Stages**: Navigate to [`http://localhost:5173/applications`](http://localhost:5173/applications).
-   - View all 11 stages on the Kanban board with 24h recruiter response SLAs.
-7. **Document Verification with OTP**: Navigate to [`http://localhost:5173/documents`](http://localhost:5173/documents).
-   - Upload any document to Cloudinary and enter authorization OTP (`123456`).
-   - Click **"Resolve Discrepancy"** to submit clarification notes.
+8. **Dark & Light Theming & Creative UI**: Navigate to [`http://localhost:5173/settings`](http://localhost:5173/settings) or click the Sun/Moon toggle in the top header.
+   - Switch between Light Mode and Obsidian Dark Mode.
+   - Explore enhanced squircle gradient avatars, glowing match badges, frosted glass pills, and quick smart filter chips.
+
+---
+
+### Turn 15: Creative UI Visual Polish & Brand Alignment
+- **User Directive**: *"The UI should me creative. it should look good, update the platform UI accordingly"*.
+- **Enhancements Implemented**:
+  1. **Jobs Explorer (`src/pages/Jobs.tsx`)**:
+     - Gradient squircle company avatars (`from-blue-600 to-indigo-600`, `from-purple-600 to-pink-600`, etc.) with inner rings.
+     - Frosted glass dark-mode badges for Hiring Periods (`bg-amber-500/10 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/20`) and Recruiter SLAs (`bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20`).
+     - Quick smart filter chips: `⚡ Immediate (0-15 Days)`, `🌐 Remote Only`, `⭐ Fast Responders (4.8+ ★)`.
+     - Smooth hover elevation (`hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10`) with top glowing accent lines.
+     - Vibrant gradient CTA buttons (`1-Click Apply`) with micro-interactions.
+  2. **Candidate Dashboard (`src/pages/Dashboard.tsx`)**:
+     - Upgraded recommended jobs grid with matching squircle avatars, verified rating badges, and frosted SLA chips.
+  3. **Job Details (`src/pages/JobDetails.tsx`)**:
+     - Modernized quick meta row with dark-mode friendly frosted boxes and sleek typography.
+  4. **Applications Pipeline (`src/pages/Applications.tsx`)**:
+     - Updated 11-stage Kanban column badges with dark-mode compatible neon glows.
+  5. **Platform Brand Unification**:
+     - Replaced legacy system strings with unified **"Gettin Candidates"** branding across all feeds, drawers, and copilot prompts.
+- **Verification**: `npx tsc --noEmit` & `npm run build` passed with **0 errors**.
+
+---
+
+### Turn 16: Sidebar Footer Theme Switcher Removal
+- **User Directive**: *"don't provide this option light or dark below the profile"* (along with sidebar screenshot).
+- **Changes**:
+  - Removed the `[ ☼ Light Mode DARK ]` switcher button below the candidate profile in [`src/components/Sidebar.tsx`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/components/Sidebar.tsx).
+  - Cleaned up unused imports (`Sun`, `Moon`, `useTheme`).
+  - Theme switching remains easily accessible via the topbar header toggle button and the Settings Appearance card.
+- **Verification**: `npx tsc --noEmit` passed with 0 errors.
+
+---
+
+### Turn 17: Saved Posts & Bookmarks Feature
+- **User Directive**: *"There should also a option where the candidates and view there save posts"*.
+- **Changes**:
+  1. **Post Service (`src/services/postService.ts`)**:
+     - Added `getSavedPosts(): Post[]` and `getSavedPostsCount(): number` helper methods.
+  2. **Saved Posts Navigation & Tabs (`src/pages/Posts.tsx`)**:
+     - Added a dedicated **"📌 Saved Posts"** category tab with live badge counters.
+     - Added header banner quick toggle buttons: `[ 🔥 All Community Feeds ]` and `[ 🔖 Saved Posts (X) ]`.
+     - Supported `?view=saved` URL query parameter for deep-linking.
+  3. **Sidebar Saved Posts Widget (`src/pages/Posts.tsx`)**:
+     - Added a dedicated **"My Saved Posts"** card on the right sidebar displaying recent bookmarked items with one-click jump and unbookmark actions.
+  4. **Dedicated Empty State**:
+     - Built custom empty state for Saved Posts when 0 posts are bookmarked, with instructions on how to bookmark posts from the feed.
+  5. **Dark Mode & Styling**:
+     - Full dark and light mode contrast support across all post cards, comment boxes, and bookmark chips.
+- **Verification**: `npx tsc --noEmit` and `npm run build` passed with **0 errors**.
+
+---
+
+### Turn 18: Sidebar Navigation Visual Clean-Up
+- **User Directive**: *"Remove new tag form the post & feed and also the highlighted part or AI Career Copilot let it look like a simple module. Note not remove the AI tag form there."*
+- **Changes**:
+  1. **Posts & Feed**: Removed the `NEW` badge pill from the sidebar navigation link in [`src/components/Sidebar.tsx`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/components/Sidebar.tsx).
+  2. **AI Career Copilot**:
+     - Removed the special highlighted box/background override so it renders cleanly and consistently like standard modules.
+     - Preserved the purple **`AI`** gradient badge pill on the right side of the module.
+- **Verification**: `npx tsc --noEmit` and `npm run build` passed with **0 errors**.
+
+---
+
+### Turn 19: AI Copilot Markdown Parser & Formatting Upgrade
+- **User Directive**: *"why this ## Hashtags sign and *** star sign is there remove them. and check which feature is not working in copilot fix it"* (with screenshot showing raw `###` and `**` symbols in chat bubbles).
+- **Root Cause**: Chat messages were rendered inside plain `<div className="whitespace-pre-line">{m.text}</div>`, causing raw markdown syntax (`###`, `**`, `*`, `` ` ``) to print directly onto the UI instead of rendering as rich UI elements.
+- **Changes**:
+  1. **Rich Markdown Component ([`src/components/ui/MarkdownMessage.tsx`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/components/ui/MarkdownMessage.tsx))**:
+     - Built dedicated React markdown parser component:
+       - Converts `### Heading` into clean section titles with Sparkle icon (completely stripping `#` and `##`).
+       - Converts `**bold**` and `***bold***` into `<strong>` bold text without raw `*` asterisks.
+       - Converts `1. Step 1 — ...` into numbered badge step rows.
+       - Converts `• bullet` into styled list items with bullet dots.
+       - Converts `💡 Pro Tip: ...` into amber frosted tip callout boxes.
+       - Converts `` `code` `` into monospaced code pills.
+  2. **Chat Bubble Upgrades**:
+     - Updated [`src/pages/AIAgent.tsx`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/pages/AIAgent.tsx) and [`src/components/AICopilotDrawer.tsx`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/components/AICopilotDrawer.tsx) to render messages using `MarkdownMessage`.
+  3. **Copilot Service Feature Audit ([`src/services/aiCopilotService.ts`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/services/aiCopilotService.ts))**:
+     - Added dedicated handler for **Saved Posts & Bookmarks** (`/posts?view=saved`).
+     - Added direct route navigation for all 14 platform modules (`take me to saved posts`, `take me to auto-apply`, `take me to voice screening`, `take me to settings`, etc.).
+- **Verification**: `npx tsc --noEmit` & `npm run build` passed with **0 errors**.
+
+---
+
+### Turn 20: AI Copilot Rich Cards Dark-Mode Contrast & Black Background
+- **User Directive**: *"This Candidate Portfolio & Showcase is not displaying properly. in dark mode fix it or chnage its color as black in dark. Don't disturb in light."* (with screenshot showing washed-out navigation card in dark mode).
+- **Changes**:
+  1. **AIAgent Page ([`src/pages/AIAgent.tsx`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/pages/AIAgent.tsx))**:
+     - Applied `dark:bg-black/90` and `dark:border-slate-800` to the **Candidate Portfolio & Showcase** navigation card.
+     - Set card title to crisp `text-slate-900 dark:text-white` and subtitle to `text-blue-600 dark:text-blue-400`.
+     - Applied matching dark black/slate styling to all other embedded rich cards (Workflow steps, Job recommendations, Action confirmations, and Interview cards).
+     - Upgraded quick action chips (`dark:bg-black/90`, `dark:text-blue-300`, `dark:border-slate-800`) and the chat input container.
+     - Preserved original crisp blue-tinted styling in Light mode without alteration.
+  2. **AICopilot Drawer ([`src/components/AICopilotDrawer.tsx`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/components/AICopilotDrawer.tsx))**:
+     - Applied the identical `dark:bg-black/90`, `dark:text-white`, and `dark:border-slate-800` treatment across all drawer cards, suggested action buttons, and input bar.
+- **Verification**: `npx tsc --noEmit` and `npm run build` passed with **0 errors**.
+
+---
+
+### Turn 21: Topbar Profile Pill & Guided Workflows Dark-Mode Fix
+- **User Directive**: *"same issue is with this and with profile also"* (with screenshots showing the Guided Workflows buttons and the topbar profile pill appearing washed-out/white in dark mode).
+- **Changes**:
+  1. **Topbar User Profile Pill ([`src/components/Layout.tsx`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/components/Layout.tsx) & [`style.css`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/style.css))**:
+     - Configured `.dark .user-pill` with `#020617` black background, `#1e293b` border, and crisp `#ffffff` text for candidate name **"Avinash"** in dark mode.
+     - Added dark mode background and border rules for `.icon-btn`, `.topbar`, and `.search-wrap`.
+     - Preserved clean white background and dark text in Light mode.
+  2. **Guided Workflows & Live Context Panels ([`src/pages/AIAgent.tsx`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/src/pages/AIAgent.tsx))**:
+     - Updated all Guided Workflow shortcut buttons (**Portfolio Creation**, **Job Application**, **Interview Preparation**, **Document KYC Hub**) to render with `dark:bg-black/90`, `dark:border-slate-800`, and `dark:text-white` in dark mode.
+     - Updated Live Candidate Context rows with `dark:bg-black/80` and `dark:border-slate-800`.
+- **Verification**: `npx tsc --noEmit` & `npm run build` passed with **0 errors**.
+
+---
+
+### Turn 22: Complete Backend Scaffolding & API Services Implementation
+- **User Directive**: *"Add these all in implementation plan in this one : Iplementation Plan: Gettin Candidates Backend Scaffolding & API Services"* & approved execution.
+- **Changes**:
+  1. **Master Implementation Plan Updated ([`implementation_plan.md`](file:///c:/Users/tiwar/.gemini/antigravity-ide/brain/6bb8b67a-a7ad-48a6-9031-a66b4478b906/implementation_plan.md))**:
+     - Synchronized all completed frontend enhancements (Saved Posts, Copilot Markdown Parser, Dark Mode fixes, Navigation clean-up) with the comprehensive backend architecture plan.
+  2. **Backend Project Foundation (`backend/`)**:
+     - Built [`backend/package.json`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/backend/package.json), [`backend/tsconfig.json`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/backend/tsconfig.json), [`backend/.env.example`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/backend/.env.example), and [`backend/.env`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/backend/.env).
+     - Defined TypeScript domain types in [`backend/src/models/types.ts`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/backend/src/models/types.ts).
+     - Built in-memory database store with rich seed data in [`backend/src/config/db.ts`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/backend/src/config/db.ts).
+  3. **Middlewares & Security**:
+     - Built JWT Bearer auth in [`backend/src/middlewares/auth.middleware.ts`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/backend/src/middlewares/auth.middleware.ts).
+     - Built automated contact info masking in [`backend/src/middlewares/privacyShield.middleware.ts`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/backend/src/middlewares/privacyShield.middleware.ts).
+     - Built centralized error handling in [`backend/src/middlewares/errorHandler.middleware.ts`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/backend/src/middlewares/errorHandler.middleware.ts).
+  4. **RESTful API Controllers & Routes (`backend/src/controllers/` & `backend/src/routes/api.routes.ts`)**:
+     - Auth & Profile (`/api/v1/auth`)
+     - Verified Jobs Discovery (`/api/v1/jobs`)
+     - 11-Stage Application Pipeline & 24h SLA (`/api/v1/applications`)
+     - Meetings, Instant Rooms & Transcripts (`/api/v1/meetings`)
+     - Community Posts & Bookmarking (`/api/v1/posts`)
+     - AI Copilot & ATS Diagnostics (`/api/v1/ai`)
+     - KYC Documents & 6-Digit OTP Verification (`/api/v1/documents`)
+  5. **WebSockets & WebRTC Signaling Gateway**:
+     - Real-time peer signaling, mute broadcasts, and transcript streaming in [`backend/src/sockets/meeting.socket.ts`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/backend/src/sockets/meeting.socket.ts).
+     - Main Express + Socket.io server listener in [`backend/src/index.ts`](file:///c:/Users/tiwar/OneDrive/Desktop/RAP%20candidate%20UI/backend/src/index.ts).
+- **Verification**:
+  - `backend/` dependencies installed (`npm install`) &mdash; **0 errors**.
+  - `backend/` TypeScript check (`npx tsc --noEmit`) &mdash; **0 errors**.
+  - `backend/` production compilation (`npm run build`) &mdash; **0 errors**.
+  - Frontend root production build (`npm run build`) &mdash; **Vite build passed with 0 errors in 8.76s**.
+
+
+
+
+
+
+

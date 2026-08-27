@@ -43,7 +43,7 @@ export default function VoiceScreening() {
 
   const hrQuestions = [
     {
-      q: `Hello ${candidateName.split(' ')[0]}! This is Sarah from the RAS AI Recruitment Team at Northstar Analytics. I'd like to ask a few quick questions regarding your recent Senior Business Analyst application. Could you start with a brief overview of your current role?`,
+      q: `Hello ${candidateName.split(' ')[0]}! This is Sarah from the Gettin AI Recruitment Team at Northstar Analytics. I'd like to ask a few quick questions regarding your recent Senior Business Analyst application. Could you start with a brief overview of your current role?`,
       sampleAnswer:
         'Sure Sarah! Currently I work as a Lead Business Analyst where I lead our revenue analytics team, build automated SQL data pipelines, and design executive BI dashboards.'
     },
@@ -145,7 +145,7 @@ export default function VoiceScreening() {
 
     // Read closing message
     speechService.speak(
-      `Thank you ${candidateName.split(' ')[0]}! Your responses have been successfully recorded and submitted to the RAS recruitment team.`,
+      `Thank you ${candidateName.split(' ')[0]}! Your responses have been successfully recorded and submitted to the hiring team.`,
       {
         onStart: () => setIsAiSpeaking(true),
         onEnd: () => setIsAiSpeaking(false)
@@ -221,7 +221,7 @@ export default function VoiceScreening() {
               <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs font-bold uppercase tracking-wider border border-blue-500/30">
                 Incoming AI HR Call
               </span>
-              <h2 className="text-xl font-extrabold mt-2">Sarah · RAS AI Talent Partner</h2>
+              <h2 className="text-xl font-extrabold mt-2">Sarah · Gettin AI Talent Partner</h2>
               <p className="text-xs text-slate-400 mt-1">Northstar Analytics · Senior Business Analyst</p>
             </div>
 

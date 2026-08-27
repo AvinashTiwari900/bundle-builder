@@ -60,11 +60,11 @@ export default function LoginPage() {
             {/* Brand */}
             <div className="flex items-center gap-3 mb-8">
               <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-extrabold text-xl text-white shadow-inner">
-                R
+                G
               </div>
               <div>
-                <h1 className="text-xl font-extrabold tracking-tight">RAS Candidate</h1>
-                <p className="text-xs text-blue-100 font-medium">Recruitment Automation System</p>
+                <h1 className="text-xl font-extrabold tracking-tight">Gettin</h1>
+                <p className="text-xs text-blue-100 font-medium tracking-wider uppercase">Candidates</p>
               </div>
             </div>
 

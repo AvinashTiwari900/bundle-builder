@@ -28,6 +28,7 @@ import {
   AI_QUICK_ACTIONS
 } from '../services/aiCopilotService'
 import Button from './ui/Button'
+import MarkdownMessage from './ui/MarkdownMessage'
 
 interface ChatMessage {
   id: string
@@ -55,7 +56,7 @@ export default function AICopilotDrawer({
     {
       id: 'm-init',
       sender: 'ai',
-      text: "👋 Hi there! I'm your **RAS AI Copilot & Platform Navigation Assistant**.\n\nI can guide you through platform workflows (Portfolio, Job Applications, Interview Practice), provide career insights, or directly navigate you to any section of RAS. How can I help you right now?",
+      text: "👋 Hi there! I'm your **Gettin Candidates AI Copilot & Platform Navigation Assistant**.\n\nI can guide you through platform workflows (Portfolio, Job Applications, Interview Practice), provide career insights, or directly navigate you to any section of Gettin Candidates. How can I help you right now?",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       quickActions: AI_QUICK_ACTIONS.slice(0, 5)
     }
@@ -165,7 +166,7 @@ export default function AICopilotDrawer({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-base tracking-tight">RAS AI Copilot</h3>
+                <h3 className="font-extrabold text-base tracking-tight">Gettin AI Copilot</h3>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 text-[10px] font-bold border border-emerald-400/30">
                   Online
                 </span>
@@ -213,7 +214,7 @@ export default function AICopilotDrawer({
         )}
 
         {/* Chat Thread Messages */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-slate-50/50 dark:bg-slate-950">
           {messages.map((m) => (
             <div
               key={m.id}
@@ -230,20 +231,20 @@ export default function AICopilotDrawer({
                   className={`rounded-2xl p-4 text-xs sm:text-sm leading-relaxed ${
                     m.sender === 'user'
                       ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-md shadow-blue-500/10'
-                      : 'bg-white border border-slate-200/90 text-slate-800 shadow-xs'
+                      : 'bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-xs'
                   }`}
                 >
-                  <div className="whitespace-pre-line font-normal">{m.text}</div>
+                  <MarkdownMessage content={m.text} isUser={m.sender === 'user'} />
 
                   {/* Render Embedded Rich UI Cards */}
                   {m.card && (
-                    <div className="mt-3 pt-3 border-t border-slate-100 space-y-2.5">
+                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 space-y-2.5">
                       {/* 1. Navigation Action Card */}
                       {m.card.type === 'navigation' && (
-                        <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-100 flex items-center justify-between gap-3">
+                        <div className="p-3 bg-blue-50/80 dark:bg-black/90 rounded-xl border border-blue-100 dark:border-slate-800 flex items-center justify-between gap-3 shadow-xs">
                           <div>
-                            <div className="font-bold text-slate-900 text-xs">{m.card.title}</div>
-                            <div className="text-[11px] text-blue-600 font-medium">Direct Platform Route</div>
+                            <div className="font-bold text-slate-900 dark:text-white text-xs">{m.card.title}</div>
+                            <div className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">Direct Platform Route</div>
                           </div>
                           <Button
                             variant="primary"
@@ -262,26 +263,26 @@ export default function AICopilotDrawer({
 
                       {/* 2. Stepper Workflow Guide Card */}
                       {m.card.type === 'workflow' && Array.isArray(m.card.data) && (
-                        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
-                          <div className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
-                            <Sparkles size={14} className="text-blue-600" />
+                        <div className="p-3.5 bg-slate-50 dark:bg-black/90 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+                          <div className="font-extrabold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <Sparkles size={14} className="text-blue-600 dark:text-blue-400" />
                             <span>{m.card.title}</span>
                           </div>
                           <div className="space-y-1.5">
                             {m.card.data.map((step: any) => (
                               <div
                                 key={step.step}
-                                className="p-2 bg-white rounded-xl border border-slate-200/80 flex items-center justify-between text-xs hover:border-blue-300 transition-colors"
+                                className="p-2 bg-white dark:bg-slate-900/90 rounded-xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
                               >
                                 <div className="flex items-center gap-2">
                                   <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px] shrink-0">
                                     {step.step}
                                   </span>
                                   <div>
-                                    <div className="font-bold text-slate-900 text-[11px]">
+                                    <div className="font-bold text-slate-900 dark:text-white text-[11px]">
                                       {step.title}
                                     </div>
-                                    <div className="text-[10px] text-slate-500">
+                                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
                                       {step.description}
                                     </div>
                                   </div>
@@ -292,7 +293,7 @@ export default function AICopilotDrawer({
                                     nav(step.route)
                                     onClose()
                                   }}
-                                  className="text-[10px] font-bold text-blue-600 hover:underline shrink-0 flex items-center gap-0.5 ml-2 cursor-pointer"
+                                  className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline shrink-0 flex items-center gap-0.5 ml-2 cursor-pointer"
                                 >
                                   <span>{step.actionLabel}</span>
                                   <ChevronRight size={12} />
@@ -321,11 +322,11 @@ export default function AICopilotDrawer({
                           {m.card.data.map((job: any) => (
                             <div
                               key={job.id}
-                              className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-2 text-xs"
+                              className="p-3 bg-slate-50 dark:bg-black/90 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 text-xs"
                             >
                               <div>
-                                <div className="font-bold text-slate-900">{job.title}</div>
-                                <div className="text-[11px] text-slate-600">
+                                <div className="font-bold text-slate-900 dark:text-white">{job.title}</div>
+                                <div className="text-[11px] text-slate-600 dark:text-slate-400">
                                   {job.company} · ₹{Math.round(job.salaryMin / 100000)}-{Math.round(job.salaryMax / 100000)} LPA
                                 </div>
                               </div>
@@ -359,12 +360,12 @@ export default function AICopilotDrawer({
 
                       {/* 4. Sensitive Action Confirmation Card */}
                       {m.card.type === 'confirmation' && m.card.confirmationAction && (
-                        <div className="p-3.5 bg-amber-50 border-2 border-amber-300 rounded-2xl space-y-2.5 animate-in zoom-in-95 duration-150">
-                          <div className="flex items-center gap-2 text-amber-800 font-bold text-xs">
-                            <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+                        <div className="p-3.5 bg-amber-50 dark:bg-black/90 border-2 border-amber-300 dark:border-amber-700/60 rounded-2xl space-y-2.5 animate-in zoom-in-95 duration-150">
+                          <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs">
+                            <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
                             <span>Confirmation Required</span>
                           </div>
-                          <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                          <p className="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
                             {m.card.confirmationAction.prompt}
                           </p>
                           <div className="flex items-center gap-2 pt-1">
@@ -409,12 +410,12 @@ export default function AICopilotDrawer({
 
                       {/* 5. Scheduled Interview Card */}
                       {m.card.type === 'interview_list' && m.card.data && (
-                        <div className="p-3.5 bg-gradient-to-r from-amber-500/15 via-indigo-500/10 to-blue-500/10 rounded-2xl border border-amber-300 space-y-2">
-                          <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
-                            <Calendar size={15} className="text-amber-600" />
+                        <div className="p-3.5 bg-gradient-to-r from-amber-500/15 via-indigo-500/10 to-blue-500/10 dark:bg-black/90 rounded-2xl border border-amber-300 dark:border-amber-700/60 space-y-2">
+                          <div className="flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-300">
+                            <Calendar size={15} className="text-amber-600 dark:text-amber-400" />
                             <span>{m.card.data.jobTitle}</span>
                           </div>
-                          <div className="text-[11px] text-slate-700">
+                          <div className="text-[11px] text-slate-700 dark:text-slate-300">
                             <strong>Company:</strong> {m.card.data.company} · <strong>Time:</strong>{' '}
                             {m.card.data.interviewDate || 'Thursday, 3:00 PM'}
                           </div>
@@ -437,13 +438,13 @@ export default function AICopilotDrawer({
 
                   {/* Contextual Quick Actions */}
                   {m.quickActions && m.quickActions.length > 0 && (
-                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap gap-1.5">
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700/80 flex flex-wrap gap-1.5">
                       {m.quickActions.map((qa, i) => (
                         <button
                           key={i}
                           type="button"
                           onClick={() => handleSend(qa.query)}
-                          className="px-2.5 py-1 bg-blue-50/80 hover:bg-blue-100 text-blue-700 rounded-lg text-[11px] font-bold border border-blue-200/80 transition-colors cursor-pointer"
+                          className="px-2.5 py-1 bg-blue-50/80 dark:bg-black/90 hover:bg-blue-100 dark:hover:bg-slate-900 text-blue-700 dark:text-blue-300 rounded-lg text-[11px] font-bold border border-blue-200/80 dark:border-slate-800 transition-colors cursor-pointer shadow-xs"
                         >
                           {qa.label}
                         </button>
@@ -474,7 +475,7 @@ export default function AICopilotDrawer({
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xs shrink-0">
                 <Bot size={16} />
               </div>
-              <div className="p-3 bg-white border border-slate-200 rounded-2xl flex items-center gap-1.5 shadow-xs">
+              <div className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-center gap-1.5 shadow-xs">
                 <span className="w-2 h-2 rounded-full bg-blue-600 animate-bounce"></span>
                 <span
                   className="w-2 h-2 rounded-full bg-blue-600 animate-bounce"
@@ -492,7 +493,7 @@ export default function AICopilotDrawer({
         </div>
 
         {/* Footer Quick Action Pills & Input Bar */}
-        <div className="p-3.5 sm:p-4 bg-white border-t border-slate-200 space-y-2.5">
+        <div className="p-3.5 sm:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
           {/* Quick suggestions scroll */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs custom-scrollbar">
             {AI_QUICK_ACTIONS.map((qa, idx) => (
@@ -500,7 +501,7 @@ export default function AICopilotDrawer({
                 key={idx}
                 type="button"
                 onClick={() => handleSend(qa.query)}
-                className="px-3 py-1 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-full font-semibold shrink-0 text-xs border border-slate-200/80 transition-colors cursor-pointer"
+                className="px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 text-slate-700 dark:text-slate-300 hover:text-indigo-700 dark:hover:text-indigo-300 rounded-full font-semibold shrink-0 text-xs border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
               >
                 {qa.label}
               </button>
@@ -516,7 +517,7 @@ export default function AICopilotDrawer({
                 if (e.key === 'Enter') handleSend()
               }}
               placeholder="Ask anything or say 'Take me to my portfolio'..."
-              className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+              className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
             />
             <Button
               variant="primary"
