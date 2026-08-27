@@ -19,11 +19,16 @@ import {
   User,
   Eye,
   Users,
-  Maximize2
+  Maximize2,
+  Volume2,
+  VolumeX,
+  Radio
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import { profileService } from '../services/profileService'
 import { notificationService } from '../services/notificationService'
+import { speechService } from '../services/speechService'
+import { meetingService } from '../services/meetingService'
 
 interface ProctoringEvent {
   id: string
@@ -41,9 +46,15 @@ export default function InterviewRoom() {
   const companyName = params.get('company') || 'Northstar Analytics'
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const animFrameRef = useRef<number | null>(null)
   const [stream, setStream] = useState<MediaStream | null>(null)
+  const [isSimulatedCamera, setIsSimulatedCamera] = useState(false)
   const [micMuted, setMicMuted] = useState(false)
   const [videoDisabled, setVideoDisabled] = useState(false)
+  const [isAiSpeaking, setIsAiSpeaking] = useState(false)
+  const [isDictating, setIsDictating] = useState(false)
+  const [isAudioMuted, setIsAudioMuted] = useState(false)
 
   // Interview Question State
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -76,27 +87,235 @@ export default function InterviewRoom() {
     }
   ]
 
-  // Initialize camera
+  // Speak question function
+  const speakQuestion = (index: number) => {
+    const q = interviewQuestions[index]?.q
+    if (!q || isAudioMuted) return
+
+    speechService.speak(q, {
+      onStart: () => setIsAiSpeaking(true),
+      onEnd: () => setIsAiSpeaking(false)
+    })
+  }
+
+  // Toggle AI Question Audio Mute
+  const toggleAudioMute = () => {
+    const next = !isAudioMuted
+    setIsAudioMuted(next)
+    speechService.setMuted(next)
+    if (next) {
+      speechService.stop()
+      setIsAiSpeaking(false)
+    } else {
+      speakQuestion(currentQuestionIndex)
+    }
+  }
+
+  // Speech-to-Text Dictation
+  const toggleDictation = () => {
+    if (isDictating) {
+      speechService.stopListening()
+      setIsDictating(false)
+    } else {
+      const ok = speechService.startListening({
+        onStart: () => setIsDictating(true),
+        onResult: (text) => {
+          setCandidateResponse((prev) => (prev ? prev + ' ' + text : text))
+        },
+        onEnd: () => setIsDictating(false),
+        onError: (err) => {
+          console.warn('Speech recognition error:', err)
+          setIsDictating(false)
+        }
+      })
+      if (!ok) setIsDictating(false)
+    }
+  }
+
+  // Auto-speak initial question on mount
   useEffect(() => {
+    const timer = setTimeout(() => {
+      speakQuestion(0)
+    }, 700)
+
+    return () => {
+      clearTimeout(timer)
+      speechService.stop()
+      speechService.stopListening()
+    }
+  }, [])
+
+  // Initialize camera with progressive fallback
+  useEffect(() => {
+    let localStream: MediaStream | null = null
+
     async function initMedia() {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setIsSimulatedCamera(true)
+        return
+      }
       try {
-        const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        setStream(s)
-        if (videoRef.current) {
-          videoRef.current.srcObject = s
+        let s: MediaStream | null = null
+        try {
+          s = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+          })
+        } catch (err1) {
+          try {
+            s = await navigator.mediaDevices.getUserMedia({ video: true })
+          } catch (err2) {
+            s = await navigator.mediaDevices.getUserMedia({
+              video: { width: { ideal: 640 }, height: { ideal: 480 } }
+            })
+          }
+        }
+        if (s) {
+          localStream = s
+          setStream(s)
+          setIsSimulatedCamera(false)
+          if (videoRef.current) {
+            videoRef.current.srcObject = s
+            videoRef.current.play().catch(() => {})
+          }
         }
       } catch (err) {
-        console.warn('Camera stream simulation active')
+        console.warn('Camera stream simulation active:', err)
+        setIsSimulatedCamera(true)
       }
     }
     initMedia()
 
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((t) => t.stop())
+      if (localStream) {
+        localStream.getTracks().forEach((t) => t.stop())
+      }
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current)
       }
     }
   }, [])
+
+  // Sync stream to video element on change
+  useEffect(() => {
+    if (stream && videoRef.current && !videoDisabled) {
+      if (videoRef.current.srcObject !== stream) {
+        videoRef.current.srcObject = stream
+      }
+      videoRef.current.play().catch(() => {})
+    }
+  }, [stream, videoDisabled])
+
+  // Canvas Simulation Animation for Demo Mode
+  useEffect(() => {
+    if (!isSimulatedCamera || videoDisabled) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    let frame = 0
+    const render = () => {
+      frame++
+      const width = canvas.width
+      const height = canvas.height
+
+      // Studio background
+      const grad = ctx.createLinearGradient(0, 0, width, height)
+      grad.addColorStop(0, '#090d16')
+      grad.addColorStop(0.5, '#1e1b4b')
+      grad.addColorStop(1, '#0f172a')
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, width, height)
+
+      // Center Avatar
+      const cx = width / 2
+      const cy = height / 2 + 10
+      const bob = Math.sin(frame * 0.05) * 3
+
+      // Torso
+      ctx.fillStyle = '#1e293b'
+      ctx.beginPath()
+      ctx.ellipse(cx, height + 40, width * 0.35, height * 0.5, 0, Math.PI, 0)
+      ctx.fill()
+
+      // Neck
+      ctx.fillStyle = '#f87171'
+      ctx.fillRect(cx - 16, cy + 28 + bob, 32, 36)
+
+      // Head
+      ctx.fillStyle = '#fca5a5'
+      ctx.beginPath()
+      ctx.ellipse(cx, cy - 10 + bob, 48, 62, 0, 0, Math.PI * 2)
+      ctx.fill()
+
+      // Eyes
+      ctx.fillStyle = '#0f172a'
+      const isBlinking = frame % 130 < 6
+      if (!isBlinking) {
+        ctx.beginPath()
+        ctx.arc(cx - 16, cy - 14 + bob, 4.5, 0, Math.PI * 2)
+        ctx.arc(cx + 16, cy - 14 + bob, 4.5, 0, Math.PI * 2)
+        ctx.fill()
+      } else {
+        ctx.strokeStyle = '#0f172a'
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.moveTo(cx - 22, cy - 14 + bob)
+        ctx.lineTo(cx - 10, cy - 14 + bob)
+        ctx.moveTo(cx + 10, cy - 14 + bob)
+        ctx.lineTo(cx + 22, cy - 14 + bob)
+        ctx.stroke()
+      }
+
+      // Mouth
+      ctx.strokeStyle = '#991b1b'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(cx, cy + 10 + bob, 14, 0.2 * Math.PI, 0.8 * Math.PI)
+      ctx.stroke()
+
+      // Proctoring Box
+      const boxSize = 135
+      const bx = cx - boxSize / 2
+      const by = cy - boxSize / 2 - 10 + bob
+      ctx.strokeStyle = '#10b981'
+      ctx.lineWidth = 1.5
+      ctx.strokeRect(bx, by, boxSize, boxSize)
+
+      // Tag
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.9)'
+      ctx.fillRect(bx, by - 18, 96, 16)
+      ctx.fillStyle = '#ffffff'
+      ctx.font = 'bold 9px Inter, sans-serif'
+      ctx.fillText('GAZE: LOCKED', bx + 6, by - 6)
+
+      animFrameRef.current = requestAnimationFrame(render)
+    }
+    render()
+
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
+    }
+  }, [isSimulatedCamera, videoDisabled])
+
+  const handleToggleMic = () => {
+    if (stream) {
+      stream.getAudioTracks().forEach((t) => {
+        t.enabled = micMuted
+      })
+    }
+    setMicMuted((prev) => !prev)
+  }
+
+  const handleToggleVideo = () => {
+    if (stream) {
+      stream.getVideoTracks().forEach((t) => {
+        t.enabled = videoDisabled
+      })
+    }
+    setVideoDisabled((prev) => !prev)
+  }
 
   // Timer countdown
   useEffect(() => {
@@ -148,37 +367,72 @@ export default function InterviewRoom() {
       return
     }
 
+    speechService.stop()
+    if (isDictating) {
+      speechService.stopListening()
+      setIsDictating(false)
+    }
+
     const currentQ = interviewQuestions[currentQuestionIndex]
     const updatedTranscript = [...transcript, { q: currentQ.q, a: candidateResponse.trim() }]
     setTranscript(updatedTranscript)
     setCandidateResponse('')
 
     if (currentQuestionIndex + 1 < interviewQuestions.length) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1)
+      const nextIdx = currentQuestionIndex + 1
+      setCurrentQuestionIndex(nextIdx)
       setSecondsRemaining(180)
+      speakQuestion(nextIdx)
     } else {
       setIsEvaluating(true)
+      speechService.speak('Evaluating responses and compiling proctoring report.')
       setTimeout(() => {
         setIsEvaluating(false)
         setIsFinished(true)
 
-        // Attach interview completion to candidate profile
+        // Attach interview completion to candidate profile & meetingService archive
+        const formattedTranscript = updatedTranscript.flatMap((item, idx) => [
+          {
+            timestamp: `0${idx * 2}:00`,
+            speaker: 'Sarah (AI Technical Evaluator)',
+            speakerRole: 'ai' as const,
+            text: item.q
+          },
+          {
+            timestamp: `0${idx * 2 + 1}:15`,
+            speaker: `${profileService.get()?.name || 'Avinash Tiwari'} (Candidate)`,
+            speakerRole: 'candidate' as const,
+            text: item.a
+          }
+        ])
+
+        const savedMeeting = meetingService.saveCompletedSession({
+          jobTitle: roleTitle,
+          company: companyName,
+          interviewType: 'Technical',
+          score: 94,
+          durationMinutes: 28,
+          recommendation: 'Strong Hire - Demonstrated High Technical and Pipeline Proficiency',
+          proctoringWarnings: proctoringWarnings,
+          transcript: formattedTranscript
+        })
+
         const p = profileService.get() || {}
         p.interviews = p.interviews || []
         p.interviews.push({
-          id: 'int-' + Date.now(),
+          id: savedMeeting.id,
           role: roleTitle,
           company: companyName,
           date: new Date().toISOString(),
-          score: 92,
+          score: 94,
           recommendation: 'Strong Hire - Proceed to Final Discussion',
           proctoringStatus: proctoringWarnings === 0 ? 'Clean (0 Warnings)' : `${proctoringWarnings} Minor Warnings`
         })
         profileService.save(p)
 
         notificationService.create({
-          title: 'AI Interview Evaluation Ready! 🎯',
-          message: `Your technical evaluation report for ${roleTitle} is now generated with a 92% rating.`,
+          title: 'AI Interview Meeting Saved & Transcribed! 🎥',
+          message: `Your interview for ${roleTitle} is archived with recording & searchable transcript.`,
           type: 'success'
         })
       }, 1500)
@@ -299,7 +553,7 @@ export default function InterviewRoom() {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+          <div className="pt-4 border-t border-slate-100 flex flex-wrap justify-end gap-3">
             <Button
               variant="outline"
               size="md"
@@ -307,6 +561,14 @@ export default function InterviewRoom() {
               className="font-bold text-xs"
             >
               Practice More
+            </Button>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => nav('/meetings')}
+              className="font-bold text-xs text-blue-700 bg-blue-50 border-blue-200"
+            >
+              🎥 View Recorded Meeting & Transcript
             </Button>
             <Button
               variant="primary"
@@ -394,13 +656,28 @@ export default function InterviewRoom() {
           <div className="bg-slate-950 rounded-3xl overflow-hidden aspect-video relative flex items-center justify-center border border-slate-800 shadow-xl">
             {/* Camera View */}
             {!videoDisabled ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover mirror"
-              />
+              stream && !isSimulatedCamera ? (
+                <video
+                  ref={(el) => {
+                    videoRef.current = el
+                    if (el && stream && el.srcObject !== stream) {
+                      el.srcObject = stream
+                      el.play().catch(() => {})
+                    }
+                  }}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover mirror"
+                />
+              ) : (
+                <canvas
+                  ref={canvasRef}
+                  width={640}
+                  height={360}
+                  className="w-full h-full object-cover"
+                />
+              )
             ) : (
               <div className="text-center text-slate-500">
                 <VideoOff size={40} className="mx-auto mb-2 opacity-50" />
@@ -412,14 +689,16 @@ export default function InterviewRoom() {
             <div className="absolute top-4 left-4 flex flex-col gap-1.5">
               <span className="px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-emerald-400 text-[10px] font-extrabold flex items-center gap-1.5 border border-emerald-500/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                <span>AI Face & Gaze Tracking: Active</span>
+                <span>
+                  {isSimulatedCamera ? 'AI Proctoring (Simulated)' : 'AI Face & Gaze Tracking: Active'}
+                </span>
               </span>
             </div>
 
             {/* Video Controls Bar */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-full border border-slate-700">
               <button
-                onClick={() => setMicMuted((prev) => !prev)}
+                onClick={handleToggleMic}
                 className={`p-2 rounded-full transition-colors ${
                   micMuted ? 'bg-rose-500 text-white' : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
                 }`}
@@ -429,7 +708,7 @@ export default function InterviewRoom() {
               </button>
 
               <button
-                onClick={() => setVideoDisabled((prev) => !prev)}
+                onClick={handleToggleVideo}
                 className={`p-2 rounded-full transition-colors ${
                   videoDisabled ? 'bg-rose-500 text-white' : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
                 }`}
@@ -482,10 +761,43 @@ export default function InterviewRoom() {
           <div className="space-y-4">
             {/* Question Box */}
             <div className="p-4 bg-gradient-to-br from-indigo-50/80 to-blue-50/80 border border-indigo-100 rounded-2xl space-y-2">
-              <div className="flex items-center gap-2 text-indigo-700 text-xs font-extrabold">
-                <Bot size={16} />
-                <span>AI Interviewer Question</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-indigo-700 text-xs font-extrabold">
+                  <Bot size={16} />
+                  <span>AI Interviewer Question</span>
+                  {isAiSpeaking && (
+                    <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold animate-pulse">
+                      Speaking...
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleAudioMute}
+                    className={`p-1 rounded-lg border text-xs transition-colors ${
+                      isAudioMuted
+                        ? 'bg-rose-50 border-rose-200 text-rose-600'
+                        : 'bg-white border-indigo-100 text-indigo-600 hover:bg-indigo-50'
+                    }`}
+                    title={isAudioMuted ? 'Unmute AI Voice' : 'Mute AI Voice'}
+                  >
+                    {isAudioMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => speakQuestion(currentQuestionIndex)}
+                    className="px-2.5 py-1 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Read question again"
+                  >
+                    <Volume2 size={12} className={isAiSpeaking ? 'text-blue-600 animate-bounce' : ''} />
+                    <span>{isAiSpeaking ? 'Re-reading...' : '🔊 Read Question'}</span>
+                  </button>
+                </div>
               </div>
+
               <h3 className="text-sm font-extrabold text-slate-900 leading-snug">
                 "{interviewQuestions[currentQuestionIndex].q}"
               </h3>
@@ -497,24 +809,48 @@ export default function InterviewRoom() {
             {/* Answer Input */}
             <div className="space-y-1.5">
               <div className="flex justify-between items-center text-xs font-bold text-slate-700">
-                <span>Your Response (Speech-to-Text / Input):</span>
-                <button
-                  onClick={() =>
-                    setCandidateResponse(
-                      'I approach this by isolating pipeline stages in staging environments, cross-checking primary key constraints, and generating automated validation logs to confirm zero loss before pushing to production.'
-                    )
-                  }
-                  className="text-blue-600 hover:underline text-[11px] font-bold flex items-center gap-1"
-                >
-                  <Sparkles size={12} />
-                  <span>Auto-Fill Sample</span>
-                </button>
+                <span className="flex items-center gap-1.5">
+                  <span>Your Response:</span>
+                  {isDictating && (
+                    <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-extrabold flex items-center gap-1 animate-pulse border border-rose-200">
+                      <Radio size={10} />
+                      <span>Recording Voice...</span>
+                    </span>
+                  )}
+                </span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleDictation}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                      isDictating
+                        ? 'bg-rose-500 text-white shadow-sm'
+                        : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200'
+                    }`}
+                  >
+                    {isDictating ? <MicOff size={12} /> : <Mic size={12} />}
+                    <span>{isDictating ? 'Stop Mic' : '🎙️ Dictate with Mic'}</span>
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      setCandidateResponse(
+                        'I approach this by isolating pipeline stages in staging environments, cross-checking primary key constraints, and generating automated validation logs to confirm zero loss before pushing to production.'
+                      )
+                    }
+                    className="text-blue-600 hover:underline text-[11px] font-bold flex items-center gap-1"
+                  >
+                    <Sparkles size={12} />
+                    <span>Auto-Fill Sample</span>
+                  </button>
+                </div>
               </div>
               <textarea
                 value={candidateResponse}
                 onChange={(e) => setCandidateResponse(e.target.value)}
-                placeholder="Speak or type your structured answer here..."
-                className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 h-44 leading-relaxed"
+                placeholder="Speak via microphone dictation or type your structured answer here..."
+                className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 h-44 leading-relaxed font-normal"
               />
             </div>
           </div>

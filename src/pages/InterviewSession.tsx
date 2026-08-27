@@ -10,10 +10,16 @@ import {
   RotateCcw,
   Zap,
   ThumbsUp,
-  Brain
+  Brain,
+  Volume2,
+  VolumeX,
+  Mic,
+  MicOff,
+  Radio
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
+import { speechService } from '../services/speechService'
 
 const QUESTION_BANK: Record<string, { q: string; tip: string; modelAnswer: string }[]> = {
   Technical: [
@@ -87,6 +93,54 @@ export default function InterviewSession() {
   const [showTip, setShowTip] = useState(false)
   const [timeLeft, setTimeLeft] = useState(120)
   const [isCompleted, setIsCompleted] = useState(false)
+  const [isAiSpeaking, setIsAiSpeaking] = useState(false)
+  const [isDictating, setIsDictating] = useState(false)
+  const [isAudioMuted, setIsAudioMuted] = useState(false)
+
+  // Read question aloud
+  const speakQuestion = (idx: number, qList = questions) => {
+    const q = qList[idx]?.q
+    if (!q || isAudioMuted) return
+
+    speechService.speak(q, {
+      onStart: () => setIsAiSpeaking(true),
+      onEnd: () => setIsAiSpeaking(false)
+    })
+  }
+
+  // Toggle voice mute
+  const toggleMute = () => {
+    const next = !isAudioMuted
+    setIsAudioMuted(next)
+    speechService.setMuted(next)
+    if (next) {
+      speechService.stop()
+      setIsAiSpeaking(false)
+    } else {
+      speakQuestion(currentIndex)
+    }
+  }
+
+  // Dictate response via microphone
+  const toggleDictation = () => {
+    if (isDictating) {
+      speechService.stopListening()
+      setIsDictating(false)
+    } else {
+      const started = speechService.startListening({
+        onStart: () => setIsDictating(true),
+        onResult: (text) => {
+          setCurrentText((prev) => (prev ? prev + ' ' + text : text))
+        },
+        onEnd: () => setIsDictating(false),
+        onError: (err) => {
+          console.warn('Speech recognition error:', err)
+          setIsDictating(false)
+        }
+      })
+      if (!started) setIsDictating(false)
+    }
+  }
 
   useEffect(() => {
     let pool = QUESTION_BANK[type] || QUESTION_BANK.Technical
@@ -99,6 +153,17 @@ export default function InterviewSession() {
     }
     setQuestions(selected)
     setUserAnswers(new Array(selected.length).fill(''))
+
+    // Auto-read first question
+    const timer = setTimeout(() => {
+      speakQuestion(0, selected)
+    }, 600)
+
+    return () => {
+      clearTimeout(timer)
+      speechService.stop()
+      speechService.stopListening()
+    }
   }, [type, count])
 
   useEffect(() => {
@@ -110,17 +175,26 @@ export default function InterviewSession() {
   }, [currentIndex, isCompleted])
 
   const handleNext = () => {
+    speechService.stop()
+    if (isDictating) {
+      speechService.stopListening()
+      setIsDictating(false)
+    }
+
     const updated = [...userAnswers]
     updated[currentIndex] = currentText
     setUserAnswers(updated)
 
     if (currentIndex + 1 < questions.length) {
-      setCurrentIndex(currentIndex + 1)
-      setCurrentText(userAnswers[currentIndex + 1] || '')
+      const nextIndex = currentIndex + 1
+      setCurrentIndex(nextIndex)
+      setCurrentText(userAnswers[nextIndex] || '')
       setTimeLeft(120)
       setShowTip(false)
+      speakQuestion(nextIndex)
     } else {
       setIsCompleted(true)
+      speechService.speak('Interview practice session completed. Great work!')
     }
   }
 
@@ -255,9 +329,42 @@ export default function InterviewSession() {
       {/* Main Question Card */}
       <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
         <div>
-          <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-            Interviewer Prompt
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <span>Interviewer Prompt</span>
+              {isAiSpeaking && (
+                <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold animate-pulse">
+                  Speaking...
+                </span>
+              )}
+            </span>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleMute}
+                className={`p-1 rounded-lg border text-xs transition-colors ${
+                  isAudioMuted
+                    ? 'bg-rose-50 border-rose-200 text-rose-600'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+                title={isAudioMuted ? 'Unmute Voice' : 'Mute Voice'}
+              >
+                {isAudioMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => speakQuestion(currentIndex)}
+                className="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-200"
+                title="Read question again"
+              >
+                <Volume2 size={12} className={isAiSpeaking ? 'text-indigo-600 animate-bounce' : ''} />
+                <span>{isAiSpeaking ? 'Re-reading...' : '🔊 Read Question'}</span>
+              </button>
+            </div>
+          </div>
+
           <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mt-1 leading-snug">
             "{activeQuestion.q}"
           </h3>
@@ -284,17 +391,39 @@ export default function InterviewSession() {
         {/* Answer text area */}
         <div className="space-y-2">
           <div className="flex justify-between items-center text-xs">
-            <label className="font-bold text-slate-700 uppercase tracking-wider">
-              Your Spoken / Written Response
-            </label>
-            <button
-              type="button"
-              onClick={fillDemoAnswer}
-              className="text-blue-600 hover:underline font-bold flex items-center gap-1"
-            >
-              <Zap size={13} />
-              <span>Auto-Fill Model Answer (Demo)</span>
-            </button>
+            <span className="font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <span>Your Spoken / Written Response</span>
+              {isDictating && (
+                <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-extrabold flex items-center gap-1 animate-pulse border border-rose-200">
+                  <Radio size={10} />
+                  <span>Recording...</span>
+                </span>
+              )}
+            </span>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleDictation}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                  isDictating
+                    ? 'bg-rose-500 text-white shadow-sm'
+                    : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200'
+                }`}
+              >
+                {isDictating ? <MicOff size={12} /> : <Mic size={12} />}
+                <span>{isDictating ? 'Stop Mic' : '🎙️ Dictate with Mic'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={fillDemoAnswer}
+                className="text-blue-600 hover:underline font-bold flex items-center gap-1 cursor-pointer"
+              >
+                <Zap size={13} />
+                <span>Auto-Fill Model Answer</span>
+              </button>
+            </div>
           </div>
           <textarea
             value={currentText}

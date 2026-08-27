@@ -12,7 +12,10 @@ import {
   Share2,
   Clock,
   ShieldCheck,
-  Send
+  Send,
+  Star,
+  Zap,
+  Award
 } from 'lucide-react'
 import { jobService } from '../services/jobService'
 import { profileService } from '../services/profileService'
@@ -101,10 +104,16 @@ export default function JobDetails() {
               {job.company.charAt(0)}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
                   {job.company}
                 </span>
+                {job.companyRating && (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold flex items-center gap-1">
+                    <Star size={11} className="fill-amber-500 text-amber-500" />
+                    <span>{job.companyRating} ★ Employer Rating</span>
+                  </span>
+                )}
                 <span className="match-pill text-[11px]">
                   <Sparkles size={11} />
                   <span>94% Match</span>
@@ -144,7 +153,7 @@ export default function JobDetails() {
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
             <div className="text-slate-400 font-semibold mb-1 flex items-center gap-1">
               <MapPin size={13} />
-              <span>Location</span>
+              <span>Location & Mode</span>
             </div>
             <div className="font-bold text-slate-800">{job.location} ({job.workMode})</div>
           </div>
@@ -159,20 +168,20 @@ export default function JobDetails() {
             </div>
           </div>
 
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <div className="text-slate-400 font-semibold mb-1 flex items-center gap-1">
-              <Briefcase size={13} />
-              <span>Experience</span>
+          <div className="p-3 bg-amber-50/70 rounded-xl border border-amber-200/80">
+            <div className="text-amber-800 font-semibold mb-1 flex items-center gap-1">
+              <Clock size={13} className="text-amber-700" />
+              <span>Hiring Period</span>
             </div>
-            <div className="font-bold text-slate-800">{job.experience}</div>
+            <div className="font-extrabold text-amber-950">{job.hiringPeriod || 'Immediate (0-15 Days)'}</div>
           </div>
 
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <div className="text-slate-400 font-semibold mb-1 flex items-center gap-1">
-              <Clock size={13} />
-              <span>Employment</span>
+          <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200/80">
+            <div className="text-emerald-800 font-semibold mb-1 flex items-center gap-1">
+              <Zap size={13} className="text-emerald-700" />
+              <span>Recruiter Response</span>
             </div>
-            <div className="font-bold text-slate-800">{job.employmentType || 'Full-time'}</div>
+            <div className="font-extrabold text-emerald-950">{job.companyResponseRate || '99% Response Rate'}</div>
           </div>
         </div>
       </div>
@@ -219,10 +228,24 @@ export default function JobDetails() {
                 ))}
               </div>
             </div>
+
+            {job.benefits && (
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 mb-3">Benefits & Perks</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600">
+                  {job.benefits.map((b: string, i: number) => (
+                    <div key={i} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-2">
+                      <Award size={14} className="text-amber-500 shrink-0" />
+                      <span>{b}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right 1 Col: AI Match Breakdown & Quick Tips */}
+        {/* Right 1 Col: AI Match Breakdown & Quick Actions */}
         <div className="space-y-6">
           {/* AI Match Widget */}
           <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 shadow-xl space-y-4">
@@ -246,8 +269,8 @@ export default function JobDetails() {
                 <span className="font-bold text-white">92%</span>
               </div>
               <div className="flex justify-between text-slate-300">
-                <span>Location / Mode</span>
-                <span className="font-bold text-white">100%</span>
+                <span>Hiring Velocity</span>
+                <span className="font-bold text-emerald-400">&lt; 24h SLA</span>
               </div>
             </div>
 
@@ -268,7 +291,7 @@ export default function JobDetails() {
               <span>Verified Employer</span>
             </div>
             <p className="text-slate-500">
-              Applications submitted through RAP Candidate Portal bypass generic recruiter queues and enter priority review.
+              Applications submitted through RAS Candidate Portal bypass generic recruiter queues and enter priority review with contact privacy protection.
             </p>
           </div>
         </div>

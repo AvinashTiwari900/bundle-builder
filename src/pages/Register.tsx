@@ -287,7 +287,7 @@ export default function RegisterPage() {
                 Create Candidate Account
               </h2>
               <p className="text-xs text-slate-500">
-                AI-Powered Career & Recruitment Acceleration Platform
+                AI-Powered Career & Recruitment Automation System (RAS)
               </p>
             </div>
           </div>

@@ -11,7 +11,12 @@ export const jobService = {
     }
     try {
       const parsed = JSON.parse(raw)
-      return parsed.length ? parsed : fallbackJobs
+      // If old cached data lacks companyRating or hiringPeriod, re-sync with fallback
+      if (!parsed.length || !parsed[0].companyRating || !parsed[0].hiringPeriod) {
+        localStorage.setItem('rap_jobs', JSON.stringify(fallbackJobs))
+        return fallbackJobs
+      }
+      return parsed
     } catch {
       return fallbackJobs
     }
@@ -62,12 +67,14 @@ export const jobService = {
       jobId: job.id,
       jobTitle: job.title,
       company: job.company,
+      companyRating: job.companyRating,
+      hiringPeriod: job.hiringPeriod,
       location: job.location,
       workMode: job.workMode,
       salary: `₹${Math.round((job.salaryMin || 1500000) / 100000)}-${Math.round((job.salaryMax || 2400000) / 100000)} LPA`,
       appliedDate: new Date().toISOString(),
-      status: 'Applied',
-      matchScore: Math.floor(Math.random() * 12) + 84,
+      status: 'Application Submitted',
+      matchScore: Math.floor(Math.random() * 10) + 88,
       notes: customNotes || ''
     }
 
@@ -76,7 +83,7 @@ export const jobService = {
 
     notificationService.create({
       title: 'Application Submitted! 🚀',
-      message: `Your application for ${job.title} at ${job.company} was submitted successfully.`,
+      message: `Your application for ${job.title} at ${job.company} was submitted successfully. Track status on your pipeline.`,
       type: 'application'
     })
 
@@ -93,6 +100,7 @@ export const jobService = {
         j.company,
         j.location || '',
         j.description || '',
+        j.hiringPeriod || '',
         ...(j.skills || [])
       ]
         .join(' ')
@@ -113,6 +121,12 @@ export const jobService = {
     if (filters.workMode && filters.workMode !== 'all') {
       res = res.filter((j: any) => j.workMode.toLowerCase() === filters.workMode.toLowerCase())
     }
+    if (filters.hiringPeriod && filters.hiringPeriod !== 'all') {
+      res = res.filter((j: any) => j.hiringPeriod?.toLowerCase()?.includes(filters.hiringPeriod.toLowerCase()))
+    }
+    if (filters.minRating) {
+      res = res.filter((j: any) => (j.companyRating || 0) >= Number(filters.minRating))
+    }
     if (filters.employmentType && filters.employmentType !== 'all') {
       res = res.filter((j: any) => j.employmentType.toLowerCase() === filters.employmentType.toLowerCase())
     }
@@ -130,6 +144,8 @@ export const jobService = {
     // Sorting
     if (filters.sort === 'latest') {
       res = res.sort((a: any, b: any) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime())
+    } else if (filters.sort === 'rating_desc') {
+      res = res.sort((a: any, b: any) => (b.companyRating || 0) - (a.companyRating || 0))
     } else if (filters.sort === 'salary_desc') {
       res = res.sort((a: any, b: any) => (b.salaryMax || 0) - (a.salaryMax || 0))
     } else if (filters.sort === 'salary_asc') {

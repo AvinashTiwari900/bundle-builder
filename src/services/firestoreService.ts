@@ -25,7 +25,7 @@ function syncToFirestoreSafely(syncFn: () => Promise<any>, operationName: string
     )
   ]).catch((err) => {
     // Non-fatal warning - client continues seamlessly with local state
-    console.warn(`[RAP Hybrid] ${operationName} offline notice:`, err?.message || err)
+    console.warn(`[RAS Hybrid] ${operationName} offline notice:`, err?.message || err)
   })
 }
 

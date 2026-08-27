@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Globe,
   Sparkles,
@@ -7,6 +8,7 @@ import {
   Github,
   Linkedin,
   Mail,
+  Phone,
   CheckCircle2,
   Share2,
   Save,
@@ -18,7 +20,16 @@ import {
   Award,
   Layers,
   Code2,
-  Trash2
+  Trash2,
+  Shield,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  Building2,
+  Calendar,
+  Lock,
+  MessageSquare,
+  Wand2
 } from 'lucide-react'
 import { portfolioService } from '../services/portfolioService'
 import { profileService } from '../services/profileService'
@@ -27,26 +38,37 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 
 export default function PortfolioPage() {
+  const nav = useNavigate()
   const [profile, setProfile] = useState<any>(null)
   const [portfolio, setPortfolio] = useState<any>(portfolioService.get())
   const [editing, setEditing] = useState(false)
+  const [isPanelView, setIsPanelView] = useState(false) // Toggle Company / Panel Member View
+  const [maskContactInfo, setMaskContactInfo] = useState(true) // Privacy toggle
   const [form, setForm] = useState<any>({})
   const [newSkill, setNewSkill] = useState('')
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectDesc, setNewProjectDesc] = useState('')
   const [newProjectTech, setNewProjectTech] = useState('')
+  const [newProjectLink, setNewProjectLink] = useState('')
+  const [newProjectGithub, setNewProjectGithub] = useState('')
   const [toast, setToast] = useState<string | null>(null)
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
+  const [isGeneratingAiTips, setIsGeneratingAiTips] = useState(false)
 
   useEffect(() => {
     const p = profileService.get() || {}
     const pf = portfolioService.get() || {}
 
-    // Ensure synchronized defaults
+    setMaskContactInfo(p.privacy?.maskContactInfo ?? true)
+
     const combined = {
       name: p.name || 'Avinash Tiwari',
       headline: p.headline || 'Lead Business Analyst & Product Strategist',
       location: p.location || 'Bengaluru, India',
       experienceYears: p.experienceYears || 5,
+      currentCtc: p.currentCtc || '₹20 LPA',
+      targetSalary: p.targetSalary || '₹24 - 28 LPA',
+      noticePeriod: p.noticePeriod || '30 days (15-day buyout feasible)',
       avatar:
         p.profilePhoto ||
         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
@@ -64,29 +86,49 @@ export default function PortfolioPage() {
         'Excel',
         'Agile / Scrum',
         'Tableau',
+        'Snowflake',
         'Stakeholder Management'
       ],
       socials: {
         github: pf.socials?.github || 'https://github.com/AvinashTiwari900',
         linkedin: pf.socials?.linkedin || 'https://www.linkedin.com/in/avinashtiwari626/',
         portfolioUrl: pf.socials?.portfolioUrl || 'https://avinash-tiwari.dev',
-        email: pf.socials?.email || p.email || 'avinashtiwari@gmail.com'
+        email: pf.socials?.email || p.email || 'avinashtiwari@gmail.com',
+        phone: p.phone || '+91 98765 43210'
       },
       featuredProjects: p.projects || [
         {
           id: 'proj-1',
           name: 'Enterprise Revenue Analytics Engine',
+          role: 'Lead Business Analyst',
           description:
             'Designed unified BI reporting dashboards automating revenue forecasting across 12 product lines, cutting report generation time by 75%.',
-          technologies: ['Power BI', 'SQL', 'Snowflake', 'Python']
+          technologies: ['Power BI', 'SQL', 'Snowflake', 'Python'],
+          link: 'https://avinash-tiwari.dev/demo-bi',
+          githubUrl: 'https://github.com/AvinashTiwari900/revenue-analytics'
         },
         {
           id: 'proj-2',
           name: 'Customer Churn Predictor & Retention Portal',
+          role: 'Product Data Analyst',
           description:
             'Built machine learning model integration predicting customer churn with 89% precision, triggering proactive retention campaigns.',
-          technologies: ['Python', 'SQL', 'Scikit-Learn', 'Tableau']
+          technologies: ['Python', 'SQL', 'Scikit-Learn', 'Tableau'],
+          link: 'https://avinash-tiwari.dev/churn-portal',
+          githubUrl: 'https://github.com/AvinashTiwari900/customer-churn-predictor'
         }
+      ],
+      education: p.education || [
+        {
+          degree: 'Bachelor of Technology in Computer Science & Engineering',
+          institution: 'National Institute of Technology (NIT)',
+          year: '2017 - 2021',
+          score: '8.8 CGPA'
+        }
+      ],
+      certifications: p.certifications || [
+        { name: 'Microsoft Certified: Power BI Data Analyst Associate (PL-300)', issuer: 'Microsoft', year: 2024 },
+        { name: 'Certified Business Analysis Professional (CBAP)', issuer: 'IIBA', year: 2023 }
       ]
     }
 
@@ -100,12 +142,21 @@ export default function PortfolioPage() {
     setTimeout(() => setToast(null), 3000)
   }
 
+  const maskEmail = (email: string) => {
+    if (!email) return 'c********@gmail.com'
+    const [user, domain] = email.split('@')
+    return `${user.charAt(0)}*****${user.slice(-1)}@${domain}`
+  }
+
+  const maskPhone = (phone: string) => {
+    if (!phone) return '+91 98****1234'
+    return phone.replace(/(\+?\d{2,3})?\s?(\d{2})\d{4,6}(\d{2,4})/, '$1 $2****$3')
+  }
+
   const handleSave = async () => {
-    // 1. Save to portfolio service
     portfolioService.save(form)
     setPortfolio(form)
 
-    // 2. Sync to profile state
     const p = profileService.get() || {}
     p.name = form.name
     p.headline = form.headline
@@ -114,13 +165,34 @@ export default function PortfolioPage() {
     p.profilePhoto = form.avatar
     p.skills = form.skills
     p.projects = form.featuredProjects
+    p.privacy = { ...p.privacy, maskContactInfo }
     profileService.save(p)
 
-    // 3. Sync to Firestore
     await firestoreService.saveCandidateProfile(p)
-
     setEditing(false)
-    showToast('Public portfolio & profile saved successfully! 🎉')
+    showToast('Public portfolio & privacy settings saved! 🎉')
+  }
+
+  const togglePrivacyMask = () => {
+    const next = !maskContactInfo
+    setMaskContactInfo(next)
+    const p = profileService.get() || {}
+    p.privacy = { ...(p.privacy || {}), maskContactInfo: next }
+    profileService.save(p)
+    showToast(next ? 'Contact Privacy Shield Enabled (Email & Phone Hidden)' : 'Direct Contact Visible')
+  }
+
+  const generateAiSuggestions = () => {
+    setIsGeneratingAiTips(true)
+    setTimeout(() => {
+      setIsGeneratingAiTips(false)
+      setAiSuggestions([
+        'Add quantified metrics to your second project (e.g. "Saved ₹32 Lakhs in retained revenue").',
+        'Add "Snowflake" and "Data Governance" to core competencies to unlock 14 high-matching roles.',
+        'Your profile has 96% verification score — verified credentials badge is prominently displayed to employer panels.'
+      ])
+      showToast('AI Portfolio Optimization Analysis Ready! 💡')
+    }, 700)
   }
 
   const addSkill = () => {
@@ -147,12 +219,16 @@ export default function PortfolioPage() {
       technologies: newProjectTech
         .split(',')
         .map((s) => s.trim())
-        .filter(Boolean)
+        .filter(Boolean),
+      link: newProjectLink.trim(),
+      githubUrl: newProjectGithub.trim()
     }
     setForm({ ...form, featuredProjects: [...currentProjects, newProj] })
     setNewProjectName('')
     setNewProjectDesc('')
     setNewProjectTech('')
+    setNewProjectLink('')
+    setNewProjectGithub('')
   }
 
   const removeFeaturedProject = (id: string) => {
@@ -173,15 +249,35 @@ export default function PortfolioPage() {
       {/* Header Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Public Candidate Portfolio
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              Candidate Portfolio & Panel Showcase
+            </h1>
+            <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold flex items-center gap-1">
+              <ShieldCheck size={12} />
+              <span>RAS Verified Credentials</span>
+            </span>
+          </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Recruiter-facing showcase presenting your identity, skills, case studies, and verified links
+            Employer & interview panel facing showcase presenting your skills, case studies, and verified certifications
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* View Switcher & Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Panel View Toggle */}
+          <button
+            onClick={() => setIsPanelView(!isPanelView)}
+            className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              isPanelView
+                ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            {isPanelView ? <EyeOff size={14} /> : <Eye size={14} />}
+            <span>{isPanelView ? 'Exit Panel View' : '👁️ View as Recruiter/Panel'}</span>
+          </button>
+
           <Button
             variant={editing ? 'primary' : 'outline'}
             size="md"
@@ -191,12 +287,12 @@ export default function PortfolioPage() {
             {editing ? (
               <>
                 <Save size={15} />
-                <span>Save All Changes</span>
+                <span>Save All</span>
               </>
             ) : (
               <>
                 <Edit2 size={15} />
-                <span>Edit All Fields</span>
+                <span>Edit Fields</span>
               </>
             )}
           </Button>
@@ -206,7 +302,7 @@ export default function PortfolioPage() {
             size="md"
             onClick={() => {
               navigator.clipboard?.writeText(window.location.href)
-              showToast('Public portfolio link copied to clipboard!')
+              showToast('Public portfolio URL copied to clipboard!')
             }}
             className="font-bold text-xs"
           >
@@ -216,190 +312,126 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      {/* Comprehensive Edit Form Drawer */}
+      {/* Privacy Shield Banner (Protection from direct unsolicited recruiter contact) */}
+      <div className="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-300 font-bold shrink-0">
+            <Lock size={18} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-extrabold text-blue-300 uppercase tracking-wider">
+                Candidate Contact Privacy Shield
+              </span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${maskContactInfo ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>
+                {maskContactInfo ? 'Active (Direct Contact Masked)' : 'Direct Contact Exposed'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Hides your direct email and phone number from companies to prevent unsolicited external calls. Recruiters message & schedule interviews directly inside RAS.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={togglePrivacyMask}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-colors cursor-pointer border ${
+            maskContactInfo
+              ? 'bg-emerald-500 text-white border-emerald-400'
+              : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+          }`}
+        >
+          {maskContactInfo ? '🛡️ Privacy Mask ON' : '⚠️ Privacy Mask OFF'}
+        </button>
+      </div>
+
+      {/* AI Quality Analyzer Trigger */}
+      <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+              <Sparkles size={16} />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-xs text-slate-900">AI Portfolio & Case Study Quality Analyzer</h3>
+              <p className="text-[11px] text-slate-500">Get AI recommendations on missing skills, project presentation, and profile appeal</p>
+            </div>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={generateAiSuggestions}
+            disabled={isGeneratingAiTips}
+            className="font-bold text-xs text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+          >
+            <Wand2 size={13} />
+            <span>{isGeneratingAiTips ? 'Analyzing Portfolio...' : 'Analyze with AI'}</span>
+          </Button>
+        </div>
+
+        {aiSuggestions.length > 0 && (
+          <div className="p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-2xl text-xs space-y-1.5 text-indigo-950 animate-in fade-in duration-200">
+            <div className="font-bold text-indigo-900">💡 AI Recommendations to improve portfolio score:</div>
+            {aiSuggestions.map((tip, i) => (
+              <div key={i} className="flex items-start gap-2 text-[11px]">
+                <CheckCircle2 size={13} className="text-indigo-600 shrink-0 mt-0.5" />
+                <span>{tip}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Edit Drawer Modal */}
       {editing && (
         <div className="bg-white border-2 border-blue-200 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6 animate-in fade-in duration-150">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
-              <h3 className="text-base font-extrabold text-slate-900">
-                Edit All Portfolio Fields
-              </h3>
-              <p className="text-xs text-slate-500">
-                Customize your name, headline, biography, GitHub, LinkedIn, skills, and case studies
-              </p>
+              <h3 className="text-base font-extrabold text-slate-900">Edit Portfolio Fields</h3>
+              <p className="text-xs text-slate-500">Customize your bio, skills, case studies, and public links</p>
             </div>
-            <button
-              onClick={() => setEditing(false)}
-              className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
-            >
+            <button onClick={() => setEditing(false)} className="p-1 text-slate-400 hover:text-slate-700">
               <X size={20} />
             </button>
           </div>
 
-          {/* Identity & Basic Info */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-extrabold text-blue-700 uppercase tracking-wider">
-              1. Candidate Identity & Header
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Full Name</label>
-                <Input
-                  value={form.name || ''}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="e.g. Avinash Tiwari"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Headline</label>
-                <Input
-                  value={form.headline || ''}
-                  onChange={(e) => setForm({ ...form, headline: e.target.value })}
-                  placeholder="e.g. Lead Business Analyst & Product Strategist"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Location</label>
-                <Input
-                  value={form.location || ''}
-                  onChange={(e) => setForm({ ...form, location: e.target.value })}
-                  placeholder="e.g. Bengaluru, India"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Years of Experience
-                </label>
-                <Input
-                  type="number"
-                  value={form.experienceYears || 5}
-                  onChange={(e) => setForm({ ...form, experienceYears: Number(e.target.value) })}
-                  placeholder="e.g. 5"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Profile Photo URL
-                </label>
-                <Input
-                  value={form.avatar || ''}
-                  onChange={(e) => setForm({ ...form, avatar: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Social Profiles */}
-          <div className="space-y-3 pt-3 border-t border-slate-100">
-            <h4 className="text-xs font-extrabold text-blue-700 uppercase tracking-wider">
-              2. Social Profiles & Links
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  GitHub Profile URL *
-                </label>
-                <Input
-                  value={form.socials?.github || ''}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      socials: { ...form.socials, github: e.target.value }
-                    })
-                  }
-                  placeholder="https://github.com/AvinashTiwari900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  LinkedIn Profile URL *
-                </label>
-                <Input
-                  value={form.socials?.linkedin || ''}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      socials: { ...form.socials, linkedin: e.target.value }
-                    })
-                  }
-                  placeholder="https://www.linkedin.com/in/avinashtiwari626/"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Personal Website / Portfolio URL
-                </label>
-                <Input
-                  value={form.socials?.portfolioUrl || ''}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      socials: { ...form.socials, portfolioUrl: e.target.value }
-                    })
-                  }
-                  placeholder="https://avinash-tiwari.dev"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Contact Email Address
-                </label>
-                <Input
-                  value={form.socials?.email || ''}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      socials: { ...form.socials, email: e.target.value }
-                    })
-                  }
-                  placeholder="avinashtiwari@gmail.com"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Executive Intro & Biography */}
-          <div className="space-y-3 pt-3 border-t border-slate-100">
-            <h4 className="text-xs font-extrabold text-blue-700 uppercase tracking-wider">
-              3. Tagline & Biography
-            </h4>
-
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Executive Tagline & Intro
-              </label>
-              <textarea
-                value={form.intro || ''}
-                onChange={(e) => setForm({ ...form, intro: e.target.value })}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 h-20 leading-relaxed font-medium"
-              />
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">Full Name</label>
+              <Input value={form.name || ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
-
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                About Me / Background & Philosophy
-              </label>
-              <textarea
-                value={form.about || ''}
-                onChange={(e) => setForm({ ...form, about: e.target.value })}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 h-24 leading-relaxed font-medium"
-              />
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">Headline</label>
+              <Input value={form.headline || ''} onChange={(e) => setForm({ ...form, headline: e.target.value })} />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">Location</label>
+              <Input value={form.location || ''} onChange={(e) => setForm({ ...form, location: e.target.value })} />
             </div>
           </div>
 
-          {/* Skills Competencies */}
-          <div className="space-y-3 pt-3 border-t border-slate-100">
-            <h4 className="text-xs font-extrabold text-blue-700 uppercase tracking-wider">
-              4. Core Competencies & Skills
-            </h4>
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 mb-1">Executive Summary / Intro</label>
+            <textarea
+              value={form.intro || ''}
+              onChange={(e) => setForm({ ...form, intro: e.target.value })}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs h-20"
+            />
+          </div>
 
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 mb-1">Detailed Biography</label>
+            <textarea
+              value={form.about || ''}
+              onChange={(e) => setForm({ ...form, about: e.target.value })}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs h-24"
+            />
+          </div>
+
+          {/* Core Skills */}
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <label className="block text-[11px] font-bold text-slate-700">Core Skills</label>
             <div className="flex gap-2">
               <input
                 value={newSkill}
@@ -410,12 +442,12 @@ export default function PortfolioPage() {
                     addSkill()
                   }
                 }}
-                placeholder="Type a skill (e.g. Snowflake, Tableau) and press Enter..."
+                placeholder="Add a skill and press Enter..."
                 className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
               />
               <Button type="button" variant="outline" size="sm" onClick={addSkill} className="font-bold text-xs">
                 <Plus size={14} />
-                <span>Add Skill</span>
+                <span>Add</span>
               </Button>
             </div>
 
@@ -436,85 +468,25 @@ export default function PortfolioPage() {
             </div>
           </div>
 
-          {/* Featured Projects Editor */}
-          <div className="space-y-3 pt-3 border-t border-slate-100">
-            <h4 className="text-xs font-extrabold text-blue-700 uppercase tracking-wider">
-              5. Featured Case Studies & Projects
-            </h4>
-
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-              <div className="font-bold text-xs text-slate-800">Add New Case Study:</div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Input
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  placeholder="Case Study Title (e.g. Real-Time Pricing Optimization)"
-                />
-                <Input
-                  value={newProjectTech}
-                  onChange={(e) => setNewProjectTech(e.target.value)}
-                  placeholder="Technologies (e.g. Python, SQL, Tableau)"
-                />
-              </div>
-              <textarea
-                value={newProjectDesc}
-                onChange={(e) => setNewProjectDesc(e.target.value)}
-                placeholder="Brief outcome & business impact..."
-                className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 h-16"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addFeaturedProject}
-                className="font-bold text-xs"
-              >
-                <Plus size={14} />
-                <span>Add to Featured Projects</span>
-              </Button>
-            </div>
-
-            {/* List of current projects */}
-            <div className="space-y-2 pt-2">
-              {(form.featuredProjects || []).map((p: any) => (
-                <div
-                  key={p.id}
-                  className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs"
-                >
-                  <div>
-                    <div className="font-bold text-slate-900">{p.name}</div>
-                    <div className="text-[11px] text-slate-500 line-clamp-1">{p.description}</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeFeaturedProject(p.id)}
-                    className="p-1.5 text-rose-500 hover:text-rose-700"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Form Actions */}
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
             <Button variant="ghost" size="md" onClick={() => setEditing(false)}>
               Cancel
             </Button>
             <Button variant="primary" size="md" onClick={handleSave} className="font-bold">
               <Save size={15} />
-              <span>Save & Publish Portfolio</span>
+              <span>Save Changes</span>
             </Button>
           </div>
         </div>
       )}
 
-      {/* Public Portfolio Live Recruiter View Card */}
-      <div className="bg-white border border-slate-200/90 rounded-3xl shadow-md overflow-hidden">
+      {/* Main Recruiter / Panel Live Portfolio Card */}
+      <div className={`bg-white border rounded-3xl shadow-md overflow-hidden transition-all ${
+        isPanelView ? 'ring-4 ring-purple-200 border-purple-300' : 'border-slate-200/90'
+      }`}>
         {/* Banner header */}
-        <div className="h-40 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 relative">
-          <div className="absolute -bottom-12 left-8">
+        <div className="h-44 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 relative">
+          <div className="absolute -bottom-12 left-8 flex items-end gap-4">
             <img
               src={portfolio.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'}
               alt={portfolio.name}
@@ -522,7 +494,15 @@ export default function PortfolioPage() {
             />
           </div>
 
-          <div className="absolute top-4 right-4">
+          {/* Panel Preview Badge Banner */}
+          {isPanelView && (
+            <div className="absolute top-4 left-4 bg-purple-900/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-purple-400/30 flex items-center gap-1.5 shadow-lg">
+              <Building2 size={14} className="text-amber-300" />
+              <span>Viewing in Recruiter & Panel Evaluation Mode</span>
+            </div>
+          )}
+
+          <div className="absolute top-4 right-4 flex items-center gap-2">
             <button
               onClick={() => setEditing(true)}
               className="px-3 py-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-white/20"
@@ -533,19 +513,28 @@ export default function PortfolioPage() {
           </div>
         </div>
 
-        {/* Profile Info Row */}
+        {/* Profile Info Body */}
         <div className="pt-16 p-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-extrabold text-slate-900">{portfolio.name}</h2>
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-2xl font-extrabold text-slate-900">{portfolio.name}</h2>
+                <span className="px-2.5 py-0.5 bg-blue-100 text-blue-800 rounded-full text-[10px] font-bold">
+                  94% ATS Fit
+                </span>
+              </div>
               <p className="text-sm font-bold text-blue-600 mt-0.5">{portfolio.headline}</p>
-              <p className="text-xs text-slate-500 mt-1">
-                📍 {portfolio.location} · 💼 {portfolio.experienceYears}+ Years Experience
+              <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-2 font-medium">
+                <span>📍 {portfolio.location}</span>
+                <span>•</span>
+                <span>💼 {portfolio.experienceYears}+ Yrs Exp</span>
+                <span>•</span>
+                <span>⏱️ {portfolio.noticePeriod}</span>
               </p>
             </div>
 
-            {/* Social Profile Links */}
-            <div className="flex items-center gap-2">
+            {/* Social & Contact Channels with Privacy Masking */}
+            <div className="flex flex-wrap items-center gap-2">
               <a
                 href={portfolio.socials?.linkedin || 'https://www.linkedin.com/in/avinashtiwari626/'}
                 target="_blank"
@@ -577,20 +566,99 @@ export default function PortfolioPage() {
                   <Globe size={18} />
                 </a>
               )}
-
-              {portfolio.socials?.email && (
-                <a
-                  href={`mailto:${portfolio.socials.email}`}
-                  className="p-2.5 bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-600 rounded-xl border border-slate-200 transition-colors"
-                  title="Email Candidate"
-                >
-                  <Mail size={18} />
-                </a>
-              )}
             </div>
           </div>
 
-          {/* Professional Introduction */}
+          {/* Contact Details Protected Card (What Recruiters/Panels see) */}
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Shield size={14} className={maskContactInfo ? 'text-emerald-600' : 'text-slate-400'} />
+                <span>Contact Details (Employer & Panelist View)</span>
+              </span>
+
+              {maskContactInfo && (
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                  <Lock size={10} />
+                  <span>Privacy Guard Protected</span>
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                <div className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                  <Mail size={12} />
+                  <span>Email Address:</span>
+                </div>
+                <div className="font-mono font-bold text-slate-800 mt-0.5">
+                  {maskContactInfo ? maskEmail(portfolio.socials?.email || 'avinashtiwari@gmail.com') : portfolio.socials?.email}
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                <div className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                  <Phone size={12} />
+                  <span>Contact Number:</span>
+                </div>
+                <div className="font-mono font-bold text-slate-800 mt-0.5">
+                  {maskContactInfo ? maskPhone(portfolio.socials?.phone || '+91 98765 43210') : portfolio.socials?.phone}
+                </div>
+              </div>
+            </div>
+            {maskContactInfo && (
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                🔒 Direct personal contact is protected. Panel members communicate, send inquiries, and schedule live interviews directly through the RAS Candidate Portal.
+              </p>
+            )}
+          </div>
+
+          {/* Panel Evaluation Action Bar (Shown when in Panel View Mode) */}
+          {isPanelView && (
+            <div className="p-4 bg-purple-50 rounded-2xl border border-purple-200 space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between text-xs font-bold text-purple-900">
+                <span className="flex items-center gap-1.5">
+                  <Building2 size={14} />
+                  <span>Recruiter & Panel Evaluation Actions:</span>
+                </span>
+                <span className="text-[11px] text-purple-700">Interview Candidate on RAS</span>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => nav('/interview/room/int-1')}
+                  className="font-bold text-xs bg-purple-600 hover:bg-purple-700"
+                >
+                  <Calendar size={13} />
+                  <span>Schedule Interview Round</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => showToast('Candidate added to Employer Shortlist! ⭐')}
+                  className="font-bold text-xs bg-white text-purple-800 border-purple-200"
+                >
+                  <Award size={13} />
+                  <span>Shortlist Candidate</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => nav('/documents')}
+                  className="font-bold text-xs bg-white text-purple-800 border-purple-200"
+                >
+                  <ShieldCheck size={13} />
+                  <span>Request KYC Verification</span>
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Executive Summary */}
           <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Executive Summary
@@ -600,7 +668,7 @@ export default function PortfolioPage() {
             </p>
           </div>
 
-          {/* About Me */}
+          {/* About Background */}
           <div className="space-y-2">
             <h3 className="text-sm font-extrabold text-slate-900">Background & Philosophy</h3>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
@@ -608,9 +676,9 @@ export default function PortfolioPage() {
             </p>
           </div>
 
-          {/* Featured Skills */}
+          {/* Core Competencies */}
           <div className="space-y-2.5">
-            <h3 className="text-sm font-extrabold text-slate-900">Core Competencies</h3>
+            <h3 className="text-sm font-extrabold text-slate-900">Core Competencies & Tools</h3>
             <div className="flex flex-wrap gap-2">
               {(portfolio.skills || []).map((skill: string) => (
                 <span
@@ -623,31 +691,94 @@ export default function PortfolioPage() {
             </div>
           </div>
 
-          {/* Featured Projects */}
+          {/* Featured Case Studies & Projects */}
           <div className="space-y-3 pt-2">
-            <h3 className="text-sm font-extrabold text-slate-900">Featured Case Studies</h3>
+            <h3 className="text-sm font-extrabold text-slate-900">Featured Case Studies & Projects</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {(portfolio.featuredProjects || []).slice(0, 4).map((p: any) => (
+              {(portfolio.featuredProjects || []).map((p: any) => (
                 <div
                   key={p.id}
-                  className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-blue-300 transition-colors space-y-2"
+                  className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-blue-300 transition-all space-y-3 flex flex-col justify-between"
                 >
-                  <h4 className="text-xs font-bold text-slate-900">{p.name}</h4>
-                  <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
-                    {p.description}
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {(p.technologies || []).map((t: string) => (
-                      <span
-                        key={t}
-                        className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-700 rounded"
-                      >
-                        {t}
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="text-xs font-bold text-slate-900">{p.name}</h4>
+                      <span className="text-[10px] text-blue-600 font-bold px-2 py-0.5 bg-blue-50 rounded">
+                        {p.role || 'Business Analyst'}
                       </span>
-                    ))}
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+                      {p.description}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <div className="flex flex-wrap gap-1">
+                      {(p.technologies || []).map((t: string) => (
+                        <span
+                          key={t}
+                          className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-700 rounded"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1 text-[11px]">
+                      {p.link && (
+                        <a
+                          href={p.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-600 hover:underline font-bold flex items-center gap-0.5"
+                        >
+                          <span>Live Demo</span>
+                          <ExternalLink size={11} />
+                        </a>
+                      )}
+                      {p.githubUrl && (
+                        <a
+                          href={p.githubUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-slate-600 hover:underline font-bold flex items-center gap-0.5"
+                        >
+                          <span>GitHub</span>
+                          <Github size={11} />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Academic & Certifications */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+              <h4 className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                <Award size={14} className="text-amber-500" />
+                <span>Verified Certifications</span>
+              </h4>
+              <div className="space-y-1.5 text-xs">
+                {(portfolio.certifications || []).map((c: any, i: number) => (
+                  <div key={i} className="text-[11px] text-slate-700">
+                    <strong>{c.name}</strong> · <span className="text-slate-500">{c.issuer} ({c.year})</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+              <h4 className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                <Award size={14} className="text-blue-600" />
+                <span>Academic Education</span>
+              </h4>
+              <div className="text-[11px] text-slate-700">
+                <strong>B.Tech in Computer Science & Engineering</strong>
+                <div className="text-slate-500">National Institute of Technology · 8.8 CGPA</div>
+              </div>
             </div>
           </div>
         </div>

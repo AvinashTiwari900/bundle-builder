@@ -227,7 +227,7 @@ export const authService = {
       notifications: [
         {
           id: 'n-welcome',
-          title: 'Welcome to RAP! 🎉',
+          title: 'Welcome to RAS! 🎉',
           message: `Account created successfully for ${data.name}. Complete your public portfolio to attract top tech recruiters.`,
           read: false,
           type: 'success',

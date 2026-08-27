@@ -14,7 +14,10 @@ import {
   Globe,
   Settings,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  MessageSquare,
+  Radio,
+  FileQuestion
 } from 'lucide-react'
 import { useAuth } from '../context/auth'
 import { profileService } from '../services/profileService'
@@ -24,7 +27,7 @@ export default function Sidebar() {
   const nav = useNavigate()
   const profile = profileService.get()
   const name = profile?.name || 'Avinash Tiwari'
-  const headline = profile?.headline || 'Business Analyst'
+  const headline = profile?.headline || 'Lead Business Analyst'
   const avatar =
     profile?.profilePhoto ||
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'
@@ -33,14 +36,16 @@ export default function Sidebar() {
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/jobs', label: 'Explore Jobs', icon: Briefcase },
     { to: '/applications', label: 'Applications', icon: Layers, badge: profile?.applications?.length },
-    { to: '/ai-agent', label: 'AI Career Copilot', icon: Sparkles, highlight: true },
-    { to: '/voice-screening', label: 'AI Voice Screening', icon: Phone },
+    { to: '/posts', label: 'Posts & Feed', icon: MessageSquare, highlightBadge: 'NEW' },
+    { to: '/meetings', label: 'Meetings & Records', icon: Video },
     { to: '/auto-apply', label: 'Auto Apply Engine', icon: Zap },
-    { to: '/interview-practice', label: 'Interview Studio', icon: Video },
+    { to: '/ai-agent', label: 'AI Career Copilot', icon: Sparkles, highlight: true },
+    { to: '/interview-practice', label: 'Interview Studio', icon: Radio },
+    { to: '/voice-screening', label: 'AI Voice Screening', icon: Phone },
     { to: '/resume', label: 'Resume & ATS', icon: FileText },
     { to: '/documents', label: 'Documents & KYC', icon: ShieldCheck },
     { to: '/projects', label: 'Projects', icon: FolderGit2 },
-    { to: '/portfolio', label: 'Public Portfolio', icon: Globe },
+    { to: '/portfolio', label: 'Portfolio (Panel View)', icon: Globe },
     { to: '/settings', label: 'Settings', icon: Settings }
   ]
 
@@ -57,8 +62,8 @@ export default function Sidebar() {
           <span>R</span>
         </div>
         <div>
-          <div className="brand-name">RAP Candidate</div>
-          <div className="brand-subtitle">Career Platform</div>
+          <div className="brand-name">RAS Candidate</div>
+          <div className="brand-subtitle">Recruitment Automation</div>
         </div>
       </div>
 
@@ -90,6 +95,11 @@ export default function Sidebar() {
                   {item.badge}
                 </span>
               )}
+              {item.highlightBadge && (
+                <span className="px-1.5 py-0.5 text-[9px] font-extrabold uppercase bg-emerald-100 text-emerald-800 rounded-md tracking-wider">
+                  {item.highlightBadge}
+                </span>
+              )}
               {item.highlight && (
                 <span className="px-1.5 py-0.5 text-[10px] font-extrabold uppercase bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-md tracking-wider">
                   AI
@@ -105,7 +115,7 @@ export default function Sidebar() {
         <div
           className="profile-mini group"
           onClick={() => nav('/profile')}
-          title="Open your profile"
+          title="Open your profile & privacy settings"
         >
           <img src={avatar} alt={name} className="shadow-xs" />
           <div className="flex-1 min-w-0">

@@ -192,7 +192,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             setCopilotInitialQuery(undefined)
             setShowCopilot(true)
           }}
-          title="Ask RAP AI Copilot"
+          title="Ask RAS AI Copilot"
           className="floating-ai-btn group"
         >
           <Sparkles size={18} className="animate-spin-slow text-amber-300" />

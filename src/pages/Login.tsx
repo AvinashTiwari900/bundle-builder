@@ -63,8 +63,8 @@ export default function LoginPage() {
                 R
               </div>
               <div>
-                <h1 className="text-xl font-extrabold tracking-tight">RAP Candidate</h1>
-                <p className="text-xs text-blue-100 font-medium">AI Career Acceleration Platform</p>
+                <h1 className="text-xl font-extrabold tracking-tight">RAS Candidate</h1>
+                <p className="text-xs text-blue-100 font-medium">Recruitment Automation System</p>
               </div>
             </div>
 

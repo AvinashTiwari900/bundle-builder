@@ -22,6 +22,8 @@ import ProjectsPage from './pages/Projects'
 import InterviewPractice from './pages/InterviewPractice'
 import InterviewSetup from './pages/InterviewSetup'
 import InterviewSession from './pages/InterviewSession'
+import PostsPage from './pages/Posts'
+import MeetingsPage from './pages/Meetings'
 import { AuthProvider, useAuth } from './context/auth'
 import Layout from './components/Layout'
 
@@ -81,6 +83,22 @@ export default function App() {
           element={
             <Protected>
               <JobDetails />
+            </Protected>
+          }
+        />
+        <Route
+          path="/posts"
+          element={
+            <Protected>
+              <PostsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/meetings"
+          element={
+            <Protected>
+              <MeetingsPage />
             </Protected>
           }
         />

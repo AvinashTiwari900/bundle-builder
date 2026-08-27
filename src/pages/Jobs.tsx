@@ -13,13 +13,27 @@ import {
   CheckCircle2,
   X,
   ChevronRight,
-  Send
+  Send,
+  Star,
+  Clock,
+  Zap,
+  Award
 } from 'lucide-react'
 import { jobService } from '../services/jobService'
 import { profileService } from '../services/profileService'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import JobComparisonModal from '../components/JobComparisonModal'
+
+const HIRING_PERIODS = [
+  'All Periods',
+  'Immediate (0-15 Days)',
+  'Active · Next 15 Days',
+  'Urgent Joining (7 Days)',
+  '30 Days Notice Accepted',
+  'Active · Next 30 Days',
+  'Cohort Joining (Q3)'
+]
 
 export default function JobsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -37,6 +51,8 @@ export default function JobsPage() {
   const q = searchParams.get('q') || ''
   const location = searchParams.get('location') || ''
   const workMode = searchParams.get('workMode') || ''
+  const hiringPeriod = searchParams.get('hiringPeriod') || ''
+  const minRating = searchParams.get('minRating') || ''
   const sort = searchParams.get('sort') || 'best'
 
   useEffect(() => {
@@ -54,10 +70,12 @@ export default function JobsPage() {
     const filters: any = {
       location: location || undefined,
       workMode: workMode || undefined,
+      hiringPeriod: hiringPeriod || undefined,
+      minRating: minRating || undefined,
       sort
     }
     jobService.search(q, filters).then(setJobs)
-  }, [q, location, workMode, sort])
+  }, [q, location, workMode, hiringPeriod, minRating, sort])
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -66,7 +84,7 @@ export default function JobsPage() {
 
   const updateParam = (key: string, value: any) => {
     const next = new URLSearchParams(searchParams)
-    if (value === undefined || value === '' || value === 'all') {
+    if (value === undefined || value === '' || value === 'all' || value === 'All Periods') {
       next.delete(key)
     } else {
       next.set(key, String(value))
@@ -117,7 +135,7 @@ export default function JobsPage() {
           <div>
             <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Explore Opportunities</h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Discover and apply to curated roles tailored to your background
+              Discover and apply to curated roles with Employer Hiring Ratings and verified Hiring Periods
             </p>
           </div>
 
@@ -129,6 +147,7 @@ export default function JobsPage() {
               className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500"
             >
               <option value="best">AI Best Match</option>
+              <option value="rating_desc">Company Rating: High → Low</option>
               <option value="latest">Latest Posted</option>
               <option value="salary_desc">Salary: High → Low</option>
               <option value="salary_asc">Salary: Low → High</option>
@@ -136,15 +155,15 @@ export default function JobsPage() {
           </div>
         </div>
 
-        {/* Filter Input Row */}
+        {/* Filter Inputs Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 pt-2">
           {/* Keyword Search */}
-          <div className="lg:col-span-5 relative">
+          <div className="lg:col-span-4 relative">
             <Input
               icon={<Search size={16} />}
               value={q}
               onChange={(e) => updateParam('q', e.target.value)}
-              placeholder="Search by title, skill (e.g. SQL, Power BI), or company..."
+              placeholder="Search title, skill (e.g. SQL, Power BI), or company..."
             />
             {q && (
               <button
@@ -157,16 +176,32 @@ export default function JobsPage() {
           </div>
 
           {/* Location Filter */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-2">
             <select
               value={location}
               onChange={(e) => updateParam('location', e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500"
             >
-              <option value="">All Locations (India)</option>
+              <option value="">All Locations</option>
               {locations.map((loc) => (
                 <option key={loc} value={loc}>
                   {loc}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Hiring Period Filter */}
+          <div className="lg:col-span-2">
+            <select
+              value={hiringPeriod}
+              onChange={(e) => updateParam('hiringPeriod', e.target.value)}
+              className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500"
+            >
+              <option value="">All Hiring Periods</option>
+              {HIRING_PERIODS.slice(1).map((hp) => (
+                <option key={hp} value={hp}>
+                  ⏱️ {hp}
                 </option>
               ))}
             </select>
@@ -177,7 +212,7 @@ export default function JobsPage() {
             <select
               value={workMode}
               onChange={(e) => updateParam('workMode', e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500"
             >
               <option value="">All Work Modes</option>
               <option value="Remote">Remote</option>
@@ -186,21 +221,23 @@ export default function JobsPage() {
             </select>
           </div>
 
-          {/* Clear Filters */}
-          <div className="lg:col-span-2 flex items-center">
-            <Button
-              variant="outline"
-              size="md"
-              onClick={resetFilters}
-              className="w-full text-slate-600 font-semibold text-xs"
+          {/* Company Rating Filter */}
+          <div className="lg:col-span-2">
+            <select
+              value={minRating}
+              onChange={(e) => updateParam('minRating', e.target.value)}
+              className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500"
             >
-              Reset Filters
-            </Button>
+              <option value="">Any Hiring Rating</option>
+              <option value="4.8">4.8+ ★ Fast Responders</option>
+              <option value="4.6">4.6+ ★ High Response</option>
+              <option value="4.5">4.5+ ★ Standard</option>
+            </select>
           </div>
         </div>
 
         {/* Active Filters Pills */}
-        {(q || location || workMode) && (
+        {(q || location || workMode || hiringPeriod || minRating) && (
           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
             <span className="font-bold text-slate-500">Active filters:</span>
             {q && (
@@ -215,24 +252,39 @@ export default function JobsPage() {
                 <X size={12} className="cursor-pointer" onClick={() => updateParam('location', '')} />
               </span>
             )}
+            {hiringPeriod && (
+              <span className="px-2.5 py-1 bg-amber-50 text-amber-800 rounded-lg font-semibold flex items-center gap-1 border border-amber-200">
+                Period: {hiringPeriod}
+                <X size={12} className="cursor-pointer" onClick={() => updateParam('hiringPeriod', '')} />
+              </span>
+            )}
+            {minRating && (
+              <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg font-semibold flex items-center gap-1 border border-indigo-200">
+                Rating: {minRating}+ ★
+                <X size={12} className="cursor-pointer" onClick={() => updateParam('minRating', '')} />
+              </span>
+            )}
             {workMode && (
               <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg font-semibold flex items-center gap-1 border border-blue-200">
                 Mode: {workMode}
                 <X size={12} className="cursor-pointer" onClick={() => updateParam('workMode', '')} />
               </span>
             )}
+            <button onClick={resetFilters} className="text-xs font-bold text-blue-600 hover:underline ml-2">
+              Reset all
+            </button>
           </div>
         )}
       </div>
 
-      {/* Results Header */}
+      {/* Results Count & Match Tagline */}
       <div className="flex items-center justify-between px-1">
         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
           Found <strong className="text-slate-900">{jobs.length}</strong> matching positions
         </span>
         <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1">
           <Sparkles size={13} className="text-emerald-500" />
-          Ranked by candidate profile match
+          <span>Ranked with Company Response Ratings & 24h SLA</span>
         </span>
       </div>
 
@@ -242,7 +294,7 @@ export default function JobsPage() {
           <Briefcase size={36} className="mx-auto text-slate-300 mb-3" />
           <h3 className="text-base font-bold text-slate-800">No jobs match your search criteria</h3>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-            Try adjusting your search terms, resetting filters, or broadening location settings.
+            Try adjusting your search terms, resetting filters, or broadening hiring periods.
           </p>
           <Button variant="outline" size="sm" onClick={resetFilters} className="mt-4 font-bold">
             Clear all filters
@@ -253,7 +305,7 @@ export default function JobsPage() {
           {jobs.map((job, idx) => {
             const isSaved = savedJobs.includes(job.id)
             const hasApplied = (profile?.applications || []).some((a: any) => a.jobId === job.id)
-            const matchScore = Math.max(72, 94 - ((idx % 10) * 2))
+            const matchScore = Math.max(72, 95 - ((idx % 10) * 2))
 
             return (
               <div
@@ -261,7 +313,7 @@ export default function JobsPage() {
                 className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between group relative"
               >
                 <div>
-                  {/* Top Bar: Company Badge & Match Pill */}
+                  {/* Top Bar: Company Badge, Rating & Match Pill */}
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3">
                       <div
@@ -279,7 +331,15 @@ export default function JobsPage() {
                         >
                           {job.title}
                         </h3>
-                        <p className="text-xs text-slate-500 font-medium truncate">{job.company}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-xs text-slate-600 font-semibold truncate">{job.company}</span>
+                          {job.companyRating && (
+                            <span className="px-1.5 py-0.2 rounded bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold flex items-center gap-0.5">
+                              <Star size={9} className="fill-amber-500 text-amber-500" />
+                              <span>{job.companyRating}</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -289,8 +349,25 @@ export default function JobsPage() {
                     </span>
                   </div>
 
+                  {/* Company Hiring Period & Response Rate Badges */}
+                  <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+                    {job.hiringPeriod && (
+                      <span className="px-2 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded-md text-[10px] font-bold flex items-center gap-1">
+                        <Clock size={10} className="text-amber-700" />
+                        <span>{job.hiringPeriod}</span>
+                      </span>
+                    )}
+
+                    {job.companyResponseRate && (
+                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md text-[10px] font-bold flex items-center gap-1">
+                        <Zap size={10} className="text-emerald-600" />
+                        <span>{job.companyResponseRate}</span>
+                      </span>
+                    )}
+                  </div>
+
                   {/* Meta details */}
-                  <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-slate-500 my-3">
+                  <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-slate-500 my-2">
                     <span className="flex items-center gap-1">
                       <MapPin size={13} className="text-slate-400" />
                       {job.location}
@@ -322,7 +399,7 @@ export default function JobsPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-2 mt-2">
+                <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2 mt-1">
                   <button
                     onClick={() => handleToggleSave(job.id)}
                     className={`p-2 rounded-xl border transition-colors ${
@@ -376,7 +453,7 @@ export default function JobsPage() {
             <div className="flex items-start justify-between pb-4 border-b border-slate-100">
               <div>
                 <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
-                  Apply with RAP Candidate Profile
+                  Apply with RAS Candidate Profile
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-0.5">
                   {selectedJobForModal.title}
@@ -394,8 +471,10 @@ export default function JobsPage() {
             <div className="py-4 space-y-3 text-xs text-slate-600">
               <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-100 space-y-1">
                 <div className="font-bold text-slate-800">Attached Candidate Profile:</div>
-                <div>👤 {profile?.name || 'Avinash Tiwari'} ({profile?.email})</div>
-                <div>📄 Primary Resume: {profile?.resumes?.[0]?.name || 'Avinash_Tiwari_Lead_BA.pdf'} (94% ATS)</div>
+                <div>👤 {profile?.name || 'Avinash Tiwari'} (Contact Privacy Shield Active 🔒)</div>
+                <div>📄 Primary Resume: {profile?.resumes?.[0]?.name || 'Avinash_Tiwari_Lead_BA.pdf'} (94% ATS Score)</div>
+                <div>⏱️ Hiring Period: <strong>{selectedJobForModal.hiringPeriod || 'Immediate'}</strong></div>
+                <div>⭐ Company Hiring Rating: <strong>{selectedJobForModal.companyRating || 4.9} / 5.0</strong> ({selectedJobForModal.companyResponseRate || '99% Response Rate'})</div>
               </div>
 
               <div>
@@ -448,4 +527,3 @@ export default function JobsPage() {
     </div>
   )
 }
-

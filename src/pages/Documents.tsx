@@ -14,12 +14,18 @@ import {
   AlertTriangle,
   FileText,
   Cloud,
-  ExternalLink
+  ExternalLink,
+  MessageSquare,
+  RefreshCw,
+  Send,
+  Lock,
+  FileWarning
 } from 'lucide-react'
 import { documentService } from '../services/documentService'
 import { profileService } from '../services/profileService'
 import { cloudinaryService } from '../services/cloudinaryService'
 import { firestoreService } from '../services/firestoreService'
+import { notificationService } from '../services/notificationService'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 
@@ -27,10 +33,11 @@ const DOCUMENT_CATEGORIES = [
   'Aadhaar Card (Govt ID)',
   'PAN Card (Tax ID)',
   'Degree Certificate (Education)',
-  'Previous Relieving Letter (Experience)',
+  'Experience Letter (Previous Relieving)',
   'Recent Salary Slips (Last 3 Months)',
-  'Past Offer Letter',
-  'Passport Size Photograph'
+  'Previous Offer Letter',
+  'Passport Photograph',
+  'Other Organization Requested Document'
 ]
 
 export default function DocumentsPage() {
@@ -39,8 +46,12 @@ export default function DocumentsPage() {
   const [selectedCategory, setSelectedCategory] = useState(DOCUMENT_CATEGORIES[0])
   const [selectedDocForOtp, setSelectedDocForOtp] = useState<any>(null)
   const [otpValue, setOtpValue] = useState('123456')
+  const [otpSent, setOtpSent] = useState(true)
   const [activeAnalysisModal, setActiveAnalysisModal] = useState<any>(null)
+  const [activeDiscrepancyModal, setActiveDiscrepancyModal] = useState<any>(null)
+  const [discrepancyReply, setDiscrepancyReply] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [isOtpUnlocked, setIsOtpUnlocked] = useState(true) // Pre-verification OTP authorization
   const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
@@ -63,18 +74,19 @@ export default function DocumentsPage() {
       // 1. Upload file to Cloudinary
       const cloudResult = await cloudinaryService.upload(file, 'rap_kyc_docs')
 
-      // 2. Save metadata & Cloudinary URL to Firestore
+      // 2. Save metadata & Cloudinary URL
       const newDoc = {
         id: 'doc-' + Date.now(),
         name: file.name,
         type: selectedCategory,
         uploadedAt: new Date().toISOString(),
-        status: 'Pending Verification',
+        status: 'Pending OTP',
         aiConfidence: 98,
         extractedName: profile?.name || 'Avinash Tiwari',
         extractedIdNumber: 'XXXX-XXXX-4321',
         cloudinaryUrl: cloudResult.secure_url,
-        cloudinaryPublicId: cloudResult.public_id
+        cloudinaryPublicId: cloudResult.public_id,
+        otpVerified: false
       }
 
       await firestoreService.saveDocumentRecord(newDoc)
@@ -82,7 +94,8 @@ export default function DocumentsPage() {
       const updated = profileService.get() || {}
       setProfile(updated)
       setDocs(updated.documents || [])
-      showToast(`Uploaded ${file.name} to Cloudinary! Please verify via OTP.`)
+      setSelectedDocForOtp(newDoc)
+      showToast(`Uploaded ${file.name} to Cloudinary! Please complete OTP verification.`)
     } catch (err: any) {
       showToast('Upload failed: ' + err.message)
     } finally {
@@ -95,14 +108,45 @@ export default function DocumentsPage() {
       return showToast('Invalid OTP. Please enter demo code: 123456')
     }
 
-    const updatedDoc = { ...selectedDocForOtp, status: 'Verified' }
+    const updatedDoc = {
+      ...selectedDocForOtp,
+      status: 'Verified',
+      otpVerified: true,
+      verifiedAt: new Date().toISOString()
+    }
     await firestoreService.saveDocumentRecord(updatedDoc)
 
     const updated = profileService.get() || {}
     setProfile(updated)
     setDocs(updated.documents || [])
     setSelectedDocForOtp(null)
+
+    notificationService.create({
+      title: 'KYC Document Verified ✅',
+      message: `${updatedDoc.name} (${updatedDoc.type}) successfully verified via OTP.`,
+      type: 'success'
+    })
     showToast('Document verified on Firebase & Cloudinary! 🎉')
+  }
+
+  const handleResolveDiscrepancy = (docId: string) => {
+    const updated = profileService.get() || {}
+    updated.documents = (updated.documents || []).map((d: any) =>
+      d.id === docId
+        ? {
+            ...d,
+            status: 'Verified',
+            discrepancyNote: undefined,
+            candidateReply: discrepancyReply
+          }
+        : d
+    )
+    profileService.save(updated)
+    setProfile(updated)
+    setDocs(updated.documents)
+    setActiveDiscrepancyModal(null)
+    setDiscrepancyReply('')
+    showToast('Discrepancy clarification submitted to employer panel! ✅')
   }
 
   const handleDelete = (id: string) => {
@@ -136,11 +180,11 @@ export default function DocumentsPage() {
             </h1>
             <span className="px-2.5 py-0.5 bg-blue-100 text-blue-800 rounded-full text-[10px] font-bold flex items-center gap-1">
               <Cloud size={12} />
-              <span>Cloudinary Storage Active</span>
+              <span>Cloudinary CDN + OTP Guard</span>
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Submit required identity, academic, and compensation records stored on Cloudinary and indexed in Firebase
+            Submit required identity, academic, compensation, and experience records authorized by OTP verification
           </p>
         </div>
       </div>
@@ -158,11 +202,11 @@ export default function DocumentsPage() {
                   KYC Verification Score: 96%
                 </span>
                 <span className="text-xs text-slate-500 font-semibold">
-                  {verifiedCount} of {docs.length} Verified
+                  {verifiedCount} of {docs.length} Records Verified
                 </span>
               </div>
               <h3 className="text-sm font-extrabold text-slate-900 mt-1">
-                Verified candidate status enabled for all hiring partners
+                OTP-authenticated candidate verification enabled for all hiring partners
               </h3>
             </div>
           </div>
@@ -198,7 +242,7 @@ export default function DocumentsPage() {
               />
               <span className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer transition-all">
                 <Upload size={15} />
-                <span>{uploading ? 'Uploading to Cloudinary...' : 'Upload to Cloudinary'}</span>
+                <span>{uploading ? 'Uploading to Cloudinary...' : 'Upload & Verify with OTP'}</span>
               </span>
             </label>
           </div>
@@ -207,28 +251,35 @@ export default function DocumentsPage() {
 
       {/* Documents List */}
       <div className="space-y-4">
-        <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">Your KYC Records</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">Your KYC & Organization Records</h2>
+          <span className="text-xs text-slate-500 font-semibold">Protected with OTP Authorization</span>
+        </div>
 
         {docs.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center">
             <FileCheck size={36} className="mx-auto text-slate-300 mb-2" />
             <h4 className="text-sm font-bold text-slate-800">No documents uploaded yet</h4>
             <p className="text-xs text-slate-500 mt-1">
-              Upload your government ID, education certificates, and previous employment proofs.
+              Upload your Aadhaar Card, PAN Card, education certificates, experience letters, and salary slips.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {docs.map((doc) => {
               const isVerified = doc.status === 'Verified'
+              const isDiscrepancy = doc.status === 'Discrepancy Flagged' || doc.discrepancyNote
+
               return (
                 <div
                   key={doc.id}
-                  className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+                  className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4 ${
+                    isDiscrepancy ? 'border-amber-400 bg-amber-50/10' : 'border-slate-200/90'
+                  }`}
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 text-slate-700">
+                      <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 text-slate-700 truncate max-w-[150px]">
                         {doc.type}
                       </span>
 
@@ -237,8 +288,13 @@ export default function DocumentsPage() {
                           <CheckCircle2 size={12} />
                           <span>Verified</span>
                         </span>
+                      ) : isDiscrepancy ? (
+                        <span className="px-2.5 py-0.5 text-[11px] font-bold bg-amber-100 text-amber-900 rounded-full flex items-center gap-1">
+                          <FileWarning size={12} />
+                          <span>Discrepancy</span>
+                        </span>
                       ) : (
-                        <span className="px-2.5 py-0.5 text-[11px] font-bold bg-amber-100 text-amber-800 rounded-full flex items-center gap-1">
+                        <span className="px-2.5 py-0.5 text-[11px] font-bold bg-blue-100 text-blue-800 rounded-full flex items-center gap-1">
                           <Clock size={12} />
                           <span>Pending OTP</span>
                         </span>
@@ -251,6 +307,13 @@ export default function DocumentsPage() {
                     <div className="text-[11px] text-slate-500 mt-0.5">
                       Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
                     </div>
+
+                    {/* Discrepancy Note Preview if flagged */}
+                    {doc.discrepancyNote && (
+                      <div className="mt-2 p-2 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 font-medium">
+                        ⚠️ <strong>HR Note:</strong> {doc.discrepancyNote}
+                      </div>
+                    )}
 
                     {/* Cloudinary CDN Link */}
                     {doc.cloudinaryUrl && (
@@ -281,6 +344,16 @@ export default function DocumentsPage() {
                       >
                         <Key size={13} />
                         <span>Verify with OTP</span>
+                      </Button>
+                    ) : isDiscrepancy ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setActiveDiscrepancyModal(doc)}
+                        className="text-xs font-bold text-amber-800 border-amber-300"
+                      >
+                        <MessageSquare size={13} />
+                        <span>Resolve Discrepancy</span>
                       </Button>
                     ) : (
                       <button
@@ -327,7 +400,7 @@ export default function DocumentsPage() {
                 <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
                   <Key size={16} />
                 </div>
-                <h3 className="text-base font-extrabold text-slate-900">OTP Identity Verification</h3>
+                <h3 className="text-base font-extrabold text-slate-900">OTP Identity Authorization</h3>
               </div>
               <button
                 onClick={() => setSelectedDocForOtp(null)}
@@ -339,7 +412,7 @@ export default function DocumentsPage() {
 
             <div className="py-4 space-y-3">
               <p className="text-xs text-slate-600 leading-relaxed">
-                Confirm your identity to authorize secure verification for{' '}
+                Before the document verification process begins, please enter the 6-digit OTP sent to your registered contact (<strong className="text-slate-900">+91 98****4321</strong>) to authorize submission for{' '}
                 <strong className="text-slate-900">{selectedDocForOtp.name}</strong>.
               </p>
 
@@ -355,7 +428,7 @@ export default function DocumentsPage() {
                   className="w-full text-center text-xl tracking-widest font-extrabold py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
                 />
                 <p className="text-[11px] text-slate-400 mt-1 text-center">
-                  Demo code: <span className="font-bold text-slate-700">123456</span>
+                  Demo authorization code: <span className="font-bold text-slate-700">123456</span>
                 </p>
               </div>
             </div>
@@ -366,6 +439,63 @@ export default function DocumentsPage() {
               </Button>
               <Button variant="primary" size="md" onClick={handleVerifyOtp} className="font-bold">
                 Authorize & Verify Document
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Discrepancy Resolution & HR Communication Modal */}
+      {activeDiscrepancyModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 space-y-4">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                  <MessageSquare size={18} />
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900">Resolve Document Discrepancy</h3>
+              </div>
+              <button
+                onClick={() => setActiveDiscrepancyModal(null)}
+                className="p-1 text-slate-400 hover:text-slate-600"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-950 space-y-1">
+                <div className="font-bold">Flagged Discrepancy Note:</div>
+                <p className="leading-relaxed">
+                  {activeDiscrepancyModal.discrepancyNote || 'The company seal on the relieving letter appears faint. Please provide an updated digital copy or clarify.'}
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Candidate Clarification / Re-submission Note
+                </label>
+                <textarea
+                  value={discrepancyReply}
+                  onChange={(e) => setDiscrepancyReply(e.target.value)}
+                  placeholder="Explain details or confirm updated document re-upload..."
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs h-20"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
+              <Button variant="ghost" size="md" onClick={() => setActiveDiscrepancyModal(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => handleResolveDiscrepancy(activeDiscrepancyModal.id)}
+                className="font-bold"
+              >
+                Submit Resolution
               </Button>
             </div>
           </div>
@@ -406,6 +536,10 @@ export default function DocumentsPage() {
                   <span className="font-bold text-emerald-700">
                     {activeAnalysisModal.extractedName || 'Avinash Tiwari'} (100% Match)
                   </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">OTP Authorization:</span>
+                  <span className="font-bold text-emerald-700">Confirmed (123456)</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Authenticity Confidence:</span>

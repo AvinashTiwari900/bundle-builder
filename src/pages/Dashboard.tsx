@@ -16,7 +16,9 @@ import {
   Calendar,
   AlertCircle,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Clock,
+  Star
 } from 'lucide-react'
 import { profileService } from '../services/profileService'
 import { resumeAnalysisService } from '../services/resumeAnalysisService'
@@ -159,20 +161,20 @@ export default function Dashboard() {
         {/* Quick query buttons */}
         <div className="flex flex-wrap gap-2 pt-1">
           {[
-            '🌐 Take me to my portfolio',
-            '💼 Show jobs suitable for my profile',
-            '📄 Show me my applications',
-            '📊 Improve my resume ATS score',
-            '🎙️ How do I prepare for an interview?',
-            '📁 How can I upload my project?',
-            '🛡️ Where can I upload my documents?'
-          ].map((prompt, i) => (
+            { label: '📰 Community Posts & Feed', path: '/posts' },
+            { label: '🎥 Meetings & Viewable Recordings', path: '/meetings' },
+            { label: '⚡ Auto-Apply Alerts (Email/WhatsApp)', path: '/auto-apply' },
+            { label: '🔒 Contact Privacy Shield', path: '/portfolio' },
+            { label: '🛡️ Documents & OTP Verification', path: '/documents' },
+            { label: '💼 Explore High-Rating Jobs', path: '/jobs?sort=rating_desc' },
+            { label: '🎙️ AI Voice Screening', path: '/voice-screening' }
+          ].map((item, i) => (
             <button
               key={i}
-              onClick={() => nav(`/ai-agent`)}
-              className="px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-xl text-xs font-medium border border-slate-200/80 transition-colors cursor-pointer"
+              onClick={() => nav(item.path)}
+              className="px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200/80 transition-colors cursor-pointer"
             >
-              {prompt}
+              {item.label}
             </button>
           ))}
         </div>
@@ -430,6 +432,21 @@ export default function Dashboard() {
                       <Sparkles size={11} />
                       <span>{matchScore}% Match</span>
                     </span>
+                  </div>
+
+                  {/* Hiring Period & Response Rate Badges */}
+                  <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                    {job.hiringPeriod && (
+                      <span className="px-2 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded text-[10px] font-bold flex items-center gap-1">
+                        <Clock size={10} className="text-amber-700" />
+                        <span>{job.hiringPeriod}</span>
+                      </span>
+                    )}
+                    {job.companyRating && (
+                      <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-800 border border-indigo-200 rounded text-[10px] font-bold">
+                        ★ {job.companyRating} ({job.companyResponseRate || '99% Response'})
+                      </span>
+                    )}
                   </div>
 
                   {/* Meta details */}
