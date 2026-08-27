@@ -225,9 +225,9 @@ export default function App() {
         <Route
           path="/interview-practice/session/:id"
           element={
-            <Protected>
+            <ProtectedStandalone>
               <InterviewSession />
-            </Protected>
+            </ProtectedStandalone>
           }
         />
 
