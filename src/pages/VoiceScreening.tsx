@@ -4,7 +4,6 @@ import {
   Phone,
   PhoneOff,
   Mic,
-  MicOff,
   Sparkles,
   Bot,
   User,
@@ -15,26 +14,21 @@ import {
   Volume2,
   VolumeX,
   RotateCcw,
-  Radio,
   HelpCircle,
   SkipForward,
   Send,
   Sliders,
   TrendingUp,
   Brain,
-  MessageSquare,
-  ChevronRight,
   Shield,
   Zap,
   Target,
   FileText,
   AlertCircle,
-  DollarSign,
-  Calendar,
   Briefcase,
   Activity,
-  Volume2 as Waves,
-  Loader2
+  Loader2,
+  Check
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import { profileService } from '../services/profileService'
@@ -74,45 +68,45 @@ export default function VoiceScreening() {
   }
 
   // Session State
-  const [interviewerMode, setInterviewerMode] = useState<InterviewerMode>('recruiter') // Default: Sarah - Recruiter Practice
+  const [interviewerMode, setInterviewerMode] = useState<InterviewerMode>('recruiter') // Sarah vs Alex
   const [targetRole, setTargetRole] = useState(candidateContext.role || 'Business Analyst')
   const [callStatus, setCallStatus] = useState<'setup' | 'connected' | 'completed'>('setup')
   const [turns, setTurns] = useState<ConversationTurn[]>([])
   const [currentDifficulty, setCurrentDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate')
 
-  // Live Interaction States
-  const [interactionState, setInteractionState] = useState<'idle' | 'ai_speaking' | 'listening' | 'processing' | 'thinking'>('idle')
-  const [sarvamStatus, setSarvamStatus] = useState<{ sarvamActive: boolean; provider: string }>({
-    sarvamActive: false,
-    provider: 'Sarvam AI / Web Speech'
-  })
+  // Live Turn-Taking States:
+  // 'idle' | 'ai_speaking' | 'listening' | 'candidate_speaking' | 'analyzing' | 'preparing'
+  const [interactionState, setInteractionState] = useState<
+    'idle' | 'ai_speaking' | 'listening' | 'candidate_speaking' | 'analyzing' | 'preparing'
+  >('idle')
 
-  // Audio & Input State
-  const [isAiSpeaking, setIsAiSpeaking] = useState(false)
-  const [isListening, setIsListening] = useState(false)
-  const [isAudioMuted, setIsAudioMuted] = useState(false)
+  // Spoken buffers & durations
   const [candidateSpeechBuffer, setCandidateSpeechBuffer] = useState('')
   const [duration, setDuration] = useState(0)
-  const [isProcessingAnswer, setIsProcessingAnswer] = useState(false)
+  const [isAudioMuted, setIsAudioMuted] = useState(false)
 
   // Diagnostics Evaluation State
   const [evaluation, setEvaluation] = useState<InterviewEvaluation | null>(null)
 
-  const chatScrollRef = useRef<HTMLDivElement>(null)
+  // Silence & Auto-Submit Refs
+  const silenceTimerRef = useRef<any>(null)
+  const speechBufferRef = useRef('')
+  const isListeningRef = useRef(false)
+  const turnsRef = useRef<ConversationTurn[]>([])
+  const difficultyRef = useRef<'beginner' | 'intermediate' | 'advanced'>('intermediate')
 
-  // Check backend Sarvam service status on mount
+  // Sync refs with state
   useEffect(() => {
-    sarvamVoiceClient.checkBackendStatus().then((status) => {
-      setSarvamStatus(status)
-    })
-  }, [])
+    speechBufferRef.current = candidateSpeechBuffer
+  }, [candidateSpeechBuffer])
 
-  // Auto-scroll chat buffer
   useEffect(() => {
-    if (chatScrollRef.current) {
-      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
-    }
-  }, [turns, candidateSpeechBuffer])
+    turnsRef.current = turns
+  }, [turns])
+
+  useEffect(() => {
+    difficultyRef.current = currentDifficulty
+  }, [currentDifficulty])
 
   // 15-Minute timer duration counter
   useEffect(() => {
@@ -123,11 +117,13 @@ export default function VoiceScreening() {
     return () => clearInterval(interval)
   }, [callStatus])
 
-  // Cleanup speech on unmount
+  // Cleanup audio & mic on unmount
   useEffect(() => {
     return () => {
+      clearSilenceTimer()
       sarvamVoiceClient.stopAudioPlayback()
       sarvamVoiceClient.cancelRecording()
+      speechService.stopListening()
     }
   }, [])
 
@@ -138,134 +134,100 @@ export default function VoiceScreening() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
-  // Play AI text via Sarvam TTS or Web Speech fallback
+  const clearSilenceTimer = () => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current)
+      silenceTimerRef.current = null
+    }
+  }
+
+  // Play AI text and automatically activate microphone when finished
   const playAiVoice = (text: string, audioBase64: string | null = null, audioFormat = 'audio/wav') => {
-    if (isAudioMuted) return
+    if (isAudioMuted) {
+      // If muted, wait a brief reading pause then open mic
+      setTimeout(() => {
+        autoStartListening()
+      }, 2500)
+      return
+    }
 
     setInteractionState('ai_speaking')
-    setIsAiSpeaking(true)
+    clearSilenceTimer()
 
     sarvamVoiceClient.playAiAudio(text, audioBase64, audioFormat, {
       onStart: () => {
-        setIsAiSpeaking(true)
         setInteractionState('ai_speaking')
       },
       onEnd: () => {
-        setIsAiSpeaking(false)
-        setInteractionState('idle')
+        // AI finished speaking -> automatically activate candidate listening
+        autoStartListening()
       }
     })
   }
 
-  // Toggle voice mute
-  const toggleMute = () => {
-    const nextMute = !isAudioMuted
-    setIsAudioMuted(nextMute)
-    if (nextMute) {
-      sarvamVoiceClient.stopAudioPlayback()
-      setIsAiSpeaking(false)
-      setInteractionState('idle')
-    } else {
-      const lastAiTurn = [...turns].reverse().find((t) => t.speaker === 'ai')
-      if (lastAiTurn) {
-        playAiVoice(lastAiTurn.text)
-      }
-    }
-  }
+  // Automatic candidate microphone activation (VAD & Continuous Turn-taking)
+  const autoStartListening = async () => {
+    clearSilenceTimer()
+    setCandidateSpeechBuffer('')
+    speechBufferRef.current = ''
+    setInteractionState('listening')
+    isListeningRef.current = true
 
-  // Barge-in: Interrupt AI Speech and start recording candidate
-  const handleBargeInAndListen = () => {
-    sarvamVoiceClient.stopAudioPlayback()
-    setIsAiSpeaking(false)
-    toggleSpeechRecording()
-  }
+    // Start speech recognition / VAD
+    speechService.startListening({
+      onStart: () => {
+        setInteractionState('listening')
+      },
+      onResult: (text: string) => {
+        if (!isListeningRef.current) return
+        
+        const clean = text.trim()
+        if (clean) {
+          setCandidateSpeechBuffer(clean)
+          speechBufferRef.current = clean
+          setInteractionState('candidate_speaking')
 
-  // Toggle Candidate Speech Recording (MediaRecorder + Sarvam STT)
-  const toggleSpeechRecording = async () => {
-    if (isListening) {
-      setInteractionState('processing')
-      setIsListening(false)
+          // Reset silence timer on every spoken word
+          clearSilenceTimer()
 
-      const result = await sarvamVoiceClient.stopAudioRecordingAndTranscribe('en-IN')
-      if (result.transcript) {
-        setCandidateSpeechBuffer((prev) => (prev ? `${prev} ${result.transcript}` : result.transcript))
-      }
-      setInteractionState('idle')
-    } else {
-      // Interrupt AI if currently speaking
-      sarvamVoiceClient.stopAudioPlayback()
-      setIsAiSpeaking(false)
-
-      const started = await sarvamVoiceClient.startAudioRecording({
-        onStart: () => {
-          setIsListening(true)
-          setInteractionState('listening')
-        },
-        onError: (err) => {
-          console.warn('Microphone error:', err)
-          setIsListening(false)
-          setInteractionState('idle')
-          // Fallback to browser SpeechRecognition if MediaRecorder fails
-          speechService.startListening({
-            onStart: () => {
-              setIsListening(true)
-              setInteractionState('listening')
-            },
-            onResult: (text) => setCandidateSpeechBuffer((prev) => (prev ? `${prev} ${text}` : text)),
-            onEnd: () => {
-              setIsListening(false)
-              setInteractionState('idle')
-            }
-          })
+          // If candidate has spoken at least 2 words, auto-submit after 2.0s of silence
+          const wordCount = clean.split(/\s+/).filter(Boolean).length
+          if (wordCount >= 2) {
+            silenceTimerRef.current = setTimeout(() => {
+              if (isListeningRef.current && speechBufferRef.current.trim().length > 0) {
+                handleAutoSubmit()
+              }
+            }, 2000) // 2.0 second silence detection threshold
+          }
         }
-      })
-
-      if (!started) {
-        setIsListening(false)
-        setInteractionState('idle')
+      },
+      onEnd: () => {
+        // If stopped naturally with buffer, auto-submit
+        if (isListeningRef.current && speechBufferRef.current.trim().length > 3) {
+          handleAutoSubmit()
+        }
       }
-    }
+    })
   }
 
-  // Start Practice Call via Backend / Sarvam AI
-  const startPracticeCall = async () => {
-    setCallStatus('connected')
-    setDuration(0)
-    setTurns([])
-    setCurrentDifficulty('intermediate')
-    setInteractionState('thinking')
+  // Stop listening and auto-submit candidate's response
+  const handleAutoSubmit = async (overrideAction?: 'normal' | 'repeat' | 'clarify' | 'skip') => {
+    clearSilenceTimer()
+    isListeningRef.current = false
+    speechService.stopListening()
+    sarvamVoiceClient.cancelRecording()
 
-    const initData = await sarvamVoiceClient.startSession(candidateContext, targetRole, interviewerMode, 'en-IN')
-
-    const firstTurn: ConversationTurn = {
-      id: `turn-${Date.now()}-ai`,
-      speaker: 'ai',
-      text: initData.initialQuestion,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      difficulty: initData.difficulty,
-      category: initData.initialCategory as any
-    }
-
-    setTurns([firstTurn])
-    playAiVoice(initData.initialQuestion, initData.audioBase64, initData.audioFormat || 'audio/wav')
-  }
-
-  // Submit Candidate's Answer (Analyze -> Follow-Up / Adapt)
-  const handleCandidateSubmit = async (overrideAction?: 'normal' | 'repeat' | 'clarify' | 'skip') => {
     const answerText = overrideAction === 'skip'
-      ? "I don't know the exact answer to this. Could we explore an adjacent topic?"
-      : candidateSpeechBuffer.trim()
+      ? "I'm not completely certain on this topic. Could we explore another area?"
+      : speechBufferRef.current.trim()
 
-    if (!answerText && !overrideAction) return
-
-    // Stop recording if active
-    if (isListening) {
-      sarvamVoiceClient.cancelRecording()
-      setIsListening(false)
+    if (!answerText && !overrideAction) {
+      // If candidate was silent, re-listen
+      autoStartListening()
+      return
     }
 
-    setIsProcessingAnswer(true)
-    setInteractionState('thinking')
+    setInteractionState('analyzing')
 
     // Append candidate turn
     const candidateTurn: ConversationTurn = {
@@ -275,17 +237,18 @@ export default function VoiceScreening() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
 
-    const updatedTurns = [...turns, candidateTurn]
+    const updatedTurns = [...turnsRef.current, candidateTurn]
     setTurns(updatedTurns)
     setCandidateSpeechBuffer('')
+    speechBufferRef.current = ''
 
     try {
-      // Call backend Adaptive Question Engine (with Sarvam STT/TTS)
+      // Call backend Adaptive Question Engine
       const turnData = await sarvamVoiceClient.sendTurn(
         updatedTurns,
         candidateContext,
         targetRole,
-        currentDifficulty,
+        difficultyRef.current,
         overrideAction || 'normal',
         interviewerMode,
         'en-IN'
@@ -308,17 +271,17 @@ export default function VoiceScreening() {
       }
 
       setTurns([...updatedTurns, aiTurn])
-      setIsProcessingAnswer(false)
+      setInteractionState('preparing')
 
+      // Automatically speak the next question
       playAiVoice(turnData.next_question, turnData.audioBase64, turnData.audioFormat || 'audio/wav')
     } catch (err) {
-      console.warn('Turn error, using client fallback:', err)
-      // Client fallback
+      console.warn('Turn error, using client fallback engine:', err)
       const nextQ = AiVoicePracticeService.generateNextQuestion(
         updatedTurns,
         candidateContext,
         targetRole,
-        currentDifficulty,
+        difficultyRef.current,
         overrideAction || 'normal',
         interviewerMode
       )
@@ -332,23 +295,46 @@ export default function VoiceScreening() {
         analysis: nextQ.analysis
       }
       setTurns([...updatedTurns, aiTurn])
-      setIsProcessingAnswer(false)
+      setInteractionState('preparing')
       playAiVoice(nextQ.question)
     }
   }
 
-  // End Practice Call & Generate Full Evaluation
+  // Start Practice Call
+  const startPracticeCall = async () => {
+    setCallStatus('connected')
+    setDuration(0)
+    setTurns([])
+    setCurrentDifficulty('intermediate')
+    setInteractionState('preparing')
+
+    const initData = await sarvamVoiceClient.startSession(candidateContext, targetRole, interviewerMode, 'en-IN')
+
+    const firstTurn: ConversationTurn = {
+      id: `turn-${Date.now()}-ai`,
+      speaker: 'ai',
+      text: initData.initialQuestion,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      difficulty: initData.difficulty,
+      category: initData.initialCategory as any
+    }
+
+    setTurns([firstTurn])
+    playAiVoice(initData.initialQuestion, initData.audioBase64, initData.audioFormat || 'audio/wav')
+  }
+
+  // End Practice Call & Show Evaluation
   const endPracticeCall = async () => {
+    clearSilenceTimer()
+    isListeningRef.current = false
     sarvamVoiceClient.stopAudioPlayback()
     sarvamVoiceClient.cancelRecording()
-    setIsListening(false)
-    setIsAiSpeaking(false)
+    speechService.stopListening()
     setInteractionState('idle')
 
-    // Request full diagnostic evaluation from backend
-    let result = await sarvamVoiceClient.evaluateSession(turns, candidateContext, targetRole, interviewerMode)
+    let result = await sarvamVoiceClient.evaluateSession(turnsRef.current, candidateContext, targetRole, interviewerMode)
     if (!result) {
-      result = AiVoicePracticeService.generateEvaluation(turns, candidateContext, targetRole, interviewerMode)
+      result = AiVoicePracticeService.generateEvaluation(turnsRef.current, candidateContext, targetRole, interviewerMode)
     }
 
     setEvaluation(result)
@@ -357,521 +343,432 @@ export default function VoiceScreening() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
 
     const personaName = interviewerMode === 'recruiter' ? 'Sarah' : 'Alex'
-    const closingVoiceMessage = `Great job on completing your 15-minute mock interview with ${personaName}. Your overall practice score is ${result.overallScore} out of 100. Review your detailed feedback breakdown below.`
+    const closingVoiceMessage = `Great job completing your mock interview practice with ${personaName}. Your overall score is ${result.overallScore} out of 100. Review your feedback below.`
     
     setTimeout(() => {
-      playAiVoice(closingVoiceMessage)
+      sarvamVoiceClient.playAiAudio(closingVoiceMessage, null)
     }, 400)
+  }
+
+  // Toggle voice mute
+  const toggleMute = () => {
+    const nextMute = !isAudioMuted
+    setIsAudioMuted(nextMute)
+    if (nextMute) {
+      sarvamVoiceClient.stopAudioPlayback()
+      if (interactionState === 'ai_speaking') {
+        autoStartListening()
+      }
+    }
   }
 
   // Category Badge Label
   const getCategoryBadge = (cat?: ConversationTurn['category']) => {
     switch (cat) {
       case 'intro':
-        return { label: 'Introduction & Availability', color: 'bg-blue-50 text-blue-700 border-blue-200' }
+        return { label: 'Background & Focus', color: 'bg-blue-50 text-blue-700 border-blue-200' }
       case 'project_deepdive':
-        return { label: 'Recent Accomplishment & Impact', color: 'bg-purple-50 text-purple-700 border-purple-200' }
+        return { label: 'Project Architecture & Impact', color: 'bg-purple-50 text-purple-700 border-purple-200' }
       case 'motivation':
-        return { label: 'Career Transition & Motivation', color: 'bg-amber-50 text-amber-700 border-amber-200' }
+        return { label: 'Career Goals & Motivation', color: 'bg-amber-50 text-amber-700 border-amber-200' }
       case 'compensation':
-        return { label: 'Compensation & Salary Framing', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+        return { label: 'Compensation & Value Framing', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
       case 'notice_period':
-        return { label: 'Notice Period & Early Buyout', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
+        return { label: 'Notice Period & Joining Dialogue', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
       case 'work_mode':
-        return { label: 'Work Mode & Location Preference', color: 'bg-teal-50 text-teal-700 border-teal-200' }
+        return { label: 'Work Mode & Environment', color: 'bg-teal-50 text-teal-700 border-teal-200' }
       case 'technical':
-        return { label: 'Domain & Technical Competency', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+        return { label: 'Technical Competency', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
       case 'behavioral':
-        return { label: 'Cultural Fit & Team Dynamics', color: 'bg-amber-50 text-amber-700 border-amber-200' }
+        return { label: 'Team Collaboration & STAR', color: 'bg-amber-50 text-amber-700 border-amber-200' }
       case 'situational':
-        return { label: 'Situational Decision Making', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
+        return { label: 'Situational Problem Solving', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
       case 'candidate_q':
-        return { label: 'Questions for Recruiter', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' }
+        return { label: 'Your Questions for the Interviewer', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' }
       default:
-        return { label: 'Screening Question', color: 'bg-slate-100 text-slate-700 border-slate-200' }
+        return { label: 'Interview Question', color: 'bg-slate-100 text-slate-700 border-slate-200' }
     }
   }
 
-  const activeAiTurn = [...turns].reverse().find((t) => t.speaker === 'ai')
+  // Active prominent current AI question
+  const currentAiTurn = [...turns].reverse().find((t) => t.speaker === 'ai')
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300 pb-16">
-      {/* Top Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300 pb-16">
+      {/* ========================================================================= */}
+      {/* CLEAN HEADER                                                              */}
+      {/* ========================================================================= */}
+      <div className="flex items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              RAS AI Voice Interview Practice Studio
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
-              <Sparkles size={12} className="text-indigo-600" />
-              <span>AI Voice Simulation</span>
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Conduct realistic, adaptive mock interviews with real-time Speech-to-Text & expressive AI voice synthesis. Practice phone screens and technical rounds.
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            RAS AI Interview Practice
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 font-semibold mt-0.5">
+            AI Mock Interview · {targetRole}
           </p>
         </div>
 
-        {/* Practice Guarantee Badge */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold shrink-0">
-          <Shield size={14} className="text-amber-600" />
-          <span>Practice Only · No Real Hiring Decisions</span>
-        </div>
+        {callStatus === 'connected' ? (
+          <div className="flex items-center gap-2.5">
+            {/* Timer */}
+            <div className="px-3.5 py-1.5 rounded-xl bg-slate-900 text-white font-mono text-xs font-bold flex items-center gap-1.5 shadow-sm">
+              <Clock size={13} className="text-emerald-400" />
+              <span>{formatTime(duration)}</span>
+              <span className="text-slate-400 font-normal">/ 15:00</span>
+            </div>
+
+            {/* Mute Button */}
+            <button
+              type="button"
+              onClick={toggleMute}
+              className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+                isAudioMuted
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+              }`}
+              title={isAudioMuted ? 'Unmute AI Voice' : 'Mute AI Voice'}
+            >
+              {isAudioMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+            </button>
+
+            {/* Red End Practice Button in Header */}
+            <button
+              type="button"
+              id="headerEndPracticeBtn"
+              onClick={endPracticeCall}
+              className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-rose-900/20 transition-all cursor-pointer border-none"
+              title="End mock interview practice session"
+            >
+              <PhoneOff size={13} />
+              <span>End Practice</span>
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold">
+            <Shield size={13} className="text-indigo-600" />
+            <span>Practice Studio</span>
+          </div>
+        )}
       </div>
 
       {/* ========================================================================= */}
-      {/* STATE 1: SETUP & LAUNCH SCREEN                                            */}
+      {/* STATE 1: SETUP & PERSONA SELECTION                                        */}
       {/* ========================================================================= */}
       {callStatus === 'setup' && (
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-10 shadow-md space-y-8">
-          <div className="text-center max-w-xl mx-auto space-y-3">
-            <div className="w-20 h-20 rounded-3xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-xl shadow-indigo-200 animate-pulse">
-              <Bot size={40} />
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-10 shadow-sm space-y-8">
+          <div className="text-center max-w-lg mx-auto space-y-2.5">
+            <div className="w-16 h-16 rounded-3xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-indigo-100">
+              <Bot size={32} />
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-              Select Your AI Mock Practice Interviewer
+              Select Your Practice Interviewer
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Simulates authentic technical and HR screening conversations with dynamic follow-ups and adaptive difficulty.
+            <p className="text-xs sm:text-sm text-slate-600">
+              Hands-free voice practice with automatic turn-taking and adaptive follow-up questions.
             </p>
           </div>
 
-          {/* Persona Selection Tabs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-            {/* Sarah - Recruiter Screening */}
+          {/* Persona Selection */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto">
+            {/* Sarah */}
             <button
               type="button"
-              id="selectSarahRecruiterBtn"
+              id="selectSarahBtn"
               onClick={() => setInterviewerMode('recruiter')}
-              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative overflow-hidden ${
+              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative ${
                 interviewerMode === 'recruiter'
-                  ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-200'
+                  ? 'border-indigo-600 bg-indigo-50/50 shadow-sm ring-2 ring-indigo-200'
                   : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-extrabold shrink-0 shadow-md text-xl">
+              <div className="flex items-start gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-bold text-lg shrink-0">
                   👩‍💼
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-extrabold text-sm text-slate-900">Sarah</h3>
                     <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
-                      Recruiter Call
+                      HR & General
                     </span>
                   </div>
-                  <div className="text-xs font-bold text-indigo-700">RAS AI Talent Partner</div>
-                  <p className="text-[11px] text-slate-600 leading-relaxed pt-1">
-                    Master 15-min HR phone screens, salary negotiation discussions, notice period flexibility, and career transition stories.
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Practice recruiter phone screens, compensation framing, notice periods, and career background stories.
                   </p>
                 </div>
               </div>
               {interviewerMode === 'recruiter' && (
-                <div className="absolute top-3 right-3 text-indigo-600 font-extrabold text-xs flex items-center gap-1">
+                <div className="absolute top-3 right-3 text-indigo-600 font-extrabold text-xs">
                   <CheckCircle2 size={16} />
                 </div>
               )}
             </button>
 
-            {/* Alex - Technical Mock Interview */}
+            {/* Alex */}
             <button
               type="button"
-              id="selectAlexTechBtn"
+              id="selectAlexBtn"
               onClick={() => setInterviewerMode('technical')}
-              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative overflow-hidden ${
+              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative ${
                 interviewerMode === 'technical'
-                  ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-200'
+                  ? 'border-indigo-600 bg-indigo-50/50 shadow-sm ring-2 ring-indigo-200'
                   : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-extrabold shrink-0 shadow-md text-xl">
+              <div className="flex items-start gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shrink-0">
                   👨‍💻
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-extrabold text-sm text-slate-900">Alex</h3>
                     <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[10px] font-extrabold">
-                      Tech & System
+                      Technical
                     </span>
                   </div>
-                  <div className="text-xs font-bold text-indigo-700">Senior AI Technical Lead</div>
-                  <p className="text-[11px] text-slate-600 leading-relaxed pt-1">
-                    Practice deep technical architecture, algorithmic decisions (XGBoost, Snowflake, Redis), trade-offs, and STAR scenarios.
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Deep-dive technical questions, system architecture, models, algorithmic trade-offs, and STAR scenarios.
                   </p>
                 </div>
               </div>
               {interviewerMode === 'technical' && (
-                <div className="absolute top-3 right-3 text-indigo-600 font-extrabold text-xs flex items-center gap-1">
+                <div className="absolute top-3 right-3 text-indigo-600 font-extrabold text-xs">
                   <CheckCircle2 size={16} />
                 </div>
               )}
             </button>
           </div>
 
-          {/* Role & Context Card */}
-          <div className="max-w-xl mx-auto bg-slate-50 border border-slate-200/80 rounded-3xl p-6 space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="targetRoleSelect" className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-                Target Role for This Mock Practice
-              </label>
-              <select
-                id="targetRoleSelect"
-                value={targetRole}
-                onChange={(e) => setTargetRole(e.target.value)}
-                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              >
-                {TARGET_ROLES.map((role) => (
-                  <option key={role} value={role}>
-                    {role}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Candidate Metadata Summary */}
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/80 text-xs">
-              <div>
-                <span className="text-[11px] text-slate-500">Candidate Name:</span>
-                <div className="font-extrabold text-slate-900">{candidateContext.name}</div>
-              </div>
-              <div>
-                <span className="text-[11px] text-slate-500">Total Experience:</span>
-                <div className="font-extrabold text-slate-900">
-                  {candidateContext.experienceYears === 0 ? 'Fresher (0 Yrs)' : `${candidateContext.experienceYears} Years`}
-                </div>
-              </div>
-              <div>
-                <span className="text-[11px] text-slate-500">Notice Period:</span>
-                <div className="font-extrabold text-slate-900">{candidateContext.noticePeriod}</div>
-              </div>
-              <div>
-                <span className="text-[11px] text-slate-500">Target CTC:</span>
-                <div className="font-extrabold text-indigo-700">{candidateContext.expectedCtc}</div>
-              </div>
-            </div>
+          {/* Role Selection */}
+          <div className="max-w-md mx-auto space-y-1.5">
+            <label htmlFor="targetRoleSelect" className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+              Target Job Role
+            </label>
+            <select
+              id="targetRoleSelect"
+              value={targetRole}
+              onChange={(e) => setTargetRole(e.target.value)}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            >
+              {TARGET_ROLES.map((role) => (
+                <option key={role} value={role}>
+                  {role}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Launch Button */}
+          {/* Start Button */}
           <div className="flex justify-center pt-2">
             <button
               type="button"
               id="startVoicePracticeBtn"
               onClick={startPracticeCall}
-              className="px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm sm:text-base flex items-center gap-3 shadow-xl shadow-indigo-200 transition-all hover:scale-105 cursor-pointer"
+              className="px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm sm:text-base flex items-center gap-3 shadow-xl shadow-indigo-100 transition-all hover:scale-105 cursor-pointer"
             >
               <Phone size={20} />
-              <span>
-                Start Adaptive Voice Practice with {interviewerMode === 'recruiter' ? 'Sarah' : 'Alex'}
-              </span>
+              <span>Start Voice Practice with {interviewerMode === 'recruiter' ? 'Sarah' : 'Alex'}</span>
             </button>
           </div>
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* STATE 2: ACTIVE VOICE PRACTICE ROOM                                       */}
+      {/* STATE 2: CLEAN VOICE-ONLY INTERVIEW ENVIRONMENT                           */}
       {/* ========================================================================= */}
-      {callStatus === 'connected' && (
+      {callStatus === 'connected' && currentAiTurn && (
         <div className="space-y-6">
-          {/* Top Live Call Bar */}
-          <div className="bg-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl">
-                  {interviewerMode === 'recruiter' ? '👩‍💼' : '👨‍💻'}
-                </div>
-                {isAiSpeaking && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-400 border-2 border-slate-900 rounded-full animate-ping" />
+          {/* Main Stage: AI Interviewer Avatar & Live Soundwave */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-8 sm:p-10 shadow-sm text-center space-y-6">
+            {/* Centered Avatar */}
+            <div className="relative inline-block">
+              <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-3xl mx-auto flex items-center justify-center text-4xl sm:text-5xl shadow-xl transition-all duration-300 ${
+                interactionState === 'ai_speaking'
+                  ? 'bg-indigo-600 text-white ring-8 ring-indigo-100 scale-105 shadow-indigo-200'
+                  : interactionState === 'candidate_speaking' || interactionState === 'listening'
+                  ? 'bg-emerald-600 text-white ring-8 ring-emerald-100 scale-105 shadow-emerald-200'
+                  : 'bg-slate-900 text-white ring-4 ring-slate-100'
+              }`}>
+                {interviewerMode === 'recruiter' ? '👩‍💼' : '👨‍💻'}
+              </div>
+
+              {/* Status Indicator Pip */}
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[11px] font-extrabold text-white shadow-md flex items-center gap-1.5 whitespace-nowrap bg-slate-900">
+                {interactionState === 'ai_speaking' && (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+                    <span>AI Speaking</span>
+                  </>
+                )}
+                {interactionState === 'listening' && (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Listening...</span>
+                  </>
+                )}
+                {interactionState === 'candidate_speaking' && (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-rose-400 animate-ping" />
+                    <span>Listening to your answer...</span>
+                  </>
+                )}
+                {interactionState === 'analyzing' && (
+                  <>
+                    <Loader2 size={11} className="animate-spin text-indigo-400" />
+                    <span>Analyzing response...</span>
+                  </>
+                )}
+                {interactionState === 'preparing' && (
+                  <>
+                    <Sparkles size={11} className="text-amber-400" />
+                    <span>Preparing next question...</span>
+                  </>
+                )}
+                {interactionState === 'idle' && (
+                  <span>Ready</span>
                 )}
               </div>
+            </div>
 
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-base sm:text-lg font-black text-white">
-                    {interviewerMode === 'recruiter' ? 'Sarah — RAS AI Talent Partner' : 'Alex — Senior AI Interviewer'}
-                  </h2>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                    Live Call ({formatTime(duration)} / 15:00)
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
-                    AI Voice Active
-                  </span>
+            {/* Soundwave Visualizer Bar */}
+            <div className="h-8 flex items-center justify-center gap-1.5">
+              {interactionState === 'ai_speaking' ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-4 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-1.5 h-7 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-1.5 h-5 bg-indigo-600 rounded-full animate-bounce" />
+                  <span className="w-1.5 h-8 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.25s]" />
+                  <span className="w-1.5 h-4 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.1s]" />
                 </div>
-                <p className="text-xs text-slate-300">
-                  Practicing Role: <strong className="text-white">{targetRole}</strong> ·{' '}
-                  <span className="text-indigo-300">
-                    {interviewerMode === 'recruiter' ? 'Recruiter Phone Screening Mode' : 'Technical Simulation Mode'}
-                  </span>
+              ) : interactionState === 'candidate_speaking' || interactionState === 'listening' ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-3 bg-emerald-500 rounded-full animate-pulse" />
+                  <span className="w-1.5 h-6 bg-emerald-500 rounded-full animate-pulse [animation-delay:-0.15s]" />
+                  <span className="w-1.5 h-4 bg-emerald-500 rounded-full animate-pulse" />
+                  <span className="w-1.5 h-7 bg-emerald-500 rounded-full animate-pulse [animation-delay:-0.2s]" />
+                  <span className="w-1.5 h-3 bg-emerald-500 rounded-full animate-pulse" />
+                </div>
+              ) : (
+                <div className="w-12 h-1 bg-slate-200 rounded-full" />
+              )}
+            </div>
+
+            {/* Interaction State Prompt Text */}
+            <div className="space-y-1">
+              {interactionState === 'listening' && (
+                <p className="text-sm font-extrabold text-emerald-700 animate-pulse">
+                  🎙️ Your turn — speak naturally into your microphone
                 </p>
-              </div>
-            </div>
-
-            {/* Difficulty & Controls */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-3 py-1 rounded-xl text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700 flex items-center gap-1.5">
-                <Sliders size={13} className="text-indigo-400" />
-                <span>Difficulty: </span>
-                <strong className="capitalize text-white">{currentDifficulty}</strong>
-              </span>
-
-              <button
-                type="button"
-                onClick={toggleMute}
-                className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
-                  isAudioMuted
-                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
-                    : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                }`}
-                title={isAudioMuted ? 'Unmute AI Voice' : 'Mute AI Voice'}
-              >
-                {isAudioMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-              </button>
-
-              <button
-                type="button"
-                id="endPracticeCallBtn"
-                onClick={endPracticeCall}
-                className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-rose-900/30 transition-all cursor-pointer border-none"
-                title="End interview practice and view performance diagnostics"
-              >
-                <PhoneOff size={14} className="shrink-0" />
-                <span>End Practice</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Active Status & Question Card */}
-          {activeAiTurn && (
-            <div className="bg-white border-2 border-indigo-200 rounded-3xl p-6 sm:p-7 shadow-md space-y-4 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <span className={`px-2.5 py-1 rounded-xl text-xs font-extrabold border ${getCategoryBadge(activeAiTurn.category).color}`}>
-                    {getCategoryBadge(activeAiTurn.category).label}
-                  </span>
-                  {activeAiTurn.analysis?.isFollowUp && (
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1">
-                      <Zap size={11} />
-                      <span>Adaptive Deep-Dive Follow-up</span>
-                    </span>
-                  )}
-                </div>
-
-                {/* Live State Visualizer Indicator */}
-                <div className="flex items-center gap-2 text-xs">
-                  {interactionState === 'ai_speaking' && (
-                    <span className="flex items-center gap-1.5 text-emerald-700 font-extrabold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 animate-pulse">
-                      <Waves size={14} className="animate-spin" />
-                      <span>AI Speaking</span>
-                    </span>
-                  )}
-                  {interactionState === 'listening' && (
-                    <span className="flex items-center gap-1.5 text-rose-700 font-extrabold bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200 animate-pulse">
-                      <Mic size={14} />
-                      <span>Listening...</span>
-                    </span>
-                  )}
-                  {interactionState === 'thinking' && (
-                    <span className="flex items-center gap-1.5 text-indigo-700 font-extrabold bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200">
-                      <Loader2 size={14} className="animate-spin" />
-                      <span>Thinking & Adapting...</span>
-                    </span>
-                  )}
-                  {interactionState === 'idle' && (
-                    <span className="flex items-center gap-1.5 text-slate-500 font-semibold">
-                      <span>Ready for Candidate Response</span>
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Pulsating Voice Visualizer with Barge-In Button */}
-              {isAiSpeaking && (
-                <div className="flex items-center justify-between gap-3 p-3 bg-indigo-50/70 rounded-2xl border border-indigo-100 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-4 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    <span className="w-1.5 h-6 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1.5 h-5 bg-indigo-600 rounded-full animate-bounce" />
-                    <span className="w-1.5 h-7 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.25s]" />
-                    <span className="w-1.5 h-3 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.1s]" />
-                    <span className="text-xs font-bold text-indigo-900 ml-1">
-                      {interviewerMode === 'recruiter' ? 'Sarah' : 'Alex'} is speaking...
-                    </span>
-                  </div>
-
-                  {/* Barge-In Interrupt Action */}
-                  <button
-                    type="button"
-                    onClick={handleBargeInAndListen}
-                    className="px-3 py-1 rounded-xl bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 text-xs font-extrabold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-                    title="Interrupt interviewer and speak"
-                  >
-                    <Mic size={13} className="text-rose-500" />
-                    <span>Interrupt & Speak 🎙️</span>
-                  </button>
-                </div>
+              )}
+              {interactionState === 'candidate_speaking' && (
+                <p className="text-sm font-extrabold text-slate-900">
+                  Capturing your response... (pause 2s when finished)
+                </p>
+              )}
+              {interactionState === 'analyzing' && (
+                <p className="text-sm font-bold text-indigo-700 flex items-center justify-center gap-1.5">
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Analyzing answer & formulating adaptive follow-up...</span>
+                </p>
+              )}
+              {interactionState === 'ai_speaking' && (
+                <p className="text-xs font-semibold text-slate-500">
+                  {interviewerMode === 'recruiter' ? 'Sarah' : 'Alex'} is asking the question. Listen carefully.
+                </p>
               )}
 
-              {/* Question Text */}
-              <h3 className="text-base sm:text-xl font-bold text-slate-900 leading-relaxed">
-                "{activeAiTurn.text}"
-              </h3>
-            </div>
-          )}
-
-          {/* Candidate Speech / Response Input Box */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <label htmlFor="candidateAnswerInput" className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                <User size={14} className="text-indigo-600" />
-                <span>Your Response (Spoken or Typed)</span>
-              </label>
-
-              {/* Candidate Mic Dictation Status */}
-              <button
-                type="button"
-                id="toggleCandidateMicBtn"
-                onClick={toggleSpeechRecording}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
-                  isListening
-                    ? 'bg-rose-500 text-white animate-pulse shadow-md shadow-rose-200'
-                    : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200'
-                }`}
-              >
-                {isListening ? <Mic size={14} /> : <MicOff size={14} />}
-                <span>{isListening ? '🔴 Recording (Tap to Stop)' : '🎙️ Speak with Microphone'}</span>
-              </button>
-            </div>
-
-            {/* Response Textarea */}
-            <textarea
-              id="candidateAnswerInput"
-              rows={4}
-              value={candidateSpeechBuffer}
-              onChange={(e) => setCandidateSpeechBuffer(e.target.value)}
-              placeholder={
-                interviewerMode === 'recruiter'
-                  ? 'Speak with your microphone or type your response... The AI will analyze your salary framing, notice period flexibility, and career motivations.'
-                  : 'Speak via microphone or type your response... The AI will evaluate your technical claims, models, tools, and trade-offs.'
-              }
-              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none leading-relaxed"
-            />
-
-            {/* Dynamic Controls Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-              {/* Candidate Actions (Repeat, Clarify, Skip) */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  id="repeatQuestionBtn"
-                  onClick={() => handleCandidateSubmit('repeat')}
-                  disabled={isProcessingAnswer}
-                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  title="Ask interviewer to repeat the question"
-                >
-                  <RotateCcw size={13} />
-                  <span>Repeat Question</span>
-                </button>
-
-                <button
-                  type="button"
-                  id="clarifyQuestionBtn"
-                  onClick={() => handleCandidateSubmit('clarify')}
-                  disabled={isProcessingAnswer}
-                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  title="Ask interviewer for clarification on this topic"
-                >
-                  <HelpCircle size={13} />
-                  <span>Ask for Clarification</span>
-                </button>
-
-                <button
-                  type="button"
-                  id="skipQuestionBtn"
-                  onClick={() => handleCandidateSubmit('skip')}
-                  disabled={isProcessingAnswer}
-                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  title="Pass question honestly without penalty"
-                >
-                  <SkipForward size={13} />
-                  <span>I Don't Know / Skip</span>
-                </button>
-              </div>
-
-              {/* Action Buttons: End Practice + Submit Answer */}
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  id="bottomEndPracticeBtn"
-                  onClick={endPracticeCall}
-                  className="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-200 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                  title="Conclude interview practice session and view diagnostic report"
-                >
-                  <PhoneOff size={14} />
-                  <span>End Practice</span>
-                </button>
-
-                <button
-                  type="button"
-                  id="submitCandidateAnswerBtn"
-                  onClick={() => handleCandidateSubmit('normal')}
-                  disabled={!candidateSpeechBuffer.trim() || isProcessingAnswer}
-                  className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:hover:bg-indigo-600 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
-                >
-                  <Send size={15} />
-                  <span>{isProcessingAnswer ? 'Analyzing Response...' : 'Submit Response →'}</span>
-                </button>
-              </div>
+              {/* Live Spoken Text Preview */}
+              {candidateSpeechBuffer && (
+                <div className="max-w-xl mx-auto p-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs text-slate-700 italic mt-2 animate-in fade-in">
+                  "{candidateSpeechBuffer}"
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Live Session Conversation History */}
-          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-2xs space-y-4">
-            <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <MessageSquare size={14} className="text-indigo-600" />
-              <span>Live Interview Transcript & Keyword Highlights</span>
-            </h3>
-
-            <div
-              ref={chatScrollRef}
-              className="max-h-72 overflow-y-auto space-y-3 pr-2 scroll-smooth"
-            >
-              {turns.map((turn) => (
-                <div
-                  key={turn.id}
-                  className={`p-4 rounded-2xl text-xs space-y-1.5 ${
-                    turn.speaker === 'ai'
-                      ? 'bg-slate-50 border border-slate-200/80'
-                      : 'bg-indigo-50/70 border border-indigo-100 ml-6'
-                  }`}
-                >
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-extrabold text-slate-900 flex items-center gap-1">
-                      {turn.speaker === 'ai' ? (
-                        <span>{interviewerMode === 'recruiter' ? '👩‍💼 Sarah (RAS AI Talent Partner)' : '👨‍💻 Alex (AI Interviewer)'}</span>
-                      ) : (
-                        <span className="flex items-center gap-1"><User size={13} className="text-indigo-700" /> You (Candidate)</span>
-                      )}
-                    </span>
-                    <span className="text-slate-400">{turn.timestamp}</span>
-                  </div>
-
-                  <p className="text-slate-700 leading-relaxed font-normal">{turn.text}</p>
-
-                  {turn.analysis && turn.analysis.identifiedKeywords?.length > 0 && (
-                    <div className="flex items-center gap-1 flex-wrap pt-1">
-                      <span className="text-[10px] text-slate-400 font-semibold">Analyzed keywords:</span>
-                      {turn.analysis.identifiedKeywords.map((k: string) => (
-                        <span key={k} className="px-1.5 py-0.5 rounded bg-white text-indigo-700 border border-indigo-200 text-[10px] font-bold">
-                          {k}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+          {/* Prominent Current Question Card */}
+          <div className="bg-white border-2 border-indigo-600/30 rounded-3xl p-7 sm:p-8 shadow-sm space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <span className="text-[11px] font-black uppercase tracking-wider text-indigo-700">
+                CURRENT QUESTION
+              </span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${getCategoryBadge(currentAiTurn.category).color}`}>
+                {getCategoryBadge(currentAiTurn.category).label}
+              </span>
             </div>
+
+            {/* Large Question Typography */}
+            <h2 className="text-lg sm:text-2xl font-black text-slate-900 leading-snug">
+              "{currentAiTurn.text}"
+            </h2>
+          </div>
+
+          {/* Candidate Control Pills (Repeat, Clarify, Skip, Done Speaking) */}
+          <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                id="repeatQuestionBtn"
+                onClick={() => handleAutoSubmit('repeat')}
+                disabled={interactionState === 'analyzing' || interactionState === 'preparing'}
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                title="Ask interviewer to repeat the question"
+              >
+                <RotateCcw size={13} />
+                <span>Repeat Question</span>
+              </button>
+
+              <button
+                type="button"
+                id="clarifyQuestionBtn"
+                onClick={() => handleAutoSubmit('clarify')}
+                disabled={interactionState === 'analyzing' || interactionState === 'preparing'}
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                title="Ask for clarification"
+              >
+                <HelpCircle size={13} />
+                <span>Clarification</span>
+              </button>
+
+              <button
+                type="button"
+                id="skipQuestionBtn"
+                onClick={() => handleAutoSubmit('skip')}
+                disabled={interactionState === 'analyzing' || interactionState === 'preparing'}
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                title="Pass question without penalty"
+              >
+                <SkipForward size={13} />
+                <span>Skip / Next Topic</span>
+              </button>
+            </div>
+
+            {/* Optional Fast Done-Speaking Trigger */}
+            {(interactionState === 'candidate_speaking' || interactionState === 'listening') && (
+              <button
+                type="button"
+                id="doneSpeakingBtn"
+                onClick={() => handleAutoSubmit('normal')}
+                className="px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Submit answer immediately without waiting for silence timeout"
+              >
+                <Check size={14} />
+                <span>Done Speaking →</span>
+              </button>
+            )}
+          </div>
+
+          {/* Bottom End Practice Bar */}
+          <div className="flex justify-center pt-4">
+            <button
+              type="button"
+              id="bottomEndPracticeBtn"
+              onClick={endPracticeCall}
+              className="px-6 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-rose-900/20 transition-all cursor-pointer"
+            >
+              <PhoneOff size={16} />
+              <span>End Practice & View Detailed Diagnostic Report</span>
+            </button>
           </div>
         </div>
       )}
@@ -1033,7 +930,7 @@ export default function VoiceScreening() {
             </div>
           </div>
 
-          {/* Recommended Practice Topics */}
+          {/* Recommended Focus Areas */}
           <div className="p-6 bg-indigo-50/60 border border-indigo-100 rounded-3xl space-y-3">
             <h4 className="text-xs font-extrabold text-indigo-950 uppercase tracking-wider">
               Recommended Focus Areas for Your Next Session
