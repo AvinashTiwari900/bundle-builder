@@ -405,11 +405,11 @@ export default function VoiceScreening() {
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
               <Sparkles size={12} className="text-indigo-600" />
-              <span>Sarvam AI Voice Integration</span>
+              <span>AI Voice Simulation</span>
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Conduct realistic, adaptive mock interviews with Sarvam Speech-to-Text & Text-to-Speech models. Practice phone screens and technical rounds.
+            Conduct realistic, adaptive mock interviews with real-time Speech-to-Text & expressive AI voice synthesis. Practice phone screens and technical rounds.
           </p>
         </div>
 
@@ -433,7 +433,7 @@ export default function VoiceScreening() {
               Select Your AI Mock Practice Interviewer
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Powered by Indian English acoustics (Sarvam AI <code className="px-1 py-0.5 bg-slate-100 rounded text-indigo-700 font-mono text-[11px]">saarika:v2</code> STT & <code className="px-1 py-0.5 bg-slate-100 rounded text-indigo-700 font-mono text-[11px]">bulbul:v1</code> TTS).
+              Simulates authentic technical and HR screening conversations with dynamic follow-ups and adaptive difficulty.
             </p>
           </div>
 
@@ -596,7 +596,7 @@ export default function VoiceScreening() {
                     Live Call ({formatTime(duration)} / 15:00)
                   </span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
-                    {sarvamStatus.sarvamActive ? 'Sarvam AI Engine' : 'Web Speech Engine'}
+                    AI Voice Active
                   </span>
                 </div>
                 <p className="text-xs text-slate-300">
@@ -740,7 +740,7 @@ export default function VoiceScreening() {
                 }`}
               >
                 {isListening ? <Mic size={14} /> : <MicOff size={14} />}
-                <span>{isListening ? '🔴 Recording (Tap to Transcribe with Sarvam STT)' : '🎙️ Speak (Sarvam STT)'}</span>
+                <span>{isListening ? '🔴 Recording (Tap to Stop)' : '🎙️ Speak with Microphone'}</span>
               </button>
             </div>
 
