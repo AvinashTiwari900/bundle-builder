@@ -64,7 +64,9 @@ export default function VoiceScreening() {
     currentCtc: profile.currentCtc || '₹22 LPA',
     expectedCtc: profile.targetSalary || '₹28 LPA',
     noticePeriod: profile.noticePeriod || '15 Days (Serving)',
-    location: profile.location || 'Bengaluru, India'
+    location: profile.location || 'Bengaluru, India',
+    domain: profile.domain || 'mrig.tech',
+    portfolioUrl: profile.portfolioUrl || 'https://mrig.tech'
   }
 
   // Session State

@@ -57,10 +57,13 @@ export function seedData(force = false) {
           year: 2023
         }
       ],
+      domain: 'mrig.tech',
+      portfolioUrl: 'https://mrig.tech',
       socials: {
         github: 'https://github.com/AvinashTiwari900',
         linkedin: 'https://www.linkedin.com/in/avinashtiwari626/',
-        portfolioUrl: 'https://avinash-tiwari.dev',
+        portfolioUrl: 'https://mrig.tech',
+        domain: 'mrig.tech',
         email: 'avinashtiwari@gmail.com'
       },
       privacy: {

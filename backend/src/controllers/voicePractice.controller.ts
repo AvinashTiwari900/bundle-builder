@@ -13,6 +13,8 @@ export interface CandidateContext {
   expectedCtc?: string
   noticePeriod?: string
   location?: string
+  domain?: string
+  portfolioUrl?: string
 }
 
 export interface ConversationTurn {

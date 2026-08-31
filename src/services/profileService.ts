@@ -60,14 +60,17 @@ export const profileService = {
           parsed.experienceYears = 0
         }
 
-        // Normalize social URLs so they are never lost between formats
-        parsed.githubUrl = parsed.githubUrl !== undefined ? parsed.githubUrl : (parsed.socials.github || '')
-        parsed.linkedinUrl = parsed.linkedinUrl !== undefined ? parsed.linkedinUrl : (parsed.socials.linkedin || '')
-        parsed.portfolioUrl = parsed.portfolioUrl !== undefined ? parsed.portfolioUrl : (parsed.socials.portfolioUrl || '')
+        // Normalize social & domain URLs so they are never lost between formats
+        parsed.githubUrl = parsed.githubUrl !== undefined && parsed.githubUrl !== '' ? parsed.githubUrl : (parsed.socials.github || 'https://github.com/AvinashTiwari900')
+        parsed.linkedinUrl = parsed.linkedinUrl !== undefined && parsed.linkedinUrl !== '' ? parsed.linkedinUrl : (parsed.socials.linkedin || 'https://www.linkedin.com/in/avinashtiwari626/')
+        parsed.portfolioUrl = parsed.portfolioUrl !== undefined && parsed.portfolioUrl !== '' && !parsed.portfolioUrl.includes('avinash-tiwari.dev') ? parsed.portfolioUrl : (parsed.socials.portfolioUrl && !parsed.socials.portfolioUrl.includes('avinash-tiwari.dev') ? parsed.socials.portfolioUrl : 'https://mrig.tech')
+        parsed.domain = parsed.domain || 'mrig.tech'
+        parsed.customDomain = parsed.customDomain || 'mrig.tech'
         parsed.socials = {
           github: parsed.githubUrl,
           linkedin: parsed.linkedinUrl,
-          portfolioUrl: parsed.portfolioUrl
+          portfolioUrl: parsed.portfolioUrl,
+          domain: parsed.domain
         }
 
         // Ensure arrays exist

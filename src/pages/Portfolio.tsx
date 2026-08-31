@@ -337,6 +337,16 @@ export default function PortfolioPage() {
                     <CheckCircle2 size={12} className="text-emerald-600" />
                     <span>Verified Candidate</span>
                   </span>
+                  <a
+                    href={websiteLink || 'https://mrig.tech'}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-2.5 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-full text-xs font-extrabold flex items-center gap-1 transition-colors"
+                    title="Verified Custom Domain"
+                  >
+                    <Globe size={12} className="text-indigo-600" />
+                    <span>mrig.tech</span>
+                  </a>
                 </div>
 
                 <p className="text-sm sm:text-base font-bold text-indigo-700">
