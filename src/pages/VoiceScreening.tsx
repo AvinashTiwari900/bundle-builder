@@ -28,7 +28,10 @@ import {
   Zap,
   Target,
   FileText,
-  AlertCircle
+  AlertCircle,
+  DollarSign,
+  Calendar,
+  Briefcase
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import { profileService } from '../services/profileService'
@@ -38,6 +41,7 @@ import {
   CandidateContext,
   ConversationTurn,
   InterviewEvaluation,
+  InterviewerMode,
   TARGET_ROLES
 } from '../services/aiVoicePracticeService'
 
@@ -51,22 +55,26 @@ export default function VoiceScreening() {
     role: profile.headline || profile.currentRole || 'Lead Business Analyst',
     skills: profile.skills || ['SQL', 'Python', 'Business Analysis', 'Agile', 'Snowflake', 'Tableau'],
     tools: profile.tools || ['JIRA', 'Git', 'dbt', 'Power BI'],
-    experienceYears: profile.totalExperienceYears || profile.experienceYears || 6,
+    experienceYears: profile.totalExperienceYears ?? profile.experienceYears ?? 6.5,
     projects: profile.projects || [
       {
         title: 'Real-Time Payment Reconciliation Pipeline',
         description: 'Reduced settlement latency from 4 hours to 6 minutes using Snowflake and Redis key caching.'
       }
     ],
-    headline: profile.headline || 'Lead Business Analyst & Analytics Engineer'
+    headline: profile.headline || 'Lead Business Analyst & Analytics Engineer',
+    currentCtc: profile.currentCtc || '₹22 LPA',
+    expectedCtc: profile.targetSalary || '₹28 LPA',
+    noticePeriod: profile.noticePeriod || '15 Days (Serving)',
+    location: profile.location || 'Bengaluru, India'
   }
 
   // Session State
+  const [interviewerMode, setInterviewerMode] = useState<InterviewerMode>('recruiter') // Default: Sarah - Recruiter Practice
   const [targetRole, setTargetRole] = useState(candidateContext.role || 'Business Analyst')
   const [callStatus, setCallStatus] = useState<'setup' | 'connected' | 'completed'>('setup')
   const [turns, setTurns] = useState<ConversationTurn[]>([])
   const [currentDifficulty, setCurrentDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate')
-  const [currentCategory, setCurrentCategory] = useState<ConversationTurn['category']>('intro')
 
   // Audio & Input State
   const [isAiSpeaking, setIsAiSpeaking] = useState(false)
@@ -88,7 +96,7 @@ export default function VoiceScreening() {
     }
   }, [turns, candidateSpeechBuffer])
 
-  // Call duration counter
+  // 15-Minute timer duration counter
   useEffect(() => {
     let interval: any
     if (callStatus === 'connected') {
@@ -170,9 +178,8 @@ export default function VoiceScreening() {
     setDuration(0)
     setTurns([])
     setCurrentDifficulty('intermediate')
-    setCurrentCategory('intro')
 
-    const initialGreeting = AiVoicePracticeService.getInitialGreeting(candidateContext, targetRole)
+    const initialGreeting = AiVoicePracticeService.getInitialGreeting(candidateContext, targetRole, interviewerMode)
     const firstTurn: ConversationTurn = {
       id: `turn-${Date.now()}-ai`,
       speaker: 'ai',
@@ -204,7 +211,7 @@ export default function VoiceScreening() {
     const candidateTurn: ConversationTurn = {
       id: `turn-${Date.now()}-cand`,
       speaker: 'candidate',
-      text: answerText || (overrideAction === 'repeat' ? 'Could you please repeat the question?' : 'Could you clarify the question?'),
+      text: answerText || (overrideAction === 'repeat' ? 'Could you please repeat the question?' : 'Could you clarify what you mean?'),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
 
@@ -219,11 +226,11 @@ export default function VoiceScreening() {
         candidateContext,
         targetRole,
         currentDifficulty,
-        overrideAction || 'normal'
+        overrideAction || 'normal',
+        interviewerMode
       )
 
       setCurrentDifficulty(nextQ.difficulty)
-      if (nextQ.category) setCurrentCategory(nextQ.category)
 
       const aiTurn: ConversationTurn = {
         id: `turn-${Date.now()}-ai`,
@@ -235,7 +242,6 @@ export default function VoiceScreening() {
         analysis: nextQ.analysis
       }
 
-      // If previous candidate turn had analysis, attach it
       if (nextQ.analysis) {
         candidateTurn.analysis = nextQ.analysis
       }
@@ -254,13 +260,14 @@ export default function VoiceScreening() {
     setIsAiSpeaking(false)
 
     // Generate structured diagnostics
-    const result = AiVoicePracticeService.generateEvaluation(turns, candidateContext, targetRole)
+    const result = AiVoicePracticeService.generateEvaluation(turns, candidateContext, targetRole, interviewerMode)
     setEvaluation(result)
     setCallStatus('completed')
 
     window.scrollTo({ top: 0, behavior: 'smooth' })
 
-    const closingVoiceMessage = `Great job on completing your ${targetRole} practice interview. Your overall practice score is ${result.overallScore} out of 100. Review your detailed diagnostic feedback below.`
+    const personaName = interviewerMode === 'recruiter' ? 'Sarah' : 'Alex'
+    const closingVoiceMessage = `Great job on completing your 15-minute mock interview with ${personaName}. Your overall practice score is ${result.overallScore} out of 100. Review your detailed feedback breakdown below.`
     setTimeout(() => {
       speakText(closingVoiceMessage)
     }, 400)
@@ -270,19 +277,27 @@ export default function VoiceScreening() {
   const getCategoryBadge = (cat?: ConversationTurn['category']) => {
     switch (cat) {
       case 'intro':
-        return { label: 'Introduction & Background', color: 'bg-blue-50 text-blue-700 border-blue-200' }
+        return { label: 'Introduction & Availability', color: 'bg-blue-50 text-blue-700 border-blue-200' }
       case 'project_deepdive':
-        return { label: 'Project Architecture & Decisions', color: 'bg-purple-50 text-purple-700 border-purple-200' }
+        return { label: 'Recent Accomplishment & Impact', color: 'bg-purple-50 text-purple-700 border-purple-200' }
+      case 'motivation':
+        return { label: 'Career Transition & Motivation', color: 'bg-amber-50 text-amber-700 border-amber-200' }
+      case 'compensation':
+        return { label: 'Compensation & Salary Framing', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+      case 'notice_period':
+        return { label: 'Notice Period & Early Buyout', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
+      case 'work_mode':
+        return { label: 'Work Mode & Location Preference', color: 'bg-teal-50 text-teal-700 border-teal-200' }
       case 'technical':
-        return { label: 'Role-Specific Technical Competency', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+        return { label: 'Domain & Technical Competency', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
       case 'behavioral':
-        return { label: 'Behavioral & STAR Scenario', color: 'bg-amber-50 text-amber-700 border-amber-200' }
+        return { label: 'Cultural Fit & Team Dynamics', color: 'bg-amber-50 text-amber-700 border-amber-200' }
       case 'situational':
-        return { label: 'Situational & Ambiguity Handling', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
+        return { label: 'Situational Decision Making', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
       case 'candidate_q':
-        return { label: 'Candidate Q&A & Wrap-Up', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' }
+        return { label: 'Questions for Recruiter', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' }
       default:
-        return { label: 'Interview Question', color: 'bg-slate-100 text-slate-700 border-slate-200' }
+        return { label: 'Screening Question', color: 'bg-slate-100 text-slate-700 border-slate-200' }
     }
   }
 
@@ -290,26 +305,26 @@ export default function VoiceScreening() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300 pb-16">
-      {/* Header Banner */}
+      {/* Top Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              AI Voice Interview Practice
+              AI Voice Interview Practice Studio
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">
-              Mock Simulation
+              15-Min Simulation
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Adaptive AI interviewer that listens to your responses, probes deeper into your projects, and dynamically adjusts difficulty.
+            Practice realistic phone screening calls and technical interviews with AI talent partners. Improve your delivery, salary framing, and confidence.
           </p>
         </div>
 
-        {/* Practice Notice */}
+        {/* Practice Guarantee Badge */}
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold shrink-0">
           <Shield size={14} className="text-amber-600" />
-          <span>Candidate Practice Only · No Real Hiring Decision</span>
+          <span>Practice Only · No Real Hiring Decision</span>
         </div>
       </div>
 
@@ -323,18 +338,91 @@ export default function VoiceScreening() {
               <Bot size={40} />
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-              Start Realistic AI Voice Interview Simulation
+              Select Your 15-Minute AI Mock Practice Session
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              The AI interviewer will ask realistic questions, evaluate your technical claims (e.g. models, tools, architectures), and ask dynamic follow-ups based on what you say.
+              Choose your practice persona to simulate realistic preliminary recruiter screening calls with Sarah or deep-dive technical rounds with Alex.
             </p>
           </div>
 
-          {/* Role & Setup Card */}
-          <div className="max-w-lg mx-auto bg-slate-50 border border-slate-200/80 rounded-2xl p-6 space-y-4">
+          {/* Persona Selection Tabs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+            {/* Sarah - Recruiter Screening */}
+            <button
+              type="button"
+              id="selectSarahRecruiterBtn"
+              onClick={() => setInterviewerMode('recruiter')}
+              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative overflow-hidden ${
+                interviewerMode === 'recruiter'
+                  ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-200'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-extrabold shrink-0 shadow-md">
+                  👩‍💼
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-sm text-slate-900">Sarah</h3>
+                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
+                      Recruiter Call
+                    </span>
+                  </div>
+                  <div className="text-xs font-bold text-indigo-700">RAS AI Talent Partner</div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed pt-1">
+                    Master 15-min HR phone screens, salary negotiation discussions, notice period flexibility, and career transition stories.
+                  </p>
+                </div>
+              </div>
+              {interviewerMode === 'recruiter' && (
+                <div className="absolute top-3 right-3 text-indigo-600 font-extrabold text-xs flex items-center gap-1">
+                  <CheckCircle2 size={16} />
+                </div>
+              )}
+            </button>
+
+            {/* Alex - Technical Mock Interview */}
+            <button
+              type="button"
+              id="selectAlexTechBtn"
+              onClick={() => setInterviewerMode('technical')}
+              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative overflow-hidden ${
+                interviewerMode === 'technical'
+                  ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-200'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-extrabold shrink-0 shadow-md">
+                  👨‍💻
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-sm text-slate-900">Alex</h3>
+                    <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[10px] font-extrabold">
+                      Tech & System
+                    </span>
+                  </div>
+                  <div className="text-xs font-bold text-indigo-700">Senior AI Technical Lead</div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed pt-1">
+                    Practice deep technical architecture, algorithmic decisions (XGBoost, Snowflake, Redis), trade-offs, and STAR scenarios.
+                  </p>
+                </div>
+              </div>
+              {interviewerMode === 'technical' && (
+                <div className="absolute top-3 right-3 text-indigo-600 font-extrabold text-xs flex items-center gap-1">
+                  <CheckCircle2 size={16} />
+                </div>
+              )}
+            </button>
+          </div>
+
+          {/* Role & Context Card */}
+          <div className="max-w-xl mx-auto bg-slate-50 border border-slate-200/80 rounded-3xl p-6 space-y-4">
             <div className="space-y-1.5">
               <label htmlFor="targetRoleSelect" className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-                Select Your Target Job Role
+                Target Role for This Mock Practice
               </label>
               <select
                 id="targetRoleSelect"
@@ -350,54 +438,25 @@ export default function VoiceScreening() {
               </select>
             </div>
 
-            {/* Candidate Sourced Metadata Preview */}
-            <div className="pt-2 border-t border-slate-200/80 space-y-2 text-xs">
-              <div className="flex items-center justify-between text-slate-600">
-                <span>Practicing Candidate:</span>
-                <span className="font-extrabold text-slate-900">{candidateContext.name}</span>
+            {/* Candidate Metadata Summary */}
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/80 text-xs">
+              <div>
+                <span className="text-[11px] text-slate-500">Candidate Name:</span>
+                <div className="font-extrabold text-slate-900">{candidateContext.name}</div>
               </div>
-              <div className="flex items-center justify-between text-slate-600">
-                <span>Experience Sourced:</span>
-                <span className="font-extrabold text-slate-900">{candidateContext.experienceYears}+ Years</span>
+              <div>
+                <span className="text-[11px] text-slate-500">Total Experience:</span>
+                <div className="font-extrabold text-slate-900">
+                  {candidateContext.experienceYears === 0 ? 'Fresher (0 Yrs)' : `${candidateContext.experienceYears} Years`}
+                </div>
               </div>
-              <div className="flex items-center justify-between text-slate-600">
-                <span>Key Profile Skills:</span>
-                <span className="font-bold text-indigo-700 truncate max-w-[240px]">
-                  {candidateContext.skills.slice(0, 4).join(', ')}
-                </span>
+              <div>
+                <span className="text-[11px] text-slate-500">Notice Period:</span>
+                <div className="font-extrabold text-slate-900">{candidateContext.noticePeriod}</div>
               </div>
-            </div>
-          </div>
-
-          {/* Feature Highlights Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto text-xs">
-            <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 space-y-1.5">
-              <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">
-                <Brain size={16} />
-              </div>
-              <div className="font-black text-slate-900">Dynamic Follow-Up Logic</div>
-              <div className="text-slate-600 leading-relaxed">
-                If you mention a framework or project (e.g. <em>"built with XGBoost"</em>), the AI asks why you chose it.
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 space-y-1.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
-                <TrendingUp size={16} />
-              </div>
-              <div className="font-black text-slate-900">Adaptive Difficulty</div>
-              <div className="text-slate-600 leading-relaxed">
-                Seamlessly moves between Beginner, Intermediate, and Advanced scenarios based on your answers.
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-100 space-y-1.5">
-              <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold">
-                <Award size={16} />
-              </div>
-              <div className="font-black text-slate-900">Diagnostic Rubric Scoring</div>
-              <div className="text-slate-600 leading-relaxed">
-                Get scored on Communication, Technical Knowledge, Problem Solving, and STAR answer depth.
+              <div>
+                <span className="text-[11px] text-slate-500">Target CTC:</span>
+                <div className="font-extrabold text-indigo-700">{candidateContext.expectedCtc}</div>
               </div>
             </div>
           </div>
@@ -411,7 +470,9 @@ export default function VoiceScreening() {
               className="px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm sm:text-base flex items-center gap-3 shadow-xl shadow-indigo-200 transition-all hover:scale-105 cursor-pointer"
             >
               <Phone size={20} />
-              <span>Launch AI Voice Practice Session</span>
+              <span>
+                Start 15-Min Voice Practice with {interviewerMode === 'recruiter' ? 'Sarah' : 'Alex'}
+              </span>
             </button>
           </div>
         </div>
@@ -426,8 +487,8 @@ export default function VoiceScreening() {
           <div className="bg-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold">
-                  <Bot size={24} />
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl">
+                  {interviewerMode === 'recruiter' ? '👩‍💼' : '👨‍💻'}
                 </div>
                 {isAiSpeaking && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-400 border-2 border-slate-900 rounded-full animate-ping" />
@@ -437,19 +498,22 @@ export default function VoiceScreening() {
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-base sm:text-lg font-black text-white">
-                    Alex — Senior AI Interviewer
+                    {interviewerMode === 'recruiter' ? 'Sarah — RAS AI Talent Partner' : 'Alex — Senior AI Interviewer'}
                   </h2>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                    Live Call ({formatTime(duration)})
+                    Live Call ({formatTime(duration)} / 15:00)
                   </span>
                 </div>
                 <p className="text-xs text-slate-300">
-                  Practicing Role: <strong className="text-white">{targetRole}</strong>
+                  Practicing Role: <strong className="text-white">{targetRole}</strong> ·{' '}
+                  <span className="text-indigo-300">
+                    {interviewerMode === 'recruiter' ? 'Recruiter Phone Screening Mode' : 'Technical Simulation Mode'}
+                  </span>
                 </p>
               </div>
             </div>
 
-            {/* Difficulty & Stage Pills */}
+            {/* Difficulty & Controls */}
             <div className="flex items-center gap-2 flex-wrap">
               <span className="px-3 py-1 rounded-xl text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700 flex items-center gap-1.5">
                 <Sliders size={13} className="text-indigo-400" />
@@ -515,7 +579,9 @@ export default function VoiceScreening() {
                   <span className="w-1.5 h-5 bg-indigo-600 rounded-full animate-bounce" />
                   <span className="w-1.5 h-7 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.25s]" />
                   <span className="w-1.5 h-3 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.1s]" />
-                  <span className="text-[11px] font-bold text-indigo-700 ml-1.5">AI Voice Synthesis Streaming</span>
+                  <span className="text-[11px] font-bold text-indigo-700 ml-1.5">
+                    {interviewerMode === 'recruiter' ? 'Sarah' : 'Alex'} is speaking...
+                  </span>
                 </div>
               )}
 
@@ -556,7 +622,11 @@ export default function VoiceScreening() {
               rows={4}
               value={candidateSpeechBuffer}
               onChange={(e) => setCandidateSpeechBuffer(e.target.value)}
-              placeholder="Speak via your microphone or type your response here... The AI will evaluate your technical claims, reasoning, and metrics."
+              placeholder={
+                interviewerMode === 'recruiter'
+                  ? 'Speak or type your answer... Practice articulating your background, salary range, notice period flexibility, and career motivations.'
+                  : 'Speak via your microphone or type your response here... The AI will evaluate your technical claims, reasoning, and metrics.'
+              }
               className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none leading-relaxed"
             />
 
@@ -632,7 +702,7 @@ export default function VoiceScreening() {
           <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-2xs space-y-4">
             <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
               <MessageSquare size={14} className="text-indigo-600" />
-              <span>Live Interview Transcript & Keyword Highlights</span>
+              <span>Live Interview Transcript & Highlights</span>
             </h3>
 
             <div
@@ -650,15 +720,17 @@ export default function VoiceScreening() {
                 >
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="font-extrabold text-slate-900 flex items-center gap-1">
-                      {turn.speaker === 'ai' ? <Bot size={13} className="text-indigo-600" /> : <User size={13} className="text-indigo-700" />}
-                      <span>{turn.speaker === 'ai' ? 'Alex (AI Interviewer)' : 'You (Candidate)'}</span>
+                      {turn.speaker === 'ai' ? (
+                        <span>{interviewerMode === 'recruiter' ? '👩‍💼 Sarah (RAS AI Talent Partner)' : '👨‍💻 Alex (AI Interviewer)'}</span>
+                      ) : (
+                        <span className="flex items-center gap-1"><User size={13} className="text-indigo-700" /> You (Candidate)</span>
+                      )}
                     </span>
                     <span className="text-slate-400">{turn.timestamp}</span>
                   </div>
 
                   <p className="text-slate-700 leading-relaxed font-normal">{turn.text}</p>
 
-                  {/* Identified Keywords Chips */}
                   {turn.analysis && turn.analysis.identifiedKeywords.length > 0 && (
                     <div className="flex items-center gap-1 flex-wrap pt-1">
                       <span className="text-[10px] text-slate-400 font-semibold">Analyzed keywords:</span>
@@ -686,11 +758,11 @@ export default function VoiceScreening() {
             <div className="space-y-2 max-w-xl">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                 <CheckCircle2 size={13} />
-                <span>Practice Session Completed</span>
+                <span>15-Min Practice Session Completed</span>
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                Interview Performance Diagnostics
+                {evaluation.interviewerName} — Feedback Diagnostics
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
                 {evaluation.performanceSummary}
@@ -705,7 +777,7 @@ export default function VoiceScreening() {
                 <span className="text-xl text-slate-400 font-normal">/100</span>
               </div>
               <div className="text-[11px] font-extrabold text-slate-300 pt-1">
-                {evaluation.overallScore >= 80 ? '⭐ Strong Readiness' : evaluation.overallScore >= 65 ? '📈 Solid Foundation' : '💡 Needs Practice'}
+                {evaluation.overallScore >= 80 ? '⭐ Excellent Readiness' : evaluation.overallScore >= 65 ? '📈 Solid Performance' : '💡 Practice Needed'}
               </div>
             </div>
           </div>
@@ -713,7 +785,7 @@ export default function VoiceScreening() {
           {/* 5-Metric Category Rubric Breakdown */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
             <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1.5">
-              <span className="text-slate-500 font-bold">Communication</span>
+              <span className="text-slate-500 font-bold">{evaluation.categoryLabels.category1}</span>
               <div className="text-xl font-extrabold text-slate-900">{evaluation.categoryScores.communication}%</div>
               <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                 <div className="bg-blue-600 h-full rounded-full" style={{ width: `${evaluation.categoryScores.communication}%` }} />
@@ -721,23 +793,23 @@ export default function VoiceScreening() {
             </div>
 
             <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1.5">
-              <span className="text-slate-500 font-bold">Tech Knowledge</span>
-              <div className="text-xl font-extrabold text-slate-900">{evaluation.categoryScores.technicalKnowledge}%</div>
+              <span className="text-slate-500 font-bold">{evaluation.categoryLabels.category2}</span>
+              <div className="text-xl font-extrabold text-slate-900">{evaluation.categoryScores.technicalOrCompensation}%</div>
               <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                <div className="bg-emerald-600 h-full rounded-full" style={{ width: `${evaluation.categoryScores.technicalKnowledge}%` }} />
+                <div className="bg-emerald-600 h-full rounded-full" style={{ width: `${evaluation.categoryScores.technicalOrCompensation}%` }} />
               </div>
             </div>
 
             <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1.5">
-              <span className="text-slate-500 font-bold">Problem Solving</span>
-              <div className="text-xl font-extrabold text-slate-900">{evaluation.categoryScores.problemSolving}%</div>
+              <span className="text-slate-500 font-bold">{evaluation.categoryLabels.category3}</span>
+              <div className="text-xl font-extrabold text-slate-900">{evaluation.categoryScores.problemSolvingOrMotivation}%</div>
               <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                <div className="bg-purple-600 h-full rounded-full" style={{ width: `${evaluation.categoryScores.problemSolving}%` }} />
+                <div className="bg-purple-600 h-full rounded-full" style={{ width: `${evaluation.categoryScores.problemSolvingOrMotivation}%` }} />
               </div>
             </div>
 
             <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1.5">
-              <span className="text-slate-500 font-bold">Answer Depth</span>
+              <span className="text-slate-500 font-bold">{evaluation.categoryLabels.category4}</span>
               <div className="text-xl font-extrabold text-slate-900">{evaluation.categoryScores.answerDepth}%</div>
               <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                 <div className="bg-amber-600 h-full rounded-full" style={{ width: `${evaluation.categoryScores.answerDepth}%` }} />
@@ -745,7 +817,7 @@ export default function VoiceScreening() {
             </div>
 
             <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1.5 col-span-2 sm:col-span-1">
-              <span className="text-slate-500 font-bold">STAR Structure</span>
+              <span className="text-slate-500 font-bold">{evaluation.categoryLabels.category5}</span>
               <div className="text-xl font-extrabold text-slate-900">{evaluation.categoryScores.confidenceAndStructure}%</div>
               <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                 <div className="bg-indigo-600 h-full rounded-full" style={{ width: `${evaluation.categoryScores.confidenceAndStructure}%` }} />
@@ -867,7 +939,7 @@ export default function VoiceScreening() {
                 onClick={() => setCallStatus('setup')}
                 className="w-full sm:w-auto text-xs font-bold border-indigo-200 text-indigo-700"
               >
-                <span>Change Target Role</span>
+                <span>Change Persona & Role</span>
               </Button>
 
               <Button
@@ -879,7 +951,7 @@ export default function VoiceScreening() {
                 className="w-full sm:w-auto text-xs font-extrabold bg-indigo-600 hover:bg-indigo-700 border-none shadow-md"
               >
                 <RotateCcw size={14} />
-                <span>Practice Another Interview</span>
+                <span>Practice Another Session</span>
               </Button>
             </div>
           </div>
