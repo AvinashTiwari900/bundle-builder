@@ -588,7 +588,9 @@ export default function ProfilePage() {
                       <span>•</span>
                       <span className="flex items-center gap-1">
                         <Clock size={13} className="text-slate-400" />
-                        {profile.totalExperienceYears || profile.experienceYears || 6.5} Yrs Experience
+                        {(profile.totalExperienceYears ?? profile.experienceYears ?? 0) === 0
+                          ? '0 Yrs (Fresher)'
+                          : `${profile.totalExperienceYears ?? profile.experienceYears ?? 0} Yrs Experience`}
                       </span>
                     </div>
                   </div>
@@ -1234,14 +1236,43 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
+                  <label htmlFor="totalExperienceInput" className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
                     Total Experience (Years)
                   </label>
                   <Input
+                    id="totalExperienceInput"
                     type="number"
-                    value={form.totalExperienceYears || form.experienceYears || 6.5}
-                    onChange={(e) => setForm({ ...form, totalExperienceYears: Number(e.target.value), experienceYears: Number(e.target.value) })}
+                    min={0}
+                    max={50}
+                    step={0.5}
+                    placeholder="0"
+                    value={
+                      form.totalExperienceYears !== undefined && form.totalExperienceYears !== null
+                        ? form.totalExperienceYears
+                        : (form.experienceYears !== undefined && form.experienceYears !== null ? form.experienceYears : 0)
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                        e.preventDefault()
+                      }
+                    }}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      if (raw === '') {
+                        setForm({ ...form, totalExperienceYears: 0, experienceYears: 0 })
+                      } else {
+                        const num = Math.max(0, Math.min(50, parseFloat(raw) || 0))
+                        setForm({ ...form, totalExperienceYears: num, experienceYears: num })
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const num = Math.max(0, Math.min(50, parseFloat(e.target.value) || 0))
+                      setForm({ ...form, totalExperienceYears: num, experienceYears: num })
+                    }}
                   />
+                  <span className="text-[10px] text-slate-400 mt-1 block">
+                    Enter positive years (e.g. 0 for Fresher, 2.5, 5)
+                  </span>
                 </div>
               </div>
 

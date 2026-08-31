@@ -47,6 +47,19 @@ export const profileService = {
       const parsed = JSON.parse(raw)
       if (parsed) {
         parsed.socials = parsed.socials || {}
+
+        // Normalize experience years to always be non-negative
+        if (parsed.totalExperienceYears !== undefined && parsed.totalExperienceYears !== null) {
+          parsed.totalExperienceYears = Math.max(0, Math.min(50, Number(parsed.totalExperienceYears) || 0))
+          parsed.experienceYears = parsed.totalExperienceYears
+        } else if (parsed.experienceYears !== undefined && parsed.experienceYears !== null) {
+          parsed.experienceYears = Math.max(0, Math.min(50, Number(parsed.experienceYears) || 0))
+          parsed.totalExperienceYears = parsed.experienceYears
+        } else {
+          parsed.totalExperienceYears = 0
+          parsed.experienceYears = 0
+        }
+
         // Normalize social URLs so they are never lost between formats
         parsed.githubUrl = parsed.githubUrl !== undefined ? parsed.githubUrl : (parsed.socials.github || '')
         parsed.linkedinUrl = parsed.linkedinUrl !== undefined ? parsed.linkedinUrl : (parsed.socials.linkedin || '')
@@ -56,6 +69,7 @@ export const profileService = {
           linkedin: parsed.linkedinUrl,
           portfolioUrl: parsed.portfolioUrl
         }
+
         // Ensure arrays exist
         parsed.education = parsed.education || [
           {
@@ -80,33 +94,34 @@ export const profileService = {
         parsed.experience = parsed.experience || [
           {
             id: 'exp-01',
-            company: 'FinScale Technologies',
-            position: 'Lead Business Analyst',
+            company: 'Northstar Analytics Corp',
+            position: 'Lead Business Analyst & Analytics Engineer',
             location: 'Bengaluru, India',
             workType: 'Hybrid',
-            startDate: '2022-04-01',
+            startDate: '2021-08',
+            endDate: '',
             isCurrent: true,
-            description: 'Spearheaded automated reconciliation pipelines across ₹800 Cr monthly GMV, cutting end-of-day discrepancy resolution from 4 hours to 6 minutes.',
-            skillsUsed: ['Snowflake', 'SQL', 'dbt', 'Power BI', 'Agile']
+            description: 'Leading data transformation initiatives, automated reconciliation engines, and executive dashboard strategies across cross-functional engineering teams.',
+            skillsUsed: ['SQL', 'Snowflake', 'Python', 'dbt', 'Power BI']
           },
           {
             id: 'exp-02',
-            company: 'Cognizant Technology Solutions',
-            position: 'Senior Systems Analyst',
-            location: 'Pune, India',
+            company: 'FinApex Solutions Ltd',
+            position: 'Senior Systems & Data Analyst',
+            location: 'Mumbai, India',
             workType: 'On-site',
-            startDate: '2019-06-01',
-            endDate: '2022-03-31',
+            startDate: '2019-06',
+            endDate: '2021-07',
             isCurrent: false,
-            description: 'Authored technical specification documents and oversaw 14 sprints for cloud payment gateway integration.',
-            skillsUsed: ['Business Analysis', 'Jira', 'SQL', 'UML Modeling']
+            description: 'Engineered automated ETL pipelines for payment reconciliation, slashing batch exception investigation time by 75%.',
+            skillsUsed: ['PostgreSQL', 'Python', 'JIRA', 'Agile']
           }
         ]
         parsed.projects = parsed.projects || [
           {
             id: 'proj-01',
-            title: 'Automated Payment Reconciliation Engine',
-            description: 'A cloud-native telemetry pipeline delivering real-time anomaly detection and ledger settlement on Snowflake and dbt.',
+            title: 'Real-Time Payment Reconciliation Engine',
+            description: 'Distributed microservice pipeline synchronizing 10M+ daily payment gateway transactions with zero reconciliation slippage.',
             role: 'Lead Architect & Business Analyst',
             technologies: ['Snowflake', 'dbt', 'SQL', 'Python', 'Power BI'],
             liveUrl: 'https://avinash-tiwari.dev/projects/payment-recon',
@@ -132,6 +147,14 @@ export const profileService = {
 
   save(profile: any) {
     if (profile) {
+      if (profile.totalExperienceYears !== undefined && profile.totalExperienceYears !== null) {
+        profile.totalExperienceYears = Math.max(0, Math.min(50, Number(profile.totalExperienceYears) || 0))
+        profile.experienceYears = profile.totalExperienceYears
+      } else if (profile.experienceYears !== undefined && profile.experienceYears !== null) {
+        profile.experienceYears = Math.max(0, Math.min(50, Number(profile.experienceYears) || 0))
+        profile.totalExperienceYears = profile.experienceYears
+      }
+
       profile.githubUrl = profile.githubUrl !== undefined ? profile.githubUrl : (profile.socials?.github || '')
       profile.linkedinUrl = profile.linkedinUrl !== undefined ? profile.linkedinUrl : (profile.socials?.linkedin || '')
       profile.portfolioUrl = profile.portfolioUrl !== undefined ? profile.portfolioUrl : (profile.socials?.portfolioUrl || '')
@@ -162,4 +185,3 @@ export const profileService = {
     return updated
   }
 }
-

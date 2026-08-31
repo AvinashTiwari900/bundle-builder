@@ -324,7 +324,9 @@ export default function PortfolioPage() {
                   <span>•</span>
                   <span className="flex items-center gap-1">
                     <Briefcase size={13} className="text-slate-400" />
-                    {profile.totalExperienceYears || profile.experienceYears || 6.5}+ Yrs Experience
+                    {(profile.totalExperienceYears ?? profile.experienceYears ?? 0) === 0
+                      ? 'Fresher (Entry Level)'
+                      : `${profile.totalExperienceYears ?? profile.experienceYears ?? 0}+ Yrs Experience`}
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1">

@@ -482,9 +482,17 @@ export default function PortfolioSetupPage() {
                 </label>
                 <Input
                   type="number"
+                  min={0}
+                  max={50}
+                  step={0.5}
                   value={experienceYears}
-                  onChange={(e) => setExperienceYears(Number(e.target.value))}
-                  placeholder="0 for students"
+                  onKeyDown={(e) => {
+                    if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                      e.preventDefault()
+                    }
+                  }}
+                  onChange={(e) => setExperienceYears(Math.max(0, Math.min(50, parseFloat(e.target.value) || 0)))}
+                  placeholder="0 for students / freshers"
                 />
               </div>
 
