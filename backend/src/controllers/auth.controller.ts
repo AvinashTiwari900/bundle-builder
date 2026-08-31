@@ -123,15 +123,25 @@ export class AuthController {
       return res.status(404).json({ success: false, message: 'Profile not found.' })
     }
 
+    const { name, email, ...rest } = req.body
+
+    // Sync name in user table if changed
+    if (name) {
+      const user = db.users.find((u) => u.id === userId)
+      if (user) user.name = name
+    }
+
     db.profiles[profileIndex] = {
       ...db.profiles[profileIndex],
-      ...req.body,
+      ...rest,
+      name: name || db.profiles[profileIndex].name,
+      email: email || db.profiles[profileIndex].email,
       updatedAt: new Date().toISOString()
     }
 
     return res.status(200).json({
       success: true,
-      message: 'Profile updated successfully.',
+      message: 'Candidate Profile & Career Details saved successfully! 🎉',
       profile: db.profiles[profileIndex]
     })
   }

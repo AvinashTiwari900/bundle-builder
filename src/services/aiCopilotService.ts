@@ -34,20 +34,21 @@ export interface CopilotResponse {
 }
 
 export const AI_QUICK_ACTIONS = [
+  { label: '🎙️ Next Question Guide', query: 'How do I move to the next question in Interview Studio?' },
+  { label: '🛡️ Anti-Cheating Rules', query: 'How does suspicious activity and tab monitoring work?' },
+  { label: '📍 Job Search & Remote/Hybrid', query: 'How do I search jobs by location and work mode?' },
+  { label: '🤝 Connect with Professionals', query: 'How do I connect with peers and view their profiles?' },
+  { label: '✏️ Edit Career Profile', query: 'How do I edit my profile, experience, and privacy?' },
   { label: '🌐 Create Portfolio', query: 'How do I create my portfolio?' },
   { label: '📊 Improve ATS Score', query: 'How do I improve my ATS score?' },
   { label: '💼 Apply for Jobs', query: 'How do I find and apply for jobs?' },
   { label: '🎥 Meetings & Records', query: 'How do I start or schedule a meeting?' },
   { label: '🔴 Record & Transcripts', query: 'How do I record a meeting and export transcripts?' },
-  { label: '🎙️ Practice Interview', query: 'How do I prepare for an interview in Interview Studio?' },
   { label: '📞 AI Voice Screening', query: 'How do I take the AI Voice Screening call?' },
   { label: '⚡ Auto Apply Engine', query: 'How do I use Auto Apply and configure alerts?' },
   { label: '🛡️ KYC Documents & OTP', query: 'How do I upload KYC documents with OTP?' },
-  { label: '📁 Add Project Showcase', query: 'How do I add a project or case study?' },
   { label: '📋 Application Stages (11)', query: 'How do I track my applications through the 11 stages?' },
-  { label: '📰 Community Posts', query: 'How do I add a post to the community feed?' },
-  { label: '🔒 Privacy Shield', query: 'How does Contact Privacy Shield hide my details?' },
-  { label: '⭐ Company Hiring Ratings', query: 'Explain company hiring ratings and hiring periods' }
+  { label: '📰 Community Posts', query: 'How do I add a post to the community feed?' }
 ]
 
 export const aiCopilotService = {
@@ -59,6 +60,153 @@ export const aiCopilotService = {
     const portfolio = portfolioService.get()
     const apps = profile.applications || []
     const meetings = meetingService.getMeetings()
+
+    // =========================================================================
+    // 0. INTERVIEW STUDIO: NEXT QUESTION & ADVANCING FLOW
+    // =========================================================================
+    if (
+      q.includes('next question') ||
+      q.includes('advance question') ||
+      q.includes('finish interview') ||
+      q.includes('how to complete interview') ||
+      q.includes('move to next')
+    ) {
+      return {
+        text: `### How to Advance Questions & Complete Your Session in Interview Studio\n\n` +
+          `Interview Studio uses **single-question delivery** so you can focus entirely on delivering structured responses without distraction.\n\n` +
+          `**Question Flow:**\n` +
+          `1. **Active Prompt Display** — Only the active question is shown on screen. Future questions remain concealed until you reach them.\n` +
+          `2. **Speak Your Response** — Deliver your answer into your microphone. The live speech buffer captures your articulation.\n` +
+          `3. **Click "Next Question →"** — Click the clearly visible **Next Question** button to save your response transcript and advance to the next prompt.\n` +
+          `4. **Finish Interview** — On the final question, the button switches to **Finish Interview**. Clicking it concludes the session and instantly renders your complete Performance Diagnostics dossier.\n\n` +
+          `💡 **Pro Tip**: You can also use the optional "Show Current Question" drawer to view coaching tips and target competency breakdowns for the active question.`,
+        suggestedRoute: '/interview/practice',
+        card: {
+          type: 'navigation',
+          title: 'Launch Interview Studio',
+          actionUrl: '/interview/practice',
+          actionLabel: 'Open Studio'
+        },
+        quickActions: [
+          { label: 'Explain Monitoring Rules', query: 'How does suspicious activity and tab monitoring work?' },
+          { label: 'AI Voice Screening', query: 'How do I take the AI Voice Screening call?' }
+        ]
+      }
+    }
+
+    // =========================================================================
+    // 0B. INTERVIEW STUDIO: SUSPICIOUS ACTIVITY & TAB MONITORING RULES
+    // =========================================================================
+    if (
+      q.includes('suspicious') ||
+      q.includes('anti-cheating') ||
+      q.includes('monitoring') ||
+      q.includes('tab change') ||
+      q.includes('tab switch') ||
+      q.includes('warning') ||
+      q.includes('strike') ||
+      q.includes('proctoring')
+    ) {
+      return {
+        text: `### Interview Studio Anti-Cheating & Monitoring Rules\n\n` +
+          `Interview Studio features a balanced real-time proctoring engine that protects academic integrity while preventing false positives.\n\n` +
+          `**Key Detection Heuristics:**\n` +
+          `• **Normal Movements Are Safe**: Thinking pauses, brief downward glances, normal head tilting, adjusting glasses/hair, and brief lighting shifts are **never penalized**.\n` +
+          `• **Suspicious Attention Deviation**: Looking away from the screen continuously for **>4.0 seconds** triggers an alert.\n` +
+          `• **Face Absence**: Completely stepping away from camera for **>5.0 seconds** triggers an alert.\n` +
+          `• **Tab Switch Monitoring**: Leaving the active interview window registers a tab change.\n\n` +
+          `**Progressive 3-Strike Warning Ladder:**\n` +
+          `1. **Incident 1 — Warning 1 of 2**: Screen alert reminding you to stay focused on camera. Session continues smoothly.\n` +
+          `2. **Incident 2 — Final Warning**: High-priority alert notifying you that one more confirmed occurrence will end the interview.\n` +
+          `3. **Incident 3 — Session Disqualification**: The interview terminates automatically and generates a detailed Incident Audit Log for review.\n\n` +
+          `💡 **Continuous Event Protection**: A 10-second cooldown ensures that sustained behavior (e.g. looking away for 15s) is recorded as **1 incident, not 3**.`,
+        suggestedRoute: '/interview/practice',
+        card: {
+          type: 'navigation',
+          title: 'Interview Studio Proctoring Rules',
+          actionUrl: '/interview/practice',
+          actionLabel: 'Review Studio Guidelines'
+        },
+        quickActions: [
+          { label: 'Next Question Flow', query: 'How do I move to the next question in Interview Studio?' },
+          { label: 'Start Practice Session', query: 'How do I prepare for an interview in Interview Studio?' }
+        ]
+      }
+    }
+
+    // =========================================================================
+    // 0C. EXPLORE JOBS: LOCATION & WORK MODE (REMOTE/HYBRID/ON-SITE)
+    // =========================================================================
+    if (
+      q.includes('search by location') ||
+      q.includes('remote jobs') ||
+      q.includes('hybrid jobs') ||
+      q.includes('work mode') ||
+      q.includes('ahmedabad') ||
+      q.includes('mumbai') ||
+      q.includes('bengaluru') ||
+      q.includes('delhi') ||
+      q.includes('pune') ||
+      q.includes('hyderabad')
+    ) {
+      return {
+        text: `### How to Search Jobs by Location & Work Mode (Remote / Hybrid / On-site)\n\n` +
+          `Explore Jobs features dedicated filters for granular geographic targeting and flexible work arrangements.\n\n` +
+          `**How to Filter:**\n` +
+          `1. **Location Search Bar** — Type any city (*Ahmedabad*, *Mumbai*, *Bengaluru*, *Pune*, *Delhi NCR*, *Hyderabad*), State (*Gujarat*, *Maharashtra*), or *India* in the location field.\n` +
+          `2. **Work Mode Selector** — Filter by **🌐 Remote**, **🔄 Hybrid**, or **🏢 On-site**.\n` +
+          `3. **Clear Badges on Cards** — Every job card prominently displays both the location pin (\`📍 Ahmedabad\`) and work mode badge (\`🌐 Remote\`).\n` +
+          `4. **Priority Ranking** — Search queries prioritizing your chosen location appear at the very top of results.\n\n` +
+          `💡 **Verified Employer SLA**: All listed jobs include verified recruiter response times (e.g., *99% Response Rate in < 12 hrs*).`,
+        suggestedRoute: '/jobs',
+        card: {
+          type: 'navigation',
+          title: 'Explore Jobs with Location & Work Mode',
+          actionUrl: '/jobs',
+          actionLabel: 'Search Jobs'
+        },
+        quickActions: [
+          { label: 'Browse Remote Jobs', query: 'Show me remote jobs' },
+          { label: 'Browse Hybrid Roles', query: 'Show hybrid jobs' }
+        ]
+      }
+    }
+
+    // =========================================================================
+    // 0D. PROFESSIONAL NETWORKING & CONNECTIONS
+    // =========================================================================
+    if (
+      q.includes('connect with') ||
+      q.includes('connection request') ||
+      q.includes('my connections') ||
+      q.includes('discover people') ||
+      q.includes('view connected profile') ||
+      q.includes('networking') ||
+      q.includes('peer')
+    ) {
+      return {
+        text: `### Professional Networking & Connections Guide\n\n` +
+          `Build your peer network across tech, product, data, and fintech leaders on Gettin:\n\n` +
+          `**Networking Features:**\n` +
+          `1. **Send Connection Requests** — Click **+ Connect** on any user's profile or community post author card. Status updates to *Request Sent*.\n` +
+          `2. **Manage Connection Requests** — In **Connections Hub** (\`/connections\`), view **Incoming Requests** (with *Accept* and *Decline* buttons) and pending **Sent Requests** (with *Cancel Request*).\n` +
+          `3. **Browse Connected Profiles** — Open any connected user's profile to view their **Work Experience**, **Education**, **Projects**, **Public Portfolio**, and **Community Posts**.\n` +
+          `4. **Discover People** — Find professionals filtered by skills, target role, or location with 1-click connection.\n` +
+          `5. **Privacy Respect** — Your personal email and phone number remain masked according to your privacy settings.`,
+        suggestedRoute: '/connections',
+        card: {
+          type: 'navigation',
+          title: 'Connections & Professional Network',
+          actionUrl: '/connections',
+          actionLabel: 'Open Network Hub'
+        },
+        quickActions: [
+          { label: 'My Connections', query: 'Show my connections' },
+          { label: 'Discover People', query: 'Discover professionals to connect' },
+          { label: 'Community Feed', query: 'How do I add a post to the community feed?' }
+        ]
+      }
+    }
 
     // =========================================================================
     // 1. PORTFOLIO WORKFLOWS
@@ -76,7 +224,7 @@ export const aiCopilotService = {
           `Your public portfolio is your verified showcase presented to hiring panels and recruiters across the platform.\n\n` +
           `**Steps:**\n` +
           `1. **Step 1 — Open Portfolio**\n` +
-          `   Go to the left sidebar and click **Portfolio (Panel View)**.\n` +
+          `   Go to the left sidebar and click **Portfolio**.\n` +
           `2. **Step 2 — Click Edit or Setup**\n` +
           `   Click **"Edit Fields"** (or **"Launch Portfolio Setup Wizard"** if setting up for the first time).\n` +
           `3. **Step 3 — Enter Your Core Details**\n` +
@@ -364,38 +512,38 @@ export const aiCopilotService = {
     }
 
     // =========================================================================
-    // 6. AI VOICE SCREENING
+    // 6. AI VOICE INTERVIEW PRACTICE
     // =========================================================================
     if (
       q.includes('voice screening') ||
       q.includes('voice call') ||
-      q.includes('sarah') ||
-      q.includes('phone screening')
+      q.includes('voice practice') ||
+      q.includes('voice interview') ||
+      q.includes('mock call')
     ) {
       return {
-        text: `### How to Complete AI Voice HR Screening\n\n` +
+        text: `### 🎙️ How to Use AI Voice Interview Practice\n\n` +
+          `The **AI Voice Interview Practice Agent** helps you simulate realistic technical and behavioral interviews with dynamic, adaptive follow-up questioning.\n\n` +
           `**Steps:**\n` +
-          `1. **Step 1 — Open AI Voice Screening**\n` +
-          `   Go to the left sidebar and click **AI Voice Screening**.\n` +
-          `2. **Step 2 — Verify Audio & Mic**\n` +
-          `   Make sure your speakers/headphones and microphone are connected.\n` +
-          `3. **Step 3 — Start Screening Call**\n` +
-          `   Click **"Start Screening Call"** to connect with Sarah, the Gettin AI Talent Partner.\n` +
-          `4. **Step 4 — Answer Conversational Questions**\n` +
-          `   Sarah will ask you standard preliminary questions regarding your background, salary expectations, notice period, and core tools.\n` +
-          `5. **Step 5 — Speak or Type Responses**\n` +
-          `   Click the microphone button to dictate your answer in real time.\n` +
-          `6. **Step 6 — Complete & Submit**\n` +
-          `   When the call ends, your communication rating and eligibility summary are automatically attached to your recruiter profile.\n\n` +
-          `**What happens next?**\n` +
-          `Candidates with high communication scores receive an instant recommendation badge for Round 1 Technical interviews.\n\n` +
-          `💡 **Pro Tip**: Speak in a quiet environment and articulate key numbers (years of experience, notice duration in days).`,
+          `1. **Step 1 — Open AI Voice Practice**\n` +
+          `   Go to the left sidebar and click **AI Voice Interview Practice**.\n` +
+          `2. **Step 2 — Select Your Target Job Role**\n` +
+          `   Choose your desired job role (e.g. *Software Engineer*, *Business Analyst*, *Data Scientist*, *Product Manager*, etc.).\n` +
+          `3. **Step 3 — Launch the Practice Call**\n` +
+          `   Click **"Launch AI Voice Practice Session"** to connect with Alex, your simulated senior technical interviewer.\n` +
+          `4. **Step 4 — Speak or Type Your Responses**\n` +
+          `   Use your live microphone or type responses. The AI analyzes your claims, mentions of tools/frameworks (e.g. *XGBoost*, *Snowflake*, *React*), and asks dynamic follow-up questions.\n` +
+          `5. **Step 5 — Use Active Candidate Controls**\n` +
+          `   Use **"Repeat Question"**, **"Ask for Clarification"**, or **"I Don't Know / Skip"** anytime without embarrassment.\n` +
+          `6. **Step 6 — Review Diagnostic Evaluation**\n` +
+          `   Receive evidence-based scores across Communication, Technical Depth, Problem Solving, and STAR Structure, with tailored recommendations.\n\n` +
+          `💡 **Pro Tip**: Use the STAR method (Situation, Task, Action, Result) and mention quantifiable metrics to achieve higher rubric scores.`,
         suggestedRoute: '/voice-screening',
         card: {
           type: 'navigation',
-          title: 'AI Voice HR Screening Simulator',
+          title: 'AI Voice Interview Practice',
           actionUrl: '/voice-screening',
-          actionLabel: 'Start Voice Screening'
+          actionLabel: 'Start Voice Practice'
         }
       }
     }
@@ -651,11 +799,11 @@ export const aiCopilotService = {
           card: { type: 'navigation', title: 'Auto Apply Engine', actionUrl: '/auto-apply', actionLabel: 'Go to Auto Apply' }
         }
       }
-      if (q.includes('voice screening') || q.includes('sarah')) {
+      if (q.includes('voice screening') || q.includes('voice practice') || q.includes('voice call') || q.includes('mock call')) {
         return {
-          text: `Taking you to **AI Voice HR Screening** with Sarah.`,
+          text: `Taking you to **AI Voice Interview Practice** to simulate realistic role-based mock interviews.`,
           suggestedRoute: '/voice-screening',
-          card: { type: 'navigation', title: 'AI Voice Screening', actionUrl: '/voice-screening', actionLabel: 'Go to Voice Screening' }
+          card: { type: 'navigation', title: 'AI Voice Interview Practice', actionUrl: '/voice-screening', actionLabel: 'Launch Voice Practice' }
         }
       }
       if (q.includes('post') || q.includes('feed')) {

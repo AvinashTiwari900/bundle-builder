@@ -130,12 +130,12 @@ class SpeechService {
       }
 
       utterance.onerror = (e) => {
-        // Ignore interrupted errors caused by explicit stop()
+        // Ignore interrupted / canceled errors caused by explicit stop()
         if (e.error !== 'interrupted' && e.error !== 'canceled') {
           console.warn('Speech synthesis playback notice:', e)
+          options?.onEnd?.()
         }
         this.activeUtterance = null
-        options?.onEnd?.()
       }
 
       this.activeUtterance = utterance

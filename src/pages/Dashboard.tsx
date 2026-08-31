@@ -168,7 +168,7 @@ export default function Dashboard() {
             { label: '🔒 Contact Privacy Shield', path: '/portfolio' },
             { label: '🛡️ Documents & OTP Verification', path: '/documents' },
             { label: '💼 Explore High-Rating Jobs', path: '/jobs?sort=rating_desc' },
-            { label: '🎙️ AI Voice Screening', path: '/voice-screening' }
+            { label: '🎙️ AI Voice Practice', path: '/voice-screening' }
           ].map((item, i) => (
             <button
               key={i}
@@ -425,7 +425,7 @@ export default function Dashboard() {
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${avatarGrad} text-white font-extrabold flex items-center justify-center text-base shadow-md shadow-slate-900/10 shrink-0 ring-2 ring-white/20`}
+                        className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${avatarGrad} text-white font-extrabold flex items-center justify-center text-base shadow-md shadow-slate-900/10 shrink-0 ring-2 ring-white/20`}
                       >
                         {job.company.charAt(0)}
                       </div>

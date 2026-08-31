@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   Briefcase,
-  Layers,
+  ClipboardList,
   Sparkles,
   Zap,
   Video,
@@ -17,7 +17,8 @@ import {
   ChevronRight,
   ChevronLeft,
   MessageSquare,
-  Radio
+  Radio,
+  Users
 } from 'lucide-react'
 import { useAuth } from '../context/auth'
 import { profileService } from '../services/profileService'
@@ -40,17 +41,18 @@ export default function Sidebar({ isCollapsed = false, onToggle }: SidebarProps)
   const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/jobs', label: 'Explore Jobs', icon: Briefcase },
-    { to: '/applications', label: 'Applications', icon: Layers, badge: profile?.applications?.length },
+    { to: '/applications', label: 'My Applications', icon: ClipboardList, badge: profile?.applications?.length },
+    { to: '/connections', label: 'Network & Connect', icon: Users },
     { to: '/posts', label: 'Posts & Feed', icon: MessageSquare },
     { to: '/meetings', label: 'Meetings & Records', icon: Video },
     { to: '/auto-apply', label: 'Auto Apply Engine', icon: Zap },
     { to: '/ai-agent', label: 'AI Career Copilot', icon: Sparkles, aiBadge: true },
     { to: '/interview-practice', label: 'Interview Studio', icon: Radio },
-    { to: '/voice-screening', label: 'AI Voice Screening', icon: Phone },
+    { to: '/voice-screening', label: 'AI Voice Interview Practice', icon: Phone },
     { to: '/resume', label: 'Resume & ATS', icon: FileText },
     { to: '/documents', label: 'Documents & KYC', icon: ShieldCheck },
     { to: '/projects', label: 'Projects', icon: FolderGit2 },
-    { to: '/portfolio', label: 'Portfolio (Panel View)', icon: Globe },
+    { to: '/portfolio', label: 'Portfolio', icon: Globe },
     { to: '/settings', label: 'Settings', icon: Settings }
   ]
 

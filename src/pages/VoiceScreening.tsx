@@ -15,64 +15,107 @@ import {
   Volume2,
   VolumeX,
   RotateCcw,
-  Radio
+  Radio,
+  HelpCircle,
+  SkipForward,
+  Send,
+  Sliders,
+  TrendingUp,
+  Brain,
+  MessageSquare,
+  ChevronRight,
+  Shield,
+  Zap,
+  Target,
+  FileText,
+  AlertCircle
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import { profileService } from '../services/profileService'
-import { notificationService } from '../services/notificationService'
 import { speechService } from '../services/speechService'
-
-interface VoiceQA {
-  q: string
-  a: string
-}
+import {
+  AiVoicePracticeService,
+  CandidateContext,
+  ConversationTurn,
+  InterviewEvaluation,
+  TARGET_ROLES
+} from '../services/aiVoicePracticeService'
 
 export default function VoiceScreening() {
   const nav = useNavigate()
-  const [callStatus, setCallStatus] = useState<'incoming' | 'connected' | 'completed'>('incoming')
-  const [currentStep, setCurrentStep] = useState(0)
-  const [userSpeech, setUserSpeech] = useState('')
-  const [transcript, setTranscript] = useState<VoiceQA[]>([])
+  const profile = profileService.get() || {}
+
+  // Candidate Context
+  const candidateContext: CandidateContext = {
+    name: profile.name || 'Avinash Tiwari',
+    role: profile.headline || profile.currentRole || 'Lead Business Analyst',
+    skills: profile.skills || ['SQL', 'Python', 'Business Analysis', 'Agile', 'Snowflake', 'Tableau'],
+    tools: profile.tools || ['JIRA', 'Git', 'dbt', 'Power BI'],
+    experienceYears: profile.totalExperienceYears || profile.experienceYears || 6,
+    projects: profile.projects || [
+      {
+        title: 'Real-Time Payment Reconciliation Pipeline',
+        description: 'Reduced settlement latency from 4 hours to 6 minutes using Snowflake and Redis key caching.'
+      }
+    ],
+    headline: profile.headline || 'Lead Business Analyst & Analytics Engineer'
+  }
+
+  // Session State
+  const [targetRole, setTargetRole] = useState(candidateContext.role || 'Business Analyst')
+  const [callStatus, setCallStatus] = useState<'setup' | 'connected' | 'completed'>('setup')
+  const [turns, setTurns] = useState<ConversationTurn[]>([])
+  const [currentDifficulty, setCurrentDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate')
+  const [currentCategory, setCurrentCategory] = useState<ConversationTurn['category']>('intro')
+
+  // Audio & Input State
   const [isAiSpeaking, setIsAiSpeaking] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isAudioMuted, setIsAudioMuted] = useState(false)
+  const [candidateSpeechBuffer, setCandidateSpeechBuffer] = useState('')
   const [duration, setDuration] = useState(0)
+  const [isProcessingAnswer, setIsProcessingAnswer] = useState(false)
 
-  const profile = profileService.get()
-  const candidateName = profile?.name || 'Avinash Tiwari'
+  // Diagnostics Evaluation State
+  const [evaluation, setEvaluation] = useState<InterviewEvaluation | null>(null)
 
-  const hrQuestions = [
-    {
-      q: `Hello ${candidateName.split(' ')[0]}! This is Sarah from the Gettin AI Recruitment Team at Northstar Analytics. I'd like to ask a few quick questions regarding your recent Senior Business Analyst application. Could you start with a brief overview of your current role?`,
-      sampleAnswer:
-        'Sure Sarah! Currently I work as a Lead Business Analyst where I lead our revenue analytics team, build automated SQL data pipelines, and design executive BI dashboards.'
-    },
-    {
-      q: 'Great! What is your current notice period, and when would you be available to join if selected?',
-      sampleAnswer: 'My official notice period is 30 days, but I have buy-out flexibility and can join in 15 days.'
-    },
-    {
-      q: 'Understood. Could you share your current compensation and your expected salary bracket for this position?',
-      sampleAnswer:
-        'My current CTC is ₹20 LPA, and based on market benchmarks and the responsibilities of this role, my expectation is ₹24 to 28 LPA.'
-    },
-    {
-      q: 'What is your primary motivation for exploring new career opportunities at this time?',
-      sampleAnswer:
-        'I am looking to take on deeper end-to-end data strategy ownership and work closely with high-scale predictive analytics products.'
-    },
-    {
-      q: 'Are you comfortable working in a hybrid model out of Hyderabad or Bengaluru?',
-      sampleAnswer: 'Yes, absolutely. Both Hyderabad and Bengaluru are my top preferred locations.'
+  const chatScrollRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll chat buffer
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
     }
-  ]
+  }, [turns, candidateSpeechBuffer])
 
-  // Speak question function
-  const speakQuestion = (stepIndex: number) => {
-    const q = hrQuestions[stepIndex]?.q
-    if (!q || isAudioMuted) return
+  // Call duration counter
+  useEffect(() => {
+    let interval: any
+    if (callStatus === 'connected') {
+      interval = setInterval(() => setDuration((prev) => prev + 1), 1000)
+    }
+    return () => clearInterval(interval)
+  }, [callStatus])
 
-    speechService.speak(q, {
+  // Cleanup speech on unmount
+  useEffect(() => {
+    return () => {
+      speechService.stop()
+      speechService.stopListening()
+    }
+  }, [])
+
+  // Format seconds to mm:ss
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60)
+    const s = secs % 60
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  }
+
+  // Speak AI text aloud
+  const speakText = (text: string) => {
+    if (isAudioMuted) return
+    speechService.speak(text, {
       onStart: () => setIsAiSpeaking(true),
       onEnd: () => setIsAiSpeaking(false)
     })
@@ -87,7 +130,10 @@ export default function VoiceScreening() {
       speechService.stop()
       setIsAiSpeaking(false)
     } else {
-      speakQuestion(currentStep)
+      const lastAiTurn = [...turns].reverse().find((t) => t.speaker === 'ai')
+      if (lastAiTurn) {
+        speakText(lastAiTurn.text)
+      }
     }
   }
 
@@ -97,10 +143,14 @@ export default function VoiceScreening() {
       speechService.stopListening()
       setIsListening(false)
     } else {
+      // Pause AI if speaking
+      speechService.stop()
+      setIsAiSpeaking(false)
+
       const started = speechService.startListening({
         onStart: () => setIsListening(true),
         onResult: (text) => {
-          setUserSpeech((prev) => (prev ? prev + ' ' + text : text))
+          setCandidateSpeechBuffer((prev) => (prev ? prev + ' ' + text : text))
         },
         onEnd: () => setIsListening(false),
         onError: (err) => {
@@ -114,342 +164,727 @@ export default function VoiceScreening() {
     }
   }
 
-  // Call duration counter
-  useEffect(() => {
-    let interval: any
-    if (callStatus === 'connected') {
-      interval = setInterval(() => setDuration((prev) => prev + 1), 1000)
-    }
-    return () => clearInterval(interval)
-  }, [callStatus])
-
-  // Stop speech on unmount
-  useEffect(() => {
-    return () => {
-      speechService.stop()
-      speechService.stopListening()
-    }
-  }, [])
-
-  const acceptCall = () => {
+  // Start Practice Call
+  const startPracticeCall = () => {
     setCallStatus('connected')
-    // Read the first question aloud when connected
-    speakQuestion(0)
-  }
+    setDuration(0)
+    setTurns([])
+    setCurrentDifficulty('intermediate')
+    setCurrentCategory('intro')
 
-  const endCall = () => {
-    speechService.stop()
-    speechService.stopListening()
-    setIsListening(false)
-    setCallStatus('completed')
-
-    // Read closing message
-    speechService.speak(
-      `Thank you ${candidateName.split(' ')[0]}! Your responses have been successfully recorded and submitted to the hiring team.`,
-      {
-        onStart: () => setIsAiSpeaking(true),
-        onEnd: () => setIsAiSpeaking(false)
-      }
-    )
-
-    // Attach screening record
-    const p = profileService.get() || {}
-    p.hrScreening = {
-      completedAt: new Date().toISOString(),
-      score: 95,
-      communicationRating: 'Fluent & Articulate',
-      status: 'Recommended for Round 1 Technical'
+    const initialGreeting = AiVoicePracticeService.getInitialGreeting(candidateContext, targetRole)
+    const firstTurn: ConversationTurn = {
+      id: `turn-${Date.now()}-ai`,
+      speaker: 'ai',
+      text: initialGreeting,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      difficulty: 'intermediate',
+      category: 'intro'
     }
-    profileService.save(p)
 
-    notificationService.create({
-      title: 'HR Screening Cleared! 🎉',
-      message: 'AI Voice Screening completed. You have been recommended for Technical Round 1.',
-      type: 'success'
-    })
+    setTurns([firstTurn])
+    speakText(initialGreeting)
   }
 
-  const handleSendVoiceResponse = () => {
-    if (!userSpeech.trim()) return
+  // Submit Candidate's Answer (Analyze -> Follow-Up / Adapt)
+  const handleCandidateSubmit = (overrideAction?: 'normal' | 'repeat' | 'clarify' | 'skip') => {
+    const answerText = overrideAction === 'skip' ? "I don't know the exact answer to this. Could we explore a different topic?" : candidateSpeechBuffer.trim()
 
-    speechService.stop()
+    if (!answerText && !overrideAction) return
+
+    // Stop recording if active
     if (isListening) {
       speechService.stopListening()
       setIsListening(false)
     }
 
-    const activeQ = hrQuestions[currentStep]
-    const updated = [...transcript, { q: activeQ.q, a: userSpeech.trim() }]
-    setTranscript(updated)
-    setUserSpeech('')
+    setIsProcessingAnswer(true)
 
-    if (currentStep + 1 < hrQuestions.length) {
-      setCurrentStep(currentStep + 1)
-      speakQuestion(currentStep + 1)
-    } else {
-      endCall()
+    // Append candidate turn
+    const candidateTurn: ConversationTurn = {
+      id: `turn-${Date.now()}-cand`,
+      speaker: 'candidate',
+      text: answerText || (overrideAction === 'repeat' ? 'Could you please repeat the question?' : 'Could you clarify the question?'),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+
+    const updatedTurns = [...turns, candidateTurn]
+    setTurns(updatedTurns)
+    setCandidateSpeechBuffer('')
+
+    // Generate Adaptive AI response
+    setTimeout(() => {
+      const nextQ = AiVoicePracticeService.generateNextQuestion(
+        updatedTurns,
+        candidateContext,
+        targetRole,
+        currentDifficulty,
+        overrideAction || 'normal'
+      )
+
+      setCurrentDifficulty(nextQ.difficulty)
+      if (nextQ.category) setCurrentCategory(nextQ.category)
+
+      const aiTurn: ConversationTurn = {
+        id: `turn-${Date.now()}-ai`,
+        speaker: 'ai',
+        text: nextQ.question,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        difficulty: nextQ.difficulty,
+        category: nextQ.category,
+        analysis: nextQ.analysis
+      }
+
+      // If previous candidate turn had analysis, attach it
+      if (nextQ.analysis) {
+        candidateTurn.analysis = nextQ.analysis
+      }
+
+      setTurns([...updatedTurns, aiTurn])
+      setIsProcessingAnswer(false)
+      speakText(nextQ.question)
+    }, 600)
+  }
+
+  // End Practice Call & Generate Full Evaluation
+  const endPracticeCall = () => {
+    speechService.stop()
+    speechService.stopListening()
+    setIsListening(false)
+    setIsAiSpeaking(false)
+
+    // Generate structured diagnostics
+    const result = AiVoicePracticeService.generateEvaluation(turns, candidateContext, targetRole)
+    setEvaluation(result)
+    setCallStatus('completed')
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+
+    const closingVoiceMessage = `Great job on completing your ${targetRole} practice interview. Your overall practice score is ${result.overallScore} out of 100. Review your detailed diagnostic feedback below.`
+    setTimeout(() => {
+      speakText(closingVoiceMessage)
+    }, 400)
+  }
+
+  // Category Badge Label
+  const getCategoryBadge = (cat?: ConversationTurn['category']) => {
+    switch (cat) {
+      case 'intro':
+        return { label: 'Introduction & Background', color: 'bg-blue-50 text-blue-700 border-blue-200' }
+      case 'project_deepdive':
+        return { label: 'Project Architecture & Decisions', color: 'bg-purple-50 text-purple-700 border-purple-200' }
+      case 'technical':
+        return { label: 'Role-Specific Technical Competency', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+      case 'behavioral':
+        return { label: 'Behavioral & STAR Scenario', color: 'bg-amber-50 text-amber-700 border-amber-200' }
+      case 'situational':
+        return { label: 'Situational & Ambiguity Handling', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
+      case 'candidate_q':
+        return { label: 'Candidate Q&A & Wrap-Up', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' }
+      default:
+        return { label: 'Interview Question', color: 'bg-slate-100 text-slate-700 border-slate-200' }
     }
   }
 
-  const fillSampleSpeech = () => {
-    setUserSpeech(hrQuestions[currentStep].sampleAnswer)
-  }
+  const activeAiTurn = [...turns].reverse().find((t) => t.speaker === 'ai')
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="text-center space-y-1">
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-          AI Voice Recruitment Screening
-        </h1>
-        <p className="text-xs text-slate-500">
-          Automated preliminary HR phone screening with live AI voice question reading
-        </p>
+    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300 pb-16">
+      {/* Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              AI Voice Interview Practice
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              Mock Simulation
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
+            Adaptive AI interviewer that listens to your responses, probes deeper into your projects, and dynamically adjusts difficulty.
+          </p>
+        </div>
+
+        {/* Practice Notice */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold shrink-0">
+          <Shield size={14} className="text-amber-600" />
+          <span>Candidate Practice Only · No Real Hiring Decision</span>
+        </div>
       </div>
 
-      {/* Main Voice Call Card */}
-      <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-8 shadow-2xl relative overflow-hidden text-center space-y-6 border border-white/10">
-        {/* Incoming Call Screen */}
-        {callStatus === 'incoming' && (
-          <div className="space-y-6 py-6 animate-in fade-in duration-200">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center mx-auto shadow-2xl shadow-blue-500/40 relative">
-              <span className="w-full h-full rounded-full bg-blue-500/30 absolute animate-ping"></span>
-              <Bot size={40} className="relative z-10" />
+      {/* ========================================================================= */}
+      {/* STATE 1: SETUP & LAUNCH SCREEN                                            */}
+      {/* ========================================================================= */}
+      {callStatus === 'setup' && (
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-10 shadow-md space-y-8">
+          <div className="text-center max-w-xl mx-auto space-y-3">
+            <div className="w-20 h-20 rounded-3xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-xl shadow-indigo-200 animate-pulse">
+              <Bot size={40} />
             </div>
-
-            <div>
-              <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs font-bold uppercase tracking-wider border border-blue-500/30">
-                Incoming AI HR Call
-              </span>
-              <h2 className="text-xl font-extrabold mt-2">Sarah · Gettin AI Talent Partner</h2>
-              <p className="text-xs text-slate-400 mt-1">Northstar Analytics · Senior Business Analyst</p>
-            </div>
-
-            <div className="flex flex-col items-center justify-center gap-3 pt-4">
-              <button
-                onClick={acceptCall}
-                className="w-16 h-16 rounded-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/40 transition-transform active:scale-95 cursor-pointer"
-                title="Accept Call & Start AI Voice"
-              >
-                <Phone size={26} />
-              </button>
-              <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
-                <Volume2 size={14} className="animate-pulse" />
-                <span>Click to Accept & Listen to Questions</span>
-              </span>
-            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+              Start Realistic AI Voice Interview Simulation
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              The AI interviewer will ask realistic questions, evaluate your technical claims (e.g. models, tools, architectures), and ask dynamic follow-ups based on what you say.
+            </p>
           </div>
-        )}
 
-        {/* Connected Live Voice Call Screen */}
-        {callStatus === 'connected' && (
-          <div className="space-y-6 py-2 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between text-xs text-slate-400 border-b border-white/10 pb-3">
-              <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Call in Progress</span>
-                {isAiSpeaking && (
-                  <span className="px-2 py-0.5 rounded-full bg-blue-500/30 text-blue-300 text-[10px] font-bold border border-blue-400/30 animate-pulse">
-                    Sarah is Speaking...
-                  </span>
-                )}
-              </span>
+          {/* Role & Setup Card */}
+          <div className="max-w-lg mx-auto bg-slate-50 border border-slate-200/80 rounded-2xl p-6 space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="targetRoleSelect" className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                Select Your Target Job Role
+              </label>
+              <select
+                id="targetRoleSelect"
+                value={targetRole}
+                onChange={(e) => setTargetRole(e.target.value)}
+                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              >
+                {TARGET_ROLES.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={toggleMute}
-                  className={`p-1.5 rounded-lg border transition-colors ${
-                    isAudioMuted
-                      ? 'bg-rose-500/20 border-rose-500/40 text-rose-300'
-                      : 'bg-white/10 border-white/15 text-slate-200 hover:bg-white/20'
-                  }`}
-                  title={isAudioMuted ? 'Unmute AI Voice' : 'Mute AI Voice'}
-                >
-                  {isAudioMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-                </button>
-
-                <span className="font-mono font-bold text-white">
-                  {Math.floor(duration / 60)}:{(duration % 60).toString().padStart(2, '0')}
+            {/* Candidate Sourced Metadata Preview */}
+            <div className="pt-2 border-t border-slate-200/80 space-y-2 text-xs">
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Practicing Candidate:</span>
+                <span className="font-extrabold text-slate-900">{candidateContext.name}</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Experience Sourced:</span>
+                <span className="font-extrabold text-slate-900">{candidateContext.experienceYears}+ Years</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Key Profile Skills:</span>
+                <span className="font-bold text-indigo-700 truncate max-w-[240px]">
+                  {candidateContext.skills.slice(0, 4).join(', ')}
                 </span>
               </div>
             </div>
+          </div>
 
-            {/* AI Avatar & Audio Visualizer Waveform */}
-            <div className="space-y-3">
-              <div
-                className={`w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/30 transition-transform duration-300 ${
-                  isAiSpeaking ? 'scale-110 ring-4 ring-blue-400/40' : ''
-                }`}
-              >
-                <Bot size={34} />
+          {/* Feature Highlights Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto text-xs">
+            <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 space-y-1.5">
+              <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">
+                <Brain size={16} />
               </div>
-              <div>
-                <h3 className="font-bold text-base">Sarah (AI Talent Partner)</h3>
-                <p className="text-[11px] text-slate-400">Voice Synthesis Engine: Active</p>
-              </div>
-
-              {/* Dynamic Audio Waveform */}
-              <div className="flex items-center justify-center gap-1.5 h-10">
-                {[14, 28, 42, 20, 36, 48, 26, 44, 22, 38, 18, 30, 46, 24, 16].map((h, i) => (
-                  <div
-                    key={i}
-                    className={`w-1.5 rounded-full transition-all duration-150 ${
-                      isAiSpeaking
-                        ? 'bg-gradient-to-t from-blue-500 to-emerald-400 animate-pulse'
-                        : 'bg-slate-700 opacity-40'
-                    }`}
-                    style={{
-                      height: isAiSpeaking ? `${Math.max(10, (h * (i % 2 === 0 ? 1 : 0.8)))}px` : '6px'
-                    }}
-                  ></div>
-                ))}
+              <div className="font-black text-slate-900">Dynamic Follow-Up Logic</div>
+              <div className="text-slate-600 leading-relaxed">
+                If you mention a framework or project (e.g. <em>"built with XGBoost"</em>), the AI asks why you chose it.
               </div>
             </div>
 
-            {/* AI Spoken Dialogue Subtitle & Replay Control */}
-            <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 text-left text-xs leading-relaxed font-medium space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-[10px] font-bold text-amber-300 uppercase flex items-center gap-1.5">
-                  <Volume2 size={13} className={isAiSpeaking ? 'animate-bounce text-emerald-400' : ''} />
-                  <span>
-                    AI Question {currentStep + 1} of {hrQuestions.length}
+            <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 space-y-1.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
+                <TrendingUp size={16} />
+              </div>
+              <div className="font-black text-slate-900">Adaptive Difficulty</div>
+              <div className="text-slate-600 leading-relaxed">
+                Seamlessly moves between Beginner, Intermediate, and Advanced scenarios based on your answers.
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-100 space-y-1.5">
+              <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold">
+                <Award size={16} />
+              </div>
+              <div className="font-black text-slate-900">Diagnostic Rubric Scoring</div>
+              <div className="text-slate-600 leading-relaxed">
+                Get scored on Communication, Technical Knowledge, Problem Solving, and STAR answer depth.
+              </div>
+            </div>
+          </div>
+
+          {/* Launch Button */}
+          <div className="flex justify-center pt-2">
+            <button
+              type="button"
+              id="startVoicePracticeBtn"
+              onClick={startPracticeCall}
+              className="px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm sm:text-base flex items-center gap-3 shadow-xl shadow-indigo-200 transition-all hover:scale-105 cursor-pointer"
+            >
+              <Phone size={20} />
+              <span>Launch AI Voice Practice Session</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* STATE 2: ACTIVE VOICE PRACTICE ROOM                                       */}
+      {/* ========================================================================= */}
+      {callStatus === 'connected' && (
+        <div className="space-y-6">
+          {/* Top Live Call Bar */}
+          <div className="bg-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold">
+                  <Bot size={24} />
+                </div>
+                {isAiSpeaking && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-400 border-2 border-slate-900 rounded-full animate-ping" />
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-black text-white">
+                    Alex — Senior AI Interviewer
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                    Live Call ({formatTime(duration)})
                   </span>
                 </div>
+                <p className="text-xs text-slate-300">
+                  Practicing Role: <strong className="text-white">{targetRole}</strong>
+                </p>
+              </div>
+            </div>
+
+            {/* Difficulty & Stage Pills */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-3 py-1 rounded-xl text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700 flex items-center gap-1.5">
+                <Sliders size={13} className="text-indigo-400" />
+                <span>Difficulty: </span>
+                <strong className="capitalize text-white">{currentDifficulty}</strong>
+              </span>
+
+              <button
+                type="button"
+                onClick={toggleMute}
+                className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
+                  isAudioMuted
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                }`}
+                title={isAudioMuted ? 'Unmute AI Voice' : 'Mute AI Voice'}
+              >
+                {isAudioMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              </button>
+
+              <button
+                type="button"
+                id="endPracticeCallBtn"
+                onClick={endPracticeCall}
+                className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-rose-900/30 transition-all cursor-pointer border-none"
+                title="End interview practice and view performance diagnostics"
+              >
+                <PhoneOff size={14} className="shrink-0" />
+                <span>End Practice</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Active Question Showcase Card */}
+          {activeAiTurn && (
+            <div className="bg-white border-2 border-indigo-200 rounded-3xl p-6 sm:p-7 shadow-md space-y-4 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className={`px-2.5 py-1 rounded-xl text-xs font-extrabold border ${getCategoryBadge(activeAiTurn.category).color}`}>
+                    {getCategoryBadge(activeAiTurn.category).label}
+                  </span>
+                  {activeAiTurn.analysis?.isFollowUp && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1">
+                      <Zap size={11} />
+                      <span>Adaptive Deep-Dive Follow-up</span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1 text-xs text-slate-500">
+                  <span>Interviewer Voice:</span>
+                  <span className="font-bold text-slate-800">
+                    {isAiSpeaking ? '🔊 Speaking...' : 'Listening to candidate'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Pulsating Voice Visualizer */}
+              {isAiSpeaking && (
+                <div className="flex items-center gap-1.5 py-2 px-3 bg-indigo-50/60 rounded-xl border border-indigo-100 w-fit">
+                  <span className="w-1.5 h-4 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-1.5 h-6 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-1.5 h-5 bg-indigo-600 rounded-full animate-bounce" />
+                  <span className="w-1.5 h-7 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.25s]" />
+                  <span className="w-1.5 h-3 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.1s]" />
+                  <span className="text-[11px] font-bold text-indigo-700 ml-1.5">AI Voice Synthesis Streaming</span>
+                </div>
+              )}
+
+              {/* Question Text */}
+              <h3 className="text-base sm:text-xl font-bold text-slate-900 leading-relaxed">
+                "{activeAiTurn.text}"
+              </h3>
+            </div>
+          )}
+
+          {/* Candidate Speech / Response Input Box */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <label htmlFor="candidateAnswerInput" className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <User size={14} className="text-indigo-600" />
+                <span>Your Spoken or Typed Response</span>
+              </label>
+
+              {/* Candidate Mic Dictation Status */}
+              <button
+                type="button"
+                id="toggleCandidateMicBtn"
+                onClick={toggleSpeechRecognition}
+                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
+                  isListening
+                    ? 'bg-rose-500 text-white animate-pulse shadow-md shadow-rose-200'
+                    : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200'
+                }`}
+              >
+                {isListening ? <Mic size={14} /> : <MicOff size={14} />}
+                <span>{isListening ? '🔴 Recording Speech (Tap to stop)' : '🎙️ Speak with Microphone'}</span>
+              </button>
+            </div>
+
+            {/* Response Textarea */}
+            <textarea
+              id="candidateAnswerInput"
+              rows={4}
+              value={candidateSpeechBuffer}
+              onChange={(e) => setCandidateSpeechBuffer(e.target.value)}
+              placeholder="Speak via your microphone or type your response here... The AI will evaluate your technical claims, reasoning, and metrics."
+              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none leading-relaxed"
+            />
+
+            {/* Dynamic Controls Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+              {/* Special Candidate Actions (Repeat, Clarify, Skip) */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  id="repeatQuestionBtn"
+                  onClick={() => handleCandidateSubmit('repeat')}
+                  disabled={isProcessingAnswer}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Ask interviewer to repeat the question"
+                >
+                  <RotateCcw size={13} />
+                  <span>Repeat Question</span>
+                </button>
 
                 <button
                   type="button"
-                  onClick={() => speakQuestion(currentStep)}
-                  className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-white/10"
-                  title="Read question again"
+                  id="clarifyQuestionBtn"
+                  onClick={() => handleCandidateSubmit('clarify')}
+                  disabled={isProcessingAnswer}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Ask interviewer for clarification on this topic"
                 >
-                  <RotateCcw size={12} />
-                  <span>{isAiSpeaking ? 'Re-reading...' : 'Replay Question'}</span>
+                  <HelpCircle size={13} />
+                  <span>Ask for Clarification</span>
+                </button>
+
+                <button
+                  type="button"
+                  id="skipQuestionBtn"
+                  onClick={() => handleCandidateSubmit('skip')}
+                  disabled={isProcessingAnswer}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Pass question honestly without penalty"
+                >
+                  <SkipForward size={13} />
+                  <span>I Don't Know / Skip</span>
                 </button>
               </div>
 
-              <p className="text-white text-xs sm:text-sm font-semibold">
-                "{hrQuestions[currentStep].q}"
+              {/* Action Buttons: End Practice + Submit Answer */}
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  id="bottomEndPracticeBtn"
+                  onClick={endPracticeCall}
+                  className="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-200 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                  title="Conclude interview practice session and view diagnostic report"
+                >
+                  <PhoneOff size={14} />
+                  <span>End Practice</span>
+                </button>
+
+                <button
+                  type="button"
+                  id="submitCandidateAnswerBtn"
+                  onClick={() => handleCandidateSubmit('normal')}
+                  disabled={!candidateSpeechBuffer.trim() || isProcessingAnswer}
+                  className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:hover:bg-indigo-600 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                >
+                  <Send size={15} />
+                  <span>{isProcessingAnswer ? 'Analyzing Response...' : 'Submit Response →'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Live Session Conversation History */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-2xs space-y-4">
+            <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+              <MessageSquare size={14} className="text-indigo-600" />
+              <span>Live Interview Transcript & Keyword Highlights</span>
+            </h3>
+
+            <div
+              ref={chatScrollRef}
+              className="max-h-72 overflow-y-auto space-y-3 pr-2 scroll-smooth"
+            >
+              {turns.map((turn) => (
+                <div
+                  key={turn.id}
+                  className={`p-4 rounded-2xl text-xs space-y-1.5 ${
+                    turn.speaker === 'ai'
+                      ? 'bg-slate-50 border border-slate-200/80'
+                      : 'bg-indigo-50/70 border border-indigo-100 ml-6'
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-extrabold text-slate-900 flex items-center gap-1">
+                      {turn.speaker === 'ai' ? <Bot size={13} className="text-indigo-600" /> : <User size={13} className="text-indigo-700" />}
+                      <span>{turn.speaker === 'ai' ? 'Alex (AI Interviewer)' : 'You (Candidate)'}</span>
+                    </span>
+                    <span className="text-slate-400">{turn.timestamp}</span>
+                  </div>
+
+                  <p className="text-slate-700 leading-relaxed font-normal">{turn.text}</p>
+
+                  {/* Identified Keywords Chips */}
+                  {turn.analysis && turn.analysis.identifiedKeywords.length > 0 && (
+                    <div className="flex items-center gap-1 flex-wrap pt-1">
+                      <span className="text-[10px] text-slate-400 font-semibold">Analyzed keywords:</span>
+                      {turn.analysis.identifiedKeywords.map((k) => (
+                        <span key={k} className="px-1.5 py-0.5 rounded bg-white text-indigo-700 border border-indigo-200 text-[10px] font-bold">
+                          {k}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* STATE 3: COMPLETED DIAGNOSTIC EVALUATION & RUBRIC                         */}
+      {/* ========================================================================= */}
+      {callStatus === 'completed' && evaluation && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {/* Overall Score Banner */}
+          <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                <CheckCircle2 size={13} />
+                <span>Practice Session Completed</span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                Interview Performance Diagnostics
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                {evaluation.performanceSummary}
               </p>
             </div>
 
-            {/* Candidate Voice Response Input */}
-            <div className="space-y-2 text-left">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-300 font-bold flex items-center gap-1.5">
-                  <span>Your Spoken / Typed Response:</span>
-                  {isListening && (
-                    <span className="px-2 py-0.5 rounded-full bg-rose-500/30 text-rose-300 text-[10px] font-extrabold flex items-center gap-1 animate-pulse border border-rose-500/40">
-                      <Radio size={10} />
-                      <span>Recording Voice...</span>
-                    </span>
-                  )}
-                </span>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={toggleSpeechRecognition}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                      isListening
-                        ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30'
-                        : 'bg-blue-600/80 hover:bg-blue-600 text-white'
-                    }`}
-                  >
-                    {isListening ? <MicOff size={12} /> : <Mic size={12} />}
-                    <span>{isListening ? 'Stop Mic' : '🎙️ Speak with Mic'}</span>
-                  </button>
-
-                  <button
-                    onClick={fillSampleSpeech}
-                    className="text-amber-300 hover:underline text-[11px] font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <Sparkles size={12} />
-                    <span>Auto-Fill Sample</span>
-                  </button>
-                </div>
+            {/* Score Ring Display */}
+            <div className="bg-slate-800/90 border border-slate-700 rounded-3xl p-6 text-center shrink-0 space-y-1 shadow-inner">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Overall Practice Score</span>
+              <div className="text-4xl sm:text-5xl font-black text-emerald-400">
+                {evaluation.overallScore}
+                <span className="text-xl text-slate-400 font-normal">/100</span>
               </div>
+              <div className="text-[11px] font-extrabold text-slate-300 pt-1">
+                {evaluation.overallScore >= 80 ? '⭐ Strong Readiness' : evaluation.overallScore >= 65 ? '📈 Solid Foundation' : '💡 Needs Practice'}
+              </div>
+            </div>
+          </div>
 
-              <textarea
-                value={userSpeech}
-                onChange={(e) => setUserSpeech(e.target.value)}
-                placeholder="Speak directly into your microphone or type your response here..."
-                className="w-full p-3.5 bg-black/40 border border-white/20 rounded-2xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 h-24 leading-relaxed font-normal"
-              />
+          {/* 5-Metric Category Rubric Breakdown */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1.5">
+              <span className="text-slate-500 font-bold">Communication</span>
+              <div className="text-xl font-extrabold text-slate-900">{evaluation.categoryScores.communication}%</div>
+              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-blue-600 h-full rounded-full" style={{ width: `${evaluation.categoryScores.communication}%` }} />
+              </div>
             </div>
 
-            {/* Call Action Controls */}
-            <div className="flex items-center justify-between pt-2">
-              <button
-                onClick={endCall}
-                className="px-4 py-2.5 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer"
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1.5">
+              <span className="text-slate-500 font-bold">Tech Knowledge</span>
+              <div className="text-xl font-extrabold text-slate-900">{evaluation.categoryScores.technicalKnowledge}%</div>
+              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-emerald-600 h-full rounded-full" style={{ width: `${evaluation.categoryScores.technicalKnowledge}%` }} />
+              </div>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1.5">
+              <span className="text-slate-500 font-bold">Problem Solving</span>
+              <div className="text-xl font-extrabold text-slate-900">{evaluation.categoryScores.problemSolving}%</div>
+              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-purple-600 h-full rounded-full" style={{ width: `${evaluation.categoryScores.problemSolving}%` }} />
+              </div>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1.5">
+              <span className="text-slate-500 font-bold">Answer Depth</span>
+              <div className="text-xl font-extrabold text-slate-900">{evaluation.categoryScores.answerDepth}%</div>
+              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-amber-600 h-full rounded-full" style={{ width: `${evaluation.categoryScores.answerDepth}%` }} />
+              </div>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1.5 col-span-2 sm:col-span-1">
+              <span className="text-slate-500 font-bold">STAR Structure</span>
+              <div className="text-xl font-extrabold text-slate-900">{evaluation.categoryScores.confidenceAndStructure}%</div>
+              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-indigo-600 h-full rounded-full" style={{ width: `${evaluation.categoryScores.confidenceAndStructure}%` }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Strengths & Areas of Improvement */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Strengths */}
+            <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-2xs space-y-3">
+              <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-600" />
+                <span>Demonstrated Strengths</span>
+              </h3>
+              <ul className="space-y-2 text-xs text-slate-700">
+                {evaluation.strengths.map((s, i) => (
+                  <li key={i} className="flex items-start gap-2 leading-relaxed">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Areas for Improvement */}
+            <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-2xs space-y-3">
+              <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                <TrendingUp size={16} className="text-indigo-600" />
+                <span>Areas for Improvement</span>
+              </h3>
+              <ul className="space-y-2 text-xs text-slate-700">
+                {evaluation.areasForImprovement.map((a, i) => (
+                  <li key={i} className="flex items-start gap-2 leading-relaxed">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                    <span>{a}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Question-by-Question Deep Dive */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-2xs space-y-4">
+            <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+              <FileText size={16} className="text-indigo-600" />
+              <span>Question-by-Question Diagnostic Review</span>
+            </h3>
+
+            <div className="space-y-4">
+              {evaluation.questionBreakdowns.map((q, idx) => (
+                <div key={idx} className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase text-indigo-700 px-2 py-0.5 bg-indigo-50 rounded">
+                        Q{idx + 1} · {q.category}
+                      </span>
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-900 mt-1.5">
+                        {q.question}
+                      </h4>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-xl text-xs font-black bg-white border border-slate-200 text-slate-800 shrink-0">
+                      Score: {q.score}/100
+                    </span>
+                  </div>
+
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Your Spoken Answer</span>
+                    <p className="text-slate-700 font-normal leading-relaxed italic">"{q.candidateAnswer}"</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                    <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-100 space-y-1">
+                      <span className="text-[10px] font-bold text-blue-900 uppercase">AI Diagnostic Assessment</span>
+                      <p className="text-slate-700 leading-relaxed">{q.assessment}</p>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-100 space-y-1">
+                      <span className="text-[10px] font-bold text-emerald-900 uppercase">Suggested Better Approach</span>
+                      <p className="text-slate-700 leading-relaxed">{q.suggestedBetterApproach}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recommended Practice Topics */}
+          <div className="p-6 bg-indigo-50/60 border border-indigo-100 rounded-3xl space-y-3">
+            <h4 className="text-xs font-extrabold text-indigo-950 uppercase tracking-wider">
+              Recommended Focus Areas for Your Next Session
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {evaluation.recommendedTopics.map((topic, i) => (
+                <span key={i} className="px-3 py-1.5 rounded-xl bg-white border border-indigo-200 text-indigo-900 text-xs font-bold shadow-2xs">
+                  🎯 {topic}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={() => nav('/dashboard')}
+              className="w-full sm:w-auto text-xs font-bold border-slate-300"
+            >
+              <span>Back to Dashboard</span>
+            </Button>
+
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => setCallStatus('setup')}
+                className="w-full sm:w-auto text-xs font-bold border-indigo-200 text-indigo-700"
               >
-                <PhoneOff size={15} />
-                <span>End Call</span>
-              </button>
+                <span>Change Target Role</span>
+              </Button>
 
               <Button
+                type="button"
+                id="practiceAgainBtn"
                 variant="primary"
                 size="md"
-                onClick={handleSendVoiceResponse}
-                disabled={!userSpeech.trim()}
-                className="font-bold text-xs bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/20"
+                onClick={startPracticeCall}
+                className="w-full sm:w-auto text-xs font-extrabold bg-indigo-600 hover:bg-indigo-700 border-none shadow-md"
               >
-                <span>{currentStep + 1 === hrQuestions.length ? 'Submit Final Answer' : 'Submit & Next Question'}</span>
-                <ArrowRight size={15} />
+                <RotateCcw size={14} />
+                <span>Practice Another Interview</span>
               </Button>
             </div>
           </div>
-        )}
-
-        {/* Completed Call Summary Screen */}
-        {callStatus === 'completed' && (
-          <div className="space-y-6 py-4 animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/30">
-              <Award size={32} />
-            </div>
-
-            <div>
-              <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-xs font-bold uppercase tracking-wider border border-emerald-500/30">
-                HR Screening Completed
-              </span>
-              <h2 className="text-xl font-extrabold text-white mt-2">
-                Preliminary Screening Cleared!
-              </h2>
-              <p className="text-xs text-slate-300 mt-1">
-                Your screening transcript and eligibility summary have been submitted to the recruitment team.
-              </p>
-            </div>
-
-            <div className="p-4 bg-white/10 rounded-2xl border border-white/10 text-left text-xs space-y-2">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Communication Rating:</span>
-                <span className="font-bold text-emerald-400">Excellent (95%)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Notice Period Verified:</span>
-                <span className="font-bold text-white">30 Days (Flexible)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Compensation Fit:</span>
-                <span className="font-bold text-white">Within Hiring Bracket</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Next Step:</span>
-                <span className="font-bold text-amber-300">Technical Round Scheduling</span>
-              </div>
-            </div>
-
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => nav('/applications')}
-              className="w-full font-bold text-xs"
-            >
-              Go to Application Tracker
-            </Button>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

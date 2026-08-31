@@ -8,6 +8,48 @@ export interface User {
   updatedAt: string
 }
 
+export interface EducationEntry {
+  id: string
+  institution: string
+  degree: string
+  fieldOfStudy: string
+  startYear: number
+  endYear: number
+  grade?: string
+}
+
+export interface ExperienceEntry {
+  id: string
+  company: string
+  position: string
+  location?: string
+  workType?: 'Remote' | 'Hybrid' | 'On-site'
+  startDate: string
+  endDate?: string
+  isCurrent: boolean
+  description: string
+  skillsUsed?: string[]
+}
+
+export interface ProjectEntry {
+  id: string
+  title: string
+  description: string
+  role?: string
+  technologies: string[]
+  liveUrl?: string
+  githubUrl?: string
+  imageUrl?: string
+}
+
+export interface UserPrivacySettings {
+  profileVisibility: 'public' | 'connections_only' | 'private'
+  showEmailToConnections: boolean
+  showPhoneToConnections: boolean
+  allowConnectionRequests: boolean
+  contactPrivacyMask: boolean
+}
+
 export interface CandidateProfile {
   id: string
   userId: string
@@ -17,6 +59,7 @@ export interface CandidateProfile {
   headline: string
   bio: string
   location: string
+  currentRole?: string
   totalExperienceYears: number
   currentSalaryLPA: number
   expectedSalaryLPA: number
@@ -28,10 +71,24 @@ export interface CandidateProfile {
   resumeUrl?: string
   atsScore: number
   contactPrivacyMask: boolean
+  privacySettings?: UserPrivacySettings
+  education?: EducationEntry[]
+  experience?: ExperienceEntry[]
+  projects?: ProjectEntry[]
   githubUrl?: string
   linkedinUrl?: string
   portfolioUrl?: string
   applicationsCount: number
+  connectionsCount?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Connection {
+  id: string
+  requesterId: string
+  recipientId: string
+  status: 'pending' | 'accepted' | 'declined'
   createdAt: string
   updatedAt: string
 }
@@ -90,6 +147,41 @@ export interface Application {
   }[]
 }
 
+export interface InterviewMonitoringIncident {
+  id: string
+  type: 'gaze_diverted' | 'face_turned_away' | 'multiple_faces' | 'no_face_detected' | 'tab_switched' | 'technical_issue'
+  title: string
+  reason: string
+  timestamp: string
+  durationSeconds: number
+  confidenceScore: number
+  strikeNumber: number | 'DISQUALIFIED'
+  severity: 'warning' | 'critical' | 'termination'
+}
+
+export interface InterviewSessionRecord {
+  id: string
+  candidateId: string
+  interviewType: 'Technical' | 'Behavioral' | 'HR' | 'Mixed' | 'System Design'
+  totalQuestions: number
+  completedQuestions: number
+  overallScore: number
+  status: 'in_progress' | 'completed' | 'terminated_violations' | 'terminated_tab_switch'
+  terminationReason?: string
+  answers: {
+    questionId: string
+    prompt: string
+    category: string
+    answeredText: string
+    durationSeconds: number
+    aiScore?: number
+    aiFeedback?: string
+  }[]
+  incidents: InterviewMonitoringIncident[]
+  startedAt: string
+  completedAt?: string
+}
+
 export interface Meeting {
   id: string
   code: string
@@ -114,37 +206,67 @@ export interface Meeting {
   createdAt: string
 }
 
+export type PostType =
+  | 'Normal Post'
+  | 'Project Showcase'
+  | 'Case Study'
+  | 'Achievement'
+  | 'Career Update'
+  | 'Technical / Knowledge Sharing'
+  | 'Experience Sharing'
+
+export type PostVisibility = 'public' | 'connections' | 'private'
+
+export interface PostLink {
+  title?: string
+  label?: string
+  url: string
+  iconType?: string
+}
+
+export interface PostMediaItem {
+  id: string
+  type: 'image' | 'video'
+  url: string
+  name?: string
+  size?: number
+}
+
+export interface PostComment {
+  id: string
+  authorId: string
+  authorName: string
+  authorRole: string
+  authorAvatar?: string
+  content: string
+  createdAt: string
+}
+
 export interface Post {
   id: string
   authorId: string
   authorName: string
   authorRole: string
   authorAvatar?: string
-  authorType: 'candidate' | 'company'
-  companyRating?: number
-  category: 'Case Study' | 'Interview Experience' | 'Hiring Announcement' | 'Technical Article' | 'General'
+  authorType?: 'candidate' | 'recruiter' | 'company'
+  category?: string
+  postType?: PostType
   title: string
   description: string
   imageUrl?: string
-  links: {
-    title: string
-    url: string
-    iconType: 'github' | 'job' | 'portfolio' | 'link'
-  }[]
-  tags: string[]
+  hashtags?: string[]
+  tags?: string[]
+  links?: PostLink[]
+  media?: PostMediaItem[]
+  visibility?: PostVisibility
   likes: number
   likedByUserIds: string[]
   savedByUserIds: string[]
-  comments: {
-    id: string
-    authorId: string
-    authorName: string
-    authorRole: string
-    authorAvatar?: string
-    content: string
-    createdAt: string
-  }[]
+  comments: PostComment[]
+  companyRating?: number
+  viewsCount?: number
   createdAt: string
+  updatedAt?: string
 }
 
 export interface KYCDocument {

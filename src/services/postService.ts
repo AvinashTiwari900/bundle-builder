@@ -1,373 +1,603 @@
+import { API_BASE_URL } from '../config/api.config'
+import { profileService } from './profileService'
+import { connectionService } from './connectionService'
+import { notificationService } from './notificationService'
+
+export type PostType =
+  | 'Normal Post'
+  | 'Project Showcase'
+  | 'Case Study'
+  | 'Achievement'
+  | 'Career Update'
+  | 'Technical / Knowledge Sharing'
+  | 'Experience Sharing'
+
+export type PostVisibility = 'public' | 'connections' | 'private'
+
+export interface PostLink {
+  label: string
+  url: string
+}
+
+export interface PostMediaItem {
+  id: string
+  type: 'image' | 'video'
+  url: string
+  name?: string
+  size?: number
+}
+
 export interface PostComment {
   id: string
+  authorId: string
   authorName: string
-  authorAvatar?: string
   authorRole: string
+  authorAvatar?: string
   content: string
   createdAt: string
 }
 
 export interface Post {
   id: string
-  title: string
-  description: string
+  authorId: string
   authorName: string
   authorRole: string
-  authorType: 'company' | 'candidate'
   authorAvatar?: string
-  companyName?: string
-  companyBadge?: string
-  companyRating?: number
-  links?: { title: string; url: string; iconType?: 'github' | 'live' | 'portfolio' | 'article' | 'job' }[]
-  tags: string[]
-  imageUrl?: string
-  videoUrl?: string
+  postType: PostType
+  title: string
+  description: string
+  hashtags: string[]
+  links: PostLink[]
+  media: PostMediaItem[]
+  visibility: PostVisibility
   likes: number
+  likedByUserIds: string[]
   hasLiked?: boolean
   isBookmarked?: boolean
+  savedByUserIds: string[]
   comments: PostComment[]
+  viewsCount?: number
   createdAt: string
-  category: 'Company Hiring' | 'Candidate Showcase' | 'Interview Experience' | 'Career Tips' | 'Tech Insight'
-  featured?: boolean
+  updatedAt?: string
 }
+
+const STORAGE_KEY = 'rap_candidate_community_posts_v3'
 
 const INITIAL_POSTS: Post[] = [
   {
-    id: 'post-1',
-    title: '🚀 Northstar Analytics is Hiring: 15+ Lead & Senior Business Analysts (Immediate Joiners)',
-    description: `We are scaling our core enterprise analytics engineering practice across Bengaluru & Hyderabad! 🌟
+    id: 'post-101',
+    authorId: 'candidate-1',
+    authorName: 'Avinash Tiwari',
+    authorRole: 'Lead Business Analyst & Analytics Engineer',
+    authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+    postType: 'Case Study',
+    title: '📊 Case Study: Slashing End-of-Day Payment Reconciliation from 4 Hours to 6 Minutes (₹800 Cr Monthly GMV)',
+    description: `### 🎯 Problem Statement
+In high-throughput FinTech ecosystems, payment gateway settlement batch files arrive asynchronously with up to 14% discrepancy noise due to intermittent network retries and webhook timeouts. Our finance operations team spent 4+ hours daily performing manual VLOOKUP reconciliations.
 
-We are looking for data-driven Business Analysts with 3-7 years of experience who excel at:
-• Advanced SQL data modeling and ETL pipeline validation
-• Building high-frequency executive BI dashboards (Power BI / Tableau)
-• Partnering with product management on revenue forecasting & funnel conversion optimization
+### 🛠️ Architecture & Solution
+1. **Idempotency Key Verification**: Implemented distributed Redis key caching before ingesting settlement event payloads.
+2. **Delta Telemetry on Snowflake**: Built dimensional star-schema staging models using dbt to compute real-time variance calculations.
+3. **Automated Quarantines**: Designed automated discrepancy triage pipelines flagging orphaned refunds without human intervention.
 
-✨ **Why Northstar?**
-- 99% Candidate Response Rate with 24h recruiter feedback SLA
-- 100% RAS verified hiring partner with 4.9 ★ Rating
-- Comprehensive wellness perks, hybrid 2-day office setup, and annual certification stipends.
-
-Feel free to check out our open jobs or connect directly through the RAS Candidate Portal!`,
-    authorName: 'Northstar Talent Acquisition',
-    authorRole: 'Official Hiring Team',
-    authorType: 'company',
-    companyName: 'Northstar Analytics',
-    companyBadge: '4.9 ★ Fast Responder',
-    companyRating: 4.9,
-    authorAvatar: 'https://images.unsplash.com/photo-1572021335469-31706a17aaef?auto=format&fit=crop&w=150&q=80',
-    imageUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80',
+### 📈 Quantified Impact
+- **End-of-day reconciliation latency**: Reduced from **4 hours to under 6 minutes** (97.5% acceleration).
+- **Zero Reconciliation Leakage**: Prevented an estimated ₹18 Lakhs in duplicate refund issuances across two fiscal quarters.`,
+    hashtags: ['#casestudy', '#sql', '#snowflake', '#businessanalysis', '#fintech', '#dbt'],
     links: [
-      { title: 'Apply to Senior BA Role (RAS 1-Click)', url: '/jobs/job-1', iconType: 'job' },
-      { title: 'Northstar Engineering Tech Blog', url: 'https://northstar-analytics.dev/careers', iconType: 'article' }
+      { label: 'GitHub Architecture Code', url: 'https://github.com/AvinashTiwari900/payment-recon-engine' },
+      { label: 'Live Project Demo & Diagram', url: 'https://avinash-tiwari.dev/projects/payment-recon' }
     ],
-    tags: ['#hiring', '#businessanalyst', '#powerbi', '#sql', '#bengaluru', '#hyderabad'],
-    likes: 142,
-    hasLiked: false,
+    media: [
+      {
+        id: 'med-1',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
+        name: 'Reconciliation_Pipeline_Architecture.png'
+      }
+    ],
+    visibility: 'public',
+    likes: 48,
+    likedByUserIds: ['candidate-1', 'usr-network-01', 'usr-network-02'],
+    hasLiked: true,
     isBookmarked: true,
-    category: 'Company Hiring',
-    featured: true,
-    createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    savedByUserIds: ['candidate-1'],
+    viewsCount: 312,
+    createdAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
     comments: [
       {
-        id: 'c-1',
-        authorName: 'Avinash Tiwari',
-        authorRole: 'Lead Business Analyst',
-        authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-        content: 'Just submitted my application through RAS Auto-Apply! Excited about the analytics engineering scale here.',
-        createdAt: new Date(Date.now() - 1 * 3600 * 1000).toISOString()
+        id: 'c-101',
+        authorId: 'usr-network-01',
+        authorName: 'Priya Sharma',
+        authorRole: 'Senior Product Manager @ Razorpay',
+        authorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
+        content: 'Phenomenal architecture breakdown Avinash! The automated quarantine step is critical for scale.',
+        createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString()
       },
       {
-        id: 'c-2',
-        authorName: 'Priya Sharma',
-        authorRole: 'Senior Data Analyst',
-        authorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80',
-        content: 'Is this role open for candidates serving a 30-day notice period as well?',
-        createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString()
+        id: 'c-102',
+        authorId: 'candidate-1',
+        authorName: 'Avinash Tiwari',
+        authorRole: 'Lead Business Analyst',
+        authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+        content: 'Thanks Priya! Separating transient webhook lag from permanent ledger mismatch was the key insight.',
+        createdAt: new Date(Date.now() - 1 * 3600 * 1000).toISOString()
       }
     ]
   },
   {
-    id: 'post-2',
-    title: '💡 My Experience Clearing the AI Technical Round on RAS for Senior BA (94% Score Breakdown)',
-    description: `Hey everyone! I recently attended the Technical Interview round conducted by the RAS AI Recruitment Agent for a Lead Business Analyst position and wanted to share my takeaways:
+    id: 'post-102',
+    authorId: 'usr-network-01',
+    authorName: 'Priya Sharma',
+    authorRole: 'Senior Product Manager @ Razorpay',
+    authorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80',
+    postType: 'Technical / Knowledge Sharing',
+    title: '🧠 5 Principles for Designing Scalable Executive Telemetry & North Star Metrics',
+    description: `When building executive analytics suites, many teams fall into the trap of dashboard overload—shipping 40+ charts that nobody checks.
 
-📌 **What the AI Interviewer focused on:**
-1. **SQL Aggregation nuances**: The difference between \`WHERE\` and \`HAVING\`, plus when to use window functions (\`ROW_NUMBER()\` vs \`DENSE_RANK()\`) preserving row-level granularity.
-2. **Data Pipeline Anomalies**: How to implement quarantine logic and threshold alerts for corrupted staging ETL records.
-3. **STAR Method for Stakeholder Deadlock**: Clearly defining Situation, Task, Action, and quantified Result (e.g. 75% latency reduction).
-
-⚡ **Top Tip:** Practice in the *AI Mock Interview Studio* on the platform before the real meeting! The live facial gaze tracking & proctoring check builds great confidence.
-
-Check out my full case study and public portfolio below!`,
-    authorName: 'Avinash Tiwari',
-    authorRole: 'Lead Business Analyst & Product Strategist',
-    authorType: 'candidate',
-    authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-    imageUrl: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1200&q=80',
+Here are the 5 principles I follow when establishing product metrics:
+1. **Single North Star Metric**: Tied directly to customer value exchange (e.g. Weekly Active Transacting Merchants).
+2. **Input vs Output Metrics**: You can't directly manipulate output metrics; align engineering squads against leading inputs.
+3. **Threshold Alerts over Static Reports**: Push proactive anomaly notifications rather than expecting stakeholders to dig through BI tabs.
+4. **Data Dictionary Transparency**: Every column must have an unambiguous business definition approved across departments.
+5. **Speed & SLA Compliance**: A slow dashboard is an unused dashboard.`,
+    hashtags: ['#productmanagement', '#analytics', '#kpis', '#metrics', '#leadership'],
     links: [
-      { title: 'View My Public Portfolio', url: '/portfolio', iconType: 'portfolio' },
-      { title: 'Revenue Analytics Project GitHub', url: 'https://github.com/AvinashTiwari900/revenue-analytics', iconType: 'github' }
+      { label: 'Product Metrics Framework Guide', url: 'https://priyasharma.pm/frameworks' }
     ],
-    tags: ['#interview-experience', '#businessanalyst', '#sql', '#ai-interview', '#career-tips'],
-    likes: 98,
-    hasLiked: true,
-    isBookmarked: false,
-    category: 'Interview Experience',
-    featured: false,
-    createdAt: new Date(Date.now() - 6 * 3600 * 1000).toISOString(),
-    comments: [
+    media: [
       {
-        id: 'c-3',
-        authorName: 'Rohan Mehta',
-        authorRole: 'Product Analyst',
-        authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80',
-        content: 'Super helpful breakdown Avinash! The tip on window functions is spot on.',
-        createdAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString()
+        id: 'med-2',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
+        name: 'Executive_Telemetry_Framework.png'
       }
-    ]
-  },
-  {
-    id: 'post-3',
-    title: '📊 Project Showcase: Enterprise Revenue Analytics & Automated Forecasting Engine',
-    description: `Excited to showcase my latest end-to-end data analytics project built with **Power BI, SQL, Python, and Snowflake**! 🎯
-
-🚀 **Key Problem Solved:**
-Executive reporting for our 12 product lines required manual spreadsheet reconciliation across 4 separate databases, causing a 4-day reporting lag at the end of every quarter.
-
-🛠️ **Technical Architecture:**
-• Automated SQL pipelines extracting and standardizing 2.5M+ daily transactions
-• Dimensional star-schema data modeling in Snowflake
-• Dynamic Power BI dashboards with automated parameter forecasting and scenario modeling
-
-📈 **Measurable Business Impact:**
-- Reduced report turnaround from 4 days to **2 hours (75% time savings)**
-- Prevented ~₹18 Lakhs in inventory over-allocation during quarterly forecasting cycles.
-
-Live demo & repository links attached below! Feedback is warmly welcomed.`,
-    authorName: 'Avinash Tiwari',
-    authorRole: 'Lead Business Analyst',
-    authorType: 'candidate',
-    authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
-    links: [
-      { title: 'Interactive BI Web Embed', url: 'https://avinash-tiwari.dev/demo-bi', iconType: 'live' },
-      { title: 'Project Repository (SQL & Python Scripts)', url: 'https://github.com/AvinashTiwari900/revenue-analytics-engine', iconType: 'github' }
     ],
-    tags: ['#portfolio-showcase', '#projects', '#powerbi', '#snowflake', '#sql', '#python'],
-    likes: 187,
-    hasLiked: false,
-    isBookmarked: true,
-    category: 'Candidate Showcase',
-    featured: false,
-    createdAt: new Date(Date.now() - 14 * 3600 * 1000).toISOString(),
-    comments: [
-      {
-        id: 'c-4',
-        authorName: 'DataVista Systems',
-        authorRole: 'Analytics Hiring Panel',
-        authorAvatar: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=100&q=80',
-        content: 'Impressive star-schema architecture. We are reviewing candidate portfolios for our Q3 Senior Analytics batch and this caught our attention!',
-        createdAt: new Date(Date.now() - 10 * 3600 * 1000).toISOString()
-      }
-    ]
-  },
-  {
-    id: 'post-4',
-    title: '🏢 Astra Digital: Announcing New AI & Cloud Analytics Engineering Hub in Pune',
-    description: `Astra Digital is officially expanding our high-impact AI & Product Analytics hub in Pune! 🏙️
-
-We are actively hiring for 20+ roles across:
-- Senior / Lead Business Analysts
-- Full Stack Python & React Engineers
-- Cloud Data Warehousing Specialists (Snowflake / BigQuery)
-
-⚡ **Highlights of our hiring cycle:**
-- 4.8 ★ Employer Rating on RAS
-- Fast-track 2-week turnaround from application to final offer
-- Zero unsolicited calls policy: candidate contact privacy respected with in-platform communication.
-
-Explore all open positions directly on the RAS Jobs Explorer tab!`,
-    authorName: 'Astra Digital Careers',
-    authorRole: 'Talent Acquisition Team',
-    authorType: 'company',
-    companyName: 'Astra Digital',
-    companyBadge: '4.8 ★ Fast Responder',
-    companyRating: 4.8,
-    authorAvatar: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=150&q=80',
-    imageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80',
-    links: [
-      { title: 'Explore Astra Digital Jobs', url: '/jobs?q=Astra', iconType: 'job' },
-      { title: 'Astra Engineering Culture', url: 'https://astradigital.io/culture', iconType: 'article' }
-    ],
-    tags: ['#hiring', '#pune', '#dataanalytics', '#cloud', '#softwareengineering'],
-    likes: 115,
+    visibility: 'public',
+    likes: 84,
+    likedByUserIds: ['candidate-1', 'usr-network-02'],
     hasLiked: false,
     isBookmarked: false,
-    category: 'Company Hiring',
-    featured: false,
-    createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+    savedByUserIds: [],
+    viewsCount: 520,
+    createdAt: new Date(Date.now() - 18 * 3600 * 1000).toISOString(),
     comments: []
   },
   {
-    id: 'post-5',
-    title: '🎯 5 Common Resume & ATS Mistakes Candidates Make (And How to Fix Them in 10 Minutes)',
-    description: `Having reviewed thousands of candidate resumes and ATS scoring algorithms, here are the top 5 mistakes that silently get applications filtered out:
+    id: 'post-103',
+    authorId: 'usr-network-02',
+    authorName: 'Rahul Verma',
+    authorRole: 'Staff Full Stack Architect @ Swiggy',
+    authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+    postType: 'Project Showcase',
+    title: '⚡ Open-Source Release: High-Throughput Event Streaming Gateway on Go & Kafka',
+    description: `Excited to open-source **EventPulse**, a lightweight WebSocket-to-Kafka ingestion gateway capable of handling 50,000+ persistent connections with sub-5ms serialization latency.
 
-1. **Vague Bullet Points without Quantified Impact**: Instead of writing "Created sales reports", write *"Built automated Power BI sales dashboards cutting reporting lag by 75% for 12 business units."*
-2. **Missing Exact Keyword Variations**: Many parsers look for both "SQL" and "Relational Databases", or "Business Analysis" and "BRD/FRD authoring".
-3. **Unstructured Project Sections**: Always provide Project Name, Your Exact Role, Technologies, and Tangible Outcomes.
-4. **Outdated Contact/Location Settings**: Keep your preferred locations (e.g. Remote, Bengaluru, Hyderabad) and notice period accurate.
-5. **Not comparing against Target Job Descriptions**: Use the **JD Match Comparator** on RAS to spot missing keywords before 1-Click Applying!
+**Key Technical Features:**
+- Zero memory allocation JSON decoder with SIMD acceleration.
+- Built-in rate limiting with token-bucket algorithms.
+- Native Prometheus metrics exporter and OpenTelemetry tracing spans.
 
-Save this post for your next job application sprint! 📌`,
-    authorName: 'RAS Career Coach AI',
-    authorRole: 'AI Career Intelligence',
-    authorType: 'company',
-    companyName: 'Recruitment Automation Software (RAS)',
-    companyBadge: 'AI Verified Guide',
-    authorAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=150&q=80',
-    imageUrl: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1200&q=80',
+Feel free to star the repository and test the benchmark suite!`,
+    hashtags: ['#golang', '#kafka', '#opensource', '#microservices', '#systemdesign'],
     links: [
-      { title: 'Run Instant ATS Resume Scan', url: '/resume', iconType: 'article' },
-      { title: 'Compare Resume against JD', url: '/jobs', iconType: 'job' }
+      { label: 'GitHub Repository (Star on GitHub)', url: 'https://github.com/example/eventpulse' },
+      { label: 'Benchmark Report & Documentation', url: 'https://eventpulse.dev' }
     ],
-    tags: ['#career-tips', '#resume-ats', '#job-search', '#recruitment', '#skills'],
-    likes: 312,
+    media: [
+      {
+        id: 'med-3',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1200&q=80',
+        name: 'EventPulse_Benchmark.png'
+      }
+    ],
+    visibility: 'public',
+    likes: 128,
+    likedByUserIds: ['candidate-1'],
     hasLiked: true,
     isBookmarked: true,
-    category: 'Career Tips',
-    featured: true,
-    createdAt: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
+    savedByUserIds: ['candidate-1'],
+    viewsCount: 890,
+    createdAt: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
+    comments: [
+      {
+        id: 'c-103',
+        authorId: 'candidate-1',
+        authorName: 'Avinash Tiwari',
+        authorRole: 'Lead Business Analyst',
+        authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+        content: 'This is brilliant Rahul! Could this be plugged directly into an audit stream for financial delta events?',
+        createdAt: new Date(Date.now() - 1 * 24 * 3600 * 1000).toISOString()
+      }
+    ]
+  },
+  {
+    id: 'post-104',
+    authorId: 'candidate-1',
+    authorName: 'Avinash Tiwari',
+    authorRole: 'Lead Business Analyst & Analytics Engineer',
+    authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+    postType: 'Achievement',
+    title: '🏆 Cleared Microsoft Certified: Power BI Data Analyst Associate (PL-300)',
+    description: `Thrilled to share that I have officially passed the **PL-300 Certification Exam** with a score of 920/1000! 
+
+The assessment tested deep competencies in:
+- Advanced DAX calculations (Time Intelligence, Iterators, Context Transition)
+- Row-Level Security (RLS) configuration across enterprise workspaces
+- Semantic data model optimization and query plan inspection
+
+Looking forward to applying these skills across larger enterprise datasets!`,
+    hashtags: ['#certification', '#powerbi', '#pl300', '#dataanalytics', '#continuouslearning'],
+    links: [
+      { label: 'Microsoft Verified Credential Badge', url: 'https://learn.microsoft.com/credentials' }
+    ],
+    media: [
+      {
+        id: 'med-4',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?auto=format&fit=crop&w=1200&q=80',
+        name: 'PL300_Certificate.png'
+      }
+    ],
+    visibility: 'public',
+    likes: 62,
+    likedByUserIds: ['candidate-1'],
+    hasLiked: true,
+    isBookmarked: false,
+    savedByUserIds: [],
+    viewsCount: 410,
+    createdAt: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
+    comments: []
+  },
+  {
+    id: 'post-105',
+    authorId: 'usr-network-03',
+    authorName: 'Ananya Iyer',
+    authorRole: 'Lead ML Engineer @ CRED',
+    authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+    postType: 'Case Study',
+    title: '🔍 Real-Time Credit Fraud Anomaly Detection on Streaming GNNs',
+    description: `Graph Neural Networks (GNNs) provide significant recall improvements when identifying synthetic identity fraud rings. In this technical walkthrough, we break down our sub-40ms inference pipeline processing 10k transactions/sec.`,
+    hashtags: ['#machinelearning', '#graphneuralnetworks', '#fintech', '#fraudprevention'],
+    links: [
+      { label: 'Technical Whitepaper', url: 'https://cred.club/tech/gnn-fraud' }
+    ],
+    media: [
+      {
+        id: 'med-5',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=1200&q=80',
+        name: 'GNN_Graph_Topology.png'
+      }
+    ],
+    visibility: 'connections',
+    likes: 95,
+    likedByUserIds: [],
+    hasLiked: false,
+    isBookmarked: false,
+    savedByUserIds: [],
+    viewsCount: 680,
+    createdAt: new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString(),
     comments: []
   }
 ]
 
 export const postService = {
+  /**
+   * Fetch all posts from LocalStorage with fallback & backend sync
+   */
   getPosts(): Post[] {
-    const raw = localStorage.getItem('rap_community_posts')
-    if (!raw) {
-      localStorage.setItem('rap_community_posts', JSON.stringify(INITIAL_POSTS))
-      return INITIAL_POSTS
-    }
     try {
-      const parsed = JSON.parse(raw)
-      return parsed.length ? parsed : INITIAL_POSTS
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed
+        }
+      }
+      this.savePosts(INITIAL_POSTS)
+      return INITIAL_POSTS
     } catch {
       return INITIAL_POSTS
     }
   },
 
+  /**
+   * Persist posts
+   */
   savePosts(posts: Post[]) {
-    localStorage.setItem('rap_community_posts', JSON.stringify(posts))
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(posts))
+    } catch (e) {
+      console.warn('Failed to save posts:', e)
+    }
   },
 
-  createPost(input: {
+  /**
+   * Get filtered visible posts for current user respecting connection & privacy rules
+   */
+  getVisiblePosts(currentUserId: string = 'candidate-1'): Post[] {
+    const all = this.getPosts()
+    return all.filter((post) => {
+      // 1. Author can always see own posts
+      if (post.authorId === currentUserId) return true
+      // 2. Private posts are hidden from others
+      if (post.visibility === 'private') return false
+      // 3. Connections only: check if user is connected
+      if (post.visibility === 'connections') {
+        return connectionService.isConnected(post.authorId)
+      }
+      // 4. Public posts are visible
+      return true
+    })
+  },
+
+  /**
+   * Create new candidate post / case study / portfolio piece
+   */
+  createPost(newPostData: {
     title: string
     description: string
-    authorName: string
-    authorRole: string
-    authorType: 'company' | 'candidate'
-    companyName?: string
-    companyBadge?: string
-    authorAvatar?: string
-    links?: { title: string; url: string; iconType?: 'github' | 'live' | 'portfolio' | 'article' | 'job' }[]
-    tags: string[]
-    imageUrl?: string
-    category: 'Company Hiring' | 'Candidate Showcase' | 'Interview Experience' | 'Career Tips' | 'Tech Insight'
+    postType: PostType
+    hashtags?: string[]
+    links?: PostLink[]
+    media?: PostMediaItem[]
+    visibility?: PostVisibility
   }): Post {
+    const profile = profileService.get() || {}
+    const currentUserId = profile.id || 'candidate-1'
     const posts = this.getPosts()
-    const newPost: Post = {
-      id: 'post-' + Date.now(),
-      title: input.title.trim(),
-      description: input.description.trim(),
-      authorName: input.authorName.trim(),
-      authorRole: input.authorRole.trim(),
-      authorType: input.authorType,
-      companyName: input.companyName,
-      companyBadge: input.companyBadge,
-      authorAvatar:
-        input.authorAvatar ||
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-      links: input.links || [],
-      tags: input.tags.map((t) => (t.startsWith('#') ? t : `#${t}`)),
-      imageUrl: input.imageUrl,
+
+    const cleanLinks: PostLink[] = (newPostData.links || [])
+      .filter((l) => l && l.label && l.url)
+      .map((l) => ({ label: l.label.trim(), url: l.url.trim() }))
+
+    const cleanHashtags: string[] = (newPostData.hashtags || [])
+      .map((t) => (t.startsWith('#') ? t.toLowerCase() : `#${t.toLowerCase()}`))
+
+    const post: Post = {
+      id: 'post-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+      authorId: currentUserId,
+      authorName: profile.name || 'Avinash Tiwari',
+      authorRole: profile.headline || 'Lead Business Analyst',
+      authorAvatar: profile.profilePhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+      postType: newPostData.postType || 'Normal Post',
+      title: newPostData.title.trim(),
+      description: newPostData.description.trim(),
+      hashtags: cleanHashtags,
+      links: cleanLinks,
+      media: newPostData.media || [],
+      visibility: newPostData.visibility || 'public',
       likes: 0,
+      likedByUserIds: [],
       hasLiked: false,
       isBookmarked: false,
+      savedByUserIds: [],
       comments: [],
-      category: input.category,
+      viewsCount: 1,
       createdAt: new Date().toISOString()
     }
 
-    const updated = [newPost, ...posts]
-    this.savePosts(updated)
-    return newPost
-  },
+    posts.unshift(post)
+    this.savePosts(posts)
 
-  toggleLike(postId: string): { likes: number; hasLiked: boolean } {
-    const posts = this.getPosts()
-    let result = { likes: 0, hasLiked: false }
-    const updated = posts.map((p) => {
-      if (p.id === postId) {
-        const nextLiked = !p.hasLiked
-        const nextLikes = nextLiked ? p.likes + 1 : Math.max(0, p.likes - 1)
-        result = { likes: nextLikes, hasLiked: nextLiked }
-        return { ...p, likes: nextLikes, hasLiked: nextLiked }
-      }
-      return p
+    // Notify user
+    notificationService.create({
+      title: '🌟 Post Published to Community Feed',
+      message: `Your ${post.postType} "${post.title.slice(0, 40)}..." is now live on your portfolio & feed.`,
+      type: 'system'
     })
-    this.savePosts(updated)
-    return result
+
+    // Async backend synchronization
+    try {
+      fetch(`${API_BASE_URL}/posts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(post)
+      }).catch(() => {})
+    } catch {}
+
+    return post
   },
 
-  toggleBookmark(postId: string): boolean {
+  /**
+   * Update existing post (author only)
+   */
+  updatePost(postId: string, updatedData: Partial<Post>): Post | null {
     const posts = this.getPosts()
-    let isBookmarked = false
-    const updated = posts.map((p) => {
-      if (p.id === postId) {
-        isBookmarked = !p.isBookmarked
-        return { ...p, isBookmarked }
+    const index = posts.findIndex((p) => p.id === postId)
+    if (index === -1) return null
+
+    const existing = posts[index]
+    const updatedPost: Post = {
+      ...existing,
+      ...updatedData,
+      updatedAt: new Date().toISOString()
+    }
+
+    posts[index] = updatedPost
+    this.savePosts(posts)
+
+    // Async backend update
+    try {
+      fetch(`${API_BASE_URL}/posts/${postId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData)
+      }).catch(() => {})
+    } catch {}
+
+    return updatedPost
+  },
+
+  /**
+   * Delete post (author only)
+   */
+  deletePost(postId: string): boolean {
+    const posts = this.getPosts()
+    const filtered = posts.filter((p) => p.id !== postId)
+    if (filtered.length === posts.length) return false
+
+    this.savePosts(filtered)
+
+    // Async backend delete
+    try {
+      fetch(`${API_BASE_URL}/posts/${postId}`, {
+        method: 'DELETE'
+      }).catch(() => {})
+    } catch {}
+
+    return true
+  },
+
+  /**
+   * Toggle like state
+   */
+  toggleLike(postId: string, currentUserId: string = 'candidate-1'): { isLiked: boolean; likesCount: number } {
+    const posts = this.getPosts()
+    const post = posts.find((p) => p.id === postId)
+    if (!post) return { isLiked: false, likesCount: 0 }
+
+    post.likedByUserIds = post.likedByUserIds || []
+    const hasLiked = post.likedByUserIds.includes(currentUserId)
+
+    if (hasLiked) {
+      post.likedByUserIds = post.likedByUserIds.filter((uid) => uid !== currentUserId)
+      post.likes = Math.max(0, post.likes - 1)
+      post.hasLiked = false
+    } else {
+      post.likedByUserIds.push(currentUserId)
+      post.likes += 1
+      post.hasLiked = true
+
+      // Notify post author if not self
+      if (post.authorId !== currentUserId) {
+        notificationService.create({
+          title: '❤️ New Like on your Post',
+          message: `Someone liked your ${post.postType}: "${post.title.slice(0, 35)}..."`,
+          type: 'social'
+        })
       }
-      return p
-    })
-    this.savePosts(updated)
-    return isBookmarked
+    }
+
+    this.savePosts(posts)
+
+    try {
+      fetch(`${API_BASE_URL}/posts/${postId}/like`, { method: 'POST' }).catch(() => {})
+    } catch {}
+
+    return { isLiked: !hasLiked, likesCount: post.likes }
   },
 
-  addComment(postId: string, comment: { authorName: string; authorRole: string; authorAvatar?: string; content: string }): PostComment {
+  /**
+   * Toggle bookmark
+   */
+  toggleBookmark(postId: string, currentUserId: string = 'candidate-1'): boolean {
     const posts = this.getPosts()
-    const newComment: PostComment = {
-      id: 'c-' + Date.now(),
-      authorName: comment.authorName,
-      authorRole: comment.authorRole,
-      authorAvatar:
-        comment.authorAvatar ||
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-      content: comment.content.trim(),
+    const post = posts.find((p) => p.id === postId)
+    if (!post) return false
+
+    post.savedByUserIds = post.savedByUserIds || []
+    const isSaved = post.savedByUserIds.includes(currentUserId)
+
+    if (isSaved) {
+      post.savedByUserIds = post.savedByUserIds.filter((uid) => uid !== currentUserId)
+      post.isBookmarked = false
+    } else {
+      post.savedByUserIds.push(currentUserId)
+      post.isBookmarked = true
+    }
+
+    this.savePosts(posts)
+
+    try {
+      fetch(`${API_BASE_URL}/posts/${postId}/bookmark`, { method: 'POST' }).catch(() => {})
+    } catch {}
+
+    return !isSaved
+  },
+
+  /**
+   * Add comment to post
+   */
+  addComment(postId: string, content: string): PostComment | null {
+    if (!content.trim()) return null
+    const profile = profileService.get() || {}
+    const currentUserId = profile.id || 'candidate-1'
+    const posts = this.getPosts()
+    const post = posts.find((p) => p.id === postId)
+    if (!post) return null
+
+    const comment: PostComment = {
+      id: 'c-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+      authorId: currentUserId,
+      authorName: profile.name || 'Avinash Tiwari',
+      authorRole: profile.headline || 'Lead Business Analyst',
+      authorAvatar: profile.profilePhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+      content: content.trim(),
       createdAt: new Date().toISOString()
     }
 
-    const updated = posts.map((p) => {
-      if (p.id === postId) {
-        return { ...p, comments: [...p.comments, newComment] }
-      }
-      return p
-    })
-    this.savePosts(updated)
-    return newComment
+    post.comments = post.comments || []
+    post.comments.push(comment)
+    this.savePosts(posts)
+
+    // Notify author if not self
+    if (post.authorId !== currentUserId) {
+      notificationService.create({
+        title: '💬 New Comment on your Post',
+        message: `${comment.authorName} commented: "${content.slice(0, 40)}..."`,
+        type: 'social'
+      })
+    }
+
+    try {
+      fetch(`${API_BASE_URL}/posts/${postId}/comment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+      }).catch(() => {})
+    } catch {}
+
+    return comment
   },
 
-  deletePost(postId: string) {
+  /**
+   * Delete comment
+   */
+  deleteComment(postId: string, commentId: string): boolean {
     const posts = this.getPosts()
-    const updated = posts.filter((p) => p.id !== postId)
-    this.savePosts(updated)
+    const post = posts.find((p) => p.id === postId)
+    if (!post || !post.comments) return false
+
+    const filtered = post.comments.filter((c) => c.id !== commentId)
+    if (filtered.length === post.comments.length) return false
+
+    post.comments = filtered
+    this.savePosts(posts)
+
+    try {
+      fetch(`${API_BASE_URL}/posts/${postId}/comments/${commentId}`, {
+        method: 'DELETE'
+      }).catch(() => {})
+    } catch {}
+
+    return true
   },
 
-  getSavedPosts(): Post[] {
-    return this.getPosts().filter((p) => p.isBookmarked)
+  /**
+   * Get saved posts for user
+   */
+  getSavedPosts(currentUserId: string = 'candidate-1'): Post[] {
+    const all = this.getPosts()
+    return all.filter((p) => (p.savedByUserIds && p.savedByUserIds.includes(currentUserId)) || p.isBookmarked)
   },
 
-  getSavedPostsCount(): number {
-    return this.getPosts().filter((p) => p.isBookmarked).length
+  /**
+   * Get count of saved posts
+   */
+  getSavedPostsCount(currentUserId: string = 'candidate-1'): number {
+    return this.getSavedPosts(currentUserId).length
   }
 }

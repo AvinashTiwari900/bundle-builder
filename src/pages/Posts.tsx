@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   MessageSquare,
@@ -13,1018 +13,1382 @@ import {
   Github,
   Globe,
   Briefcase,
-  Building2,
   User,
   CheckCircle2,
   X,
   Tag,
   Send,
   Image as ImageIcon,
+  Video,
   Link as LinkIcon,
-  Flame,
   Award,
   Clock,
   ThumbsUp,
   MoreVertical,
-  Trash2
+  Trash2,
+  Edit3,
+  UserPlus,
+  UserCheck,
+  Lock,
+  Users,
+  Eye,
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+  Layers,
+  FileCode,
+  TrendingUp,
+  AlertCircle,
+  FolderGit2,
+  Check,
+  ChevronDown,
+  Upload,
+  Play
 } from 'lucide-react'
-import { postService, Post, PostComment } from '../services/postService'
+import {
+  postService,
+  Post,
+  PostComment,
+  PostType,
+  PostVisibility,
+  PostLink,
+  PostMediaItem
+} from '../services/postService'
 import { profileService } from '../services/profileService'
+import { connectionService, ConnectionUser } from '../services/connectionService'
+import { notificationService } from '../services/notificationService'
 import Button from '../components/ui/Button'
-import Input from '../components/ui/Input'
+import Card from '../components/ui/Card'
+import FormattedContent from '../components/common/FormattedContent'
 
-const CATEGORIES = [
-  'All Posts',
-  'Saved Posts',
-  'Company Hiring',
-  'Candidate Showcase',
-  'Interview Experience',
-  'Career Tips',
-  'Tech Insight'
+const POST_TYPES: PostType[] = [
+  'Normal Post',
+  'Project Showcase',
+  'Case Study',
+  'Achievement',
+  'Career Update',
+  'Technical / Knowledge Sharing',
+  'Experience Sharing'
 ]
 
 export default function PostsPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
   const nav = useNavigate()
-  const [posts, setPosts] = useState<Post[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<string>('All Posts')
-  const [activeTag, setActiveTag] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null)
-  const [commentText, setCommentText] = useState('')
-  const [toast, setToast] = useState<string | null>(null)
-
-  // Add Post Form State
-  const [formTitle, setFormTitle] = useState('')
-  const [formCategory, setFormCategory] = useState<Post['category']>('Candidate Showcase')
-  const [formDescription, setFormDescription] = useState('')
-  const [formAuthorType, setFormAuthorType] = useState<'candidate' | 'company'>('candidate')
-  const [formCompanyName, setFormCompanyName] = useState('Northstar Analytics')
-  const [formTags, setFormTags] = useState('')
-  const [formImageUrl, setFormImageUrl] = useState('')
-  const [linkTitle1, setLinkTitle1] = useState('')
-  const [linkUrl1, setLinkUrl1] = useState('')
-  const [linkType1, setLinkType1] = useState<'github' | 'live' | 'portfolio' | 'article' | 'job'>('github')
-  const [linkTitle2, setLinkTitle2] = useState('')
-  const [linkUrl2, setLinkUrl2] = useState('')
-  const [linkType2, setLinkType2] = useState<'github' | 'live' | 'portfolio' | 'article' | 'job'>('live')
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const profile = profileService.get()
+  const currentUserId = profile?.id || 'candidate-1'
+
+  // Data states
+  const [posts, setPosts] = useState<Post[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+
+  // Filter & Search states
+  const [activeTab, setActiveTab] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeTag, setActiveTag] = useState<string | null>(null)
+
+  // Modals & Panels
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editingPost, setEditingPost] = useState<Post | null>(null)
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null)
+  const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null)
+  const [commentText, setCommentText] = useState('')
+  const [activeMediaLightbox, setActiveMediaLightbox] = useState<{ url: string; type: 'image' | 'video'; name?: string } | null>(null)
+
+  // Create / Edit Form States
+  const [formPostType, setFormPostType] = useState<PostType>('Project Showcase')
+  const [formTitle, setFormTitle] = useState('')
+  const [formDescription, setFormDescription] = useState('')
+  const [formHashtags, setFormHashtags] = useState('')
+  const [formVisibility, setFormVisibility] = useState<PostVisibility>('public')
+  const [formLinks, setFormLinks] = useState<PostLink[]>([{ label: '', url: '' }])
+  const [formMedia, setFormMedia] = useState<PostMediaItem[]>([])
+  const [mediaUploadError, setMediaUploadError] = useState<string | null>(null)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const descriptionTextareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg)
+    setTimeout(() => setToastMessage(null), 3500)
+  }
+
+  // Load posts
+  const loadPosts = () => {
+    setIsLoading(true)
+    try {
+      const all = postService.getVisiblePosts(currentUserId)
+      setPosts(all)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
     loadPosts()
     const tagParam = searchParams.get('tag')
-    const viewParam = searchParams.get('view')
+    const tabParam = searchParams.get('tab')
     if (tagParam) setActiveTag(tagParam)
-    if (viewParam === 'saved') setSelectedCategory('Saved Posts')
+    if (tabParam) setActiveTab(tabParam)
   }, [searchParams])
 
-  const loadPosts = () => {
-    setPosts(postService.getPosts())
+  // Tab change
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId)
+    setSearchParams(tabId === 'all' ? {} : { tab: tabId })
   }
 
-  const showToast = (msg: string) => {
-    setToast(msg)
-    setTimeout(() => setToast(null), 3000)
-  }
-
-  const handleLike = (postId: string) => {
-    postService.toggleLike(postId)
+  // Handle Like
+  const handleToggleLike = (postId: string) => {
+    const res = postService.toggleLike(postId, currentUserId)
     loadPosts()
+    if (res.isLiked) {
+      showToast('Liked post! ❤️')
+    }
   }
 
-  const handleBookmark = (postId: string) => {
-    const isSaved = postService.toggleBookmark(postId)
+  // Handle Bookmark
+  const handleToggleBookmark = (postId: string) => {
+    const isSaved = postService.toggleBookmark(postId, currentUserId)
     loadPosts()
-    showToast(isSaved ? 'Post bookmarked to saved items 📌' : 'Post removed from bookmarks')
+    showToast(isSaved ? '📌 Post saved to your bookmarks!' : 'Post removed from bookmarks.')
   }
 
+  // Handle Share / Copy Link
+  const handleSharePost = (post: Post) => {
+    const postUrl = `${window.location.origin}/posts?post=${post.id}`
+    navigator.clipboard.writeText(postUrl)
+    showToast('🔗 Post link copied to clipboard!')
+  }
+
+  // Handle Connect with Author
+  const handleConnectWithAuthor = async (authorId: string, authorName: string) => {
+    try {
+      const res = await connectionService.sendRequest(authorId)
+      showToast(res.message || `Connection request sent to ${authorName}!`)
+      loadPosts()
+    } catch {
+      showToast(`Connection request sent to ${authorName}!`)
+      loadPosts()
+    }
+  }
+
+  // Handle Add Comment
   const handleAddComment = (postId: string) => {
     if (!commentText.trim()) return
-    postService.addComment(postId, {
-      authorName: profile?.name || 'Avinash Tiwari',
-      authorRole: profile?.headline || 'Lead Business Analyst',
-      authorAvatar:
-        profile?.profilePhoto ||
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-      content: commentText.trim()
-    })
-    setCommentText('')
-    loadPosts()
-    showToast('Comment posted! 💬')
+    const res = postService.addComment(postId, commentText.trim())
+    if (res) {
+      setCommentText('')
+      loadPosts()
+      showToast('Comment posted! 💬')
+    }
   }
 
-  const handleCreatePost = (e: React.FormEvent) => {
+  // Handle Delete Comment
+  const handleDeleteComment = (postId: string, commentId: string) => {
+    postService.deleteComment(postId, commentId)
+    loadPosts()
+    showToast('Comment deleted.')
+  }
+
+  // Handle Direct Media Upload (Images & Videos)
+  const handleMediaFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMediaUploadError(null)
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    Array.from(files).forEach((file) => {
+      // Validate file format
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg', 'video/mp4', 'video/quicktime', 'video/webm']
+      if (!validTypes.includes(file.type)) {
+        setMediaUploadError(`Unsupported file format: ${file.name}. Please upload JPG, PNG, WEBP, or MP4 videos.`)
+        return
+      }
+
+      // Validate file size (Images: 10MB, Videos: 50MB)
+      const isVideo = file.type.startsWith('video/')
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024
+      if (file.size > maxSize) {
+        setMediaUploadError(`File too large: ${file.name}. Max size is ${isVideo ? '50MB for video' : '10MB for image'}.`)
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (uploadEvent) => {
+        const resultUrl = uploadEvent.target?.result as string
+        if (resultUrl) {
+          const newMediaItem: PostMediaItem = {
+            id: 'med-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+            type: isVideo ? 'video' : 'image',
+            url: resultUrl,
+            name: file.name,
+            size: file.size
+          }
+          setFormMedia((prev) => [...prev, newMediaItem])
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleRemoveMedia = (mediaId: string) => {
+    setFormMedia((prev) => prev.filter((m) => m.id !== mediaId))
+  }
+
+  // Formatting Toolbar Helper
+  const insertFormatting = (prefix: string, suffix: string = '') => {
+    const textarea = descriptionTextareaRef.current
+    if (!textarea) return
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const currentText = textarea.value
+    const selectedText = currentText.substring(start, end)
+    const replacement = `${prefix}${selectedText || 'text'}${suffix}`
+    const newText = currentText.substring(0, start) + replacement + currentText.substring(end)
+    setFormDescription(newText)
+    setTimeout(() => {
+      textarea.focus()
+      textarea.setSelectionRange(start + prefix.length, start + prefix.length + (selectedText ? selectedText.length : 4))
+    }, 50)
+  }
+
+  // Links List Helpers
+  const handleAddLinkRow = () => {
+    setFormLinks((prev) => [...prev, { label: '', url: '' }])
+  }
+
+  const handleUpdateLinkRow = (index: number, field: 'label' | 'url', value: string) => {
+    setFormLinks((prev) => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], [field]: value }
+      return updated
+    })
+  }
+
+  const handleRemoveLinkRow = (index: number) => {
+    setFormLinks((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  // Open Create Modal
+  const openCreateModal = (type: PostType = 'Project Showcase') => {
+    setEditingPost(null)
+    setFormPostType(type)
+    setFormTitle('')
+    setFormDescription('')
+    setFormHashtags('')
+    setFormVisibility('public')
+    setFormLinks([{ label: '', url: '' }])
+    setFormMedia([])
+    setMediaUploadError(null)
+    setShowCreateModal(true)
+  }
+
+  // Open Edit Modal
+  const openEditModal = (post: Post) => {
+    setEditingPost(post)
+    setFormPostType(post.postType)
+    setFormTitle(post.title)
+    setFormDescription(post.description)
+    setFormHashtags(post.hashtags.join(' '))
+    setFormVisibility(post.visibility)
+    setFormLinks(post.links.length > 0 ? post.links : [{ label: '', url: '' }])
+    setFormMedia(post.media || [])
+    setMediaUploadError(null)
+    setShowCreateModal(true)
+  }
+
+  // Handle Submit (Create or Update)
+  const handleSubmitPost = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formTitle.trim() || !formDescription.trim()) {
-      showToast('Please fill in both title and description.')
+      showToast('Please provide both a title and description.')
       return
     }
 
-    const links = []
-    if (linkTitle1.trim() && linkUrl1.trim()) {
-      links.push({ title: linkTitle1.trim(), url: linkUrl1.trim(), iconType: linkType1 })
-    }
-    if (linkTitle2.trim() && linkUrl2.trim()) {
-      links.push({ title: linkTitle2.trim(), url: linkUrl2.trim(), iconType: linkType2 })
-    }
-
-    const parsedTags = formTags
+    const cleanLinks = formLinks.filter((l) => l.label.trim() && l.url.trim())
+    const cleanHashtags = formHashtags
       .split(/[\s,]+/)
       .map((t) => t.trim())
       .filter(Boolean)
-      .map((t) => (t.startsWith('#') ? t : `#${t}`))
 
-    if (parsedTags.length === 0) {
-      parsedTags.push('#career', '#tech')
+    if (editingPost) {
+      postService.updatePost(editingPost.id, {
+        title: formTitle,
+        description: formDescription,
+        postType: formPostType,
+        hashtags: cleanHashtags,
+        links: cleanLinks,
+        media: formMedia,
+        visibility: formVisibility
+      })
+      showToast('Post updated successfully! ✨')
+    } else {
+      postService.createPost({
+        title: formTitle,
+        description: formDescription,
+        postType: formPostType,
+        hashtags: cleanHashtags,
+        links: cleanLinks,
+        media: formMedia,
+        visibility: formVisibility
+      })
+      showToast('Post published to feed & portfolio! 🚀')
     }
 
-    postService.createPost({
-      title: formTitle,
-      description: formDescription,
-      authorName: formAuthorType === 'candidate' ? (profile?.name || 'Avinash Tiwari') : `${formCompanyName} Team`,
-      authorRole: formAuthorType === 'candidate' ? (profile?.headline || 'Lead Business Analyst') : 'Hiring Partner',
-      authorType: formAuthorType,
-      companyName: formAuthorType === 'company' ? formCompanyName : undefined,
-      companyBadge: formAuthorType === 'company' ? '4.9 ★ Fast Responder' : undefined,
-      authorAvatar:
-        formAuthorType === 'candidate'
-          ? profile?.profilePhoto ||
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
-          : 'https://images.unsplash.com/photo-1572021335469-31706a17aaef?auto=format&fit=crop&w=150&q=80',
-      category: formCategory,
-      links,
-      tags: parsedTags,
-      imageUrl: formImageUrl.trim() || undefined
-    })
-
+    setShowCreateModal(false)
     loadPosts()
-    setShowAddModal(false)
-    resetForm()
-    showToast('Post published to community feed! 🚀')
   }
 
-  const resetForm = () => {
-    setFormTitle('')
-    setFormDescription('')
-    setFormTags('')
-    setFormImageUrl('')
-    setLinkTitle1('')
-    setLinkUrl1('')
-    setLinkTitle2('')
-    setLinkUrl2('')
+  // Handle Delete Post
+  const handleConfirmDeletePost = () => {
+    if (!deletingPostId) return
+    postService.deletePost(deletingPostId)
+    setDeletingPostId(null)
+    loadPosts()
+    showToast('Post deleted successfully.')
   }
-
-  const savedPosts = posts.filter((p) => p.isBookmarked)
-  const savedCount = savedPosts.length
 
   // Filtered Posts
-  const filteredPosts = posts.filter((p) => {
-    // Saved Posts match
-    if (selectedCategory === 'Saved Posts') {
-      if (!p.isBookmarked) return false
-    } else if (selectedCategory !== 'All Posts' && p.category !== selectedCategory) {
-      return false
-    }
-    // Tag filter match
-    if (activeTag && !p.tags.some((t) => t.toLowerCase() === activeTag.toLowerCase())) {
-      return false
-    }
-    // Search query match
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      const haystack = `${p.title} ${p.description} ${p.authorName} ${p.tags.join(' ')} ${p.companyName || ''}`.toLowerCase()
-      if (!haystack.includes(q)) return false
-    }
-    return true
-  })
+  const filteredPosts = useMemo(() => {
+    return posts.filter((post) => {
+      // Tab filter
+      if (activeTab === 'my_posts') {
+        if (post.authorId !== currentUserId) return false
+      } else if (activeTab === 'connections') {
+        if (post.authorId !== currentUserId && !connectionService.isConnected(post.authorId)) return false
+      } else if (activeTab === 'case_studies') {
+        if (post.postType !== 'Case Study') return false
+      } else if (activeTab === 'projects') {
+        if (post.postType !== 'Project Showcase') return false
+      } else if (activeTab === 'achievements') {
+        if (post.postType !== 'Achievement') return false
+      } else if (activeTab === 'saved') {
+        if (!post.savedByUserIds?.includes(currentUserId) && !post.isBookmarked) return false
+      }
 
-  // Extract all popular tags
-  const allTags = Array.from(new Set(posts.flatMap((p) => p.tags))).slice(0, 12)
+      // Tag filter
+      if (activeTag) {
+        const target = activeTag.toLowerCase().startsWith('#') ? activeTag.toLowerCase() : `#${activeTag.toLowerCase()}`
+        if (!post.hashtags.some((t) => t.toLowerCase() === target)) return false
+      }
+
+      // Search Query
+      if (searchQuery.trim()) {
+        const term = searchQuery.toLowerCase().trim()
+        const matchTitle = post.title.toLowerCase().includes(term)
+        const matchDesc = post.description.toLowerCase().includes(term)
+        const matchAuthor = post.authorName.toLowerCase().includes(term)
+        const matchTag = post.hashtags.some((t) => t.toLowerCase().includes(term))
+        if (!matchTitle && !matchDesc && !matchAuthor && !matchTag) return false
+      }
+
+      return true
+    })
+  }, [posts, activeTab, activeTag, searchQuery, currentUserId])
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-300 pb-16">
       {/* Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm font-semibold border border-slate-700 animate-in slide-in-from-bottom-3 duration-200">
-          <CheckCircle2 size={18} className="text-emerald-400" />
-          <span>{toast}</span>
+      {toastMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 text-sm font-semibold border border-slate-700 animate-in slide-in-from-bottom-3 duration-200"
+        >
+          <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 text-white rounded-3xl p-7 sm:p-9 shadow-xl relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-3 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-bold text-amber-300">
-              <Flame size={14} />
-              <span>Gettin Career Community Feed</span>
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-md">
+              <MessageSquare size={22} />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Posts & Recruitment Feeds
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
-              Discover official company hiring drives, explore candidate project showcases, read verified interview experiences, and bookmark posts for quick reference.
-            </p>
-
-            {/* Quick Toggle Pill: All Posts vs Saved Posts */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <button
-                onClick={() => {
-                  setSelectedCategory('All Posts')
-                  setActiveTag(null)
-                  setSearchParams({})
-                }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  selectedCategory !== 'Saved Posts'
-                    ? 'bg-white text-blue-900 shadow-md shadow-black/10'
-                    : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
-                }`}
-              >
-                <Flame size={13} className={selectedCategory !== 'Saved Posts' ? 'text-amber-500' : 'text-amber-300'} />
-                <span>All Community Feeds</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setSelectedCategory('Saved Posts')
-                  setActiveTag(null)
-                  setSearchParams({ view: 'saved' })
-                }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  selectedCategory === 'Saved Posts'
-                    ? 'bg-amber-400 text-amber-950 shadow-md shadow-amber-500/30 ring-2 ring-amber-300'
-                    : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
-                }`}
-              >
-                <Bookmark size={13} className={selectedCategory === 'Saved Posts' ? 'fill-amber-950 text-amber-950' : 'fill-amber-300 text-amber-300'} />
-                <span>Saved Posts ({savedCount})</span>
-              </button>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Community Posts & Portfolio
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium">
+                Showcase projects, case studies, achievements, and career updates to recruiters and peers.
+              </p>
             </div>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Button
+            variant="outline"
+            size="md"
+            onClick={() => nav('/portfolio')}
+            className="text-xs font-bold border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+            aria-label="View Employer Panel Portfolio Preview"
+          >
+            <Globe size={15} />
+            <span>Panel Portfolio View</span>
+          </Button>
 
           <Button
             variant="primary"
-            size="lg"
-            onClick={() => setShowAddModal(true)}
-            className="bg-white text-blue-900 hover:bg-slate-100 font-bold border-none shadow-lg shadow-black/20 shrink-0"
+            size="md"
+            id="createPostBtn"
+            onClick={() => openCreateModal('Project Showcase')}
+            className="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 border-none"
+            aria-label="Create new candidate post or project showcase"
           >
-            <Plus size={18} />
-            <span>Add Post</span>
+            <Plus size={16} />
+            <span>Create Post / Showcase</span>
           </Button>
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-4 backdrop-blur-md">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Category Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full text-xs font-bold">
-            {CATEGORIES.map((cat) => {
-              const isSavedTab = cat === 'Saved Posts'
-              const isActive = selectedCategory === cat && !activeTag
-              return (
-                <button
-                  key={cat}
-                  onClick={() => {
-                    setSelectedCategory(cat)
-                    setActiveTag(null)
-                    if (isSavedTab) {
-                      setSearchParams({ view: 'saved' })
-                    } else {
-                      setSearchParams({})
-                    }
-                  }}
-                  className={`px-3.5 py-2 rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                    isActive
-                      ? isSavedTab
-                        ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20 font-extrabold'
-                        : 'bg-blue-600 text-white shadow-sm shadow-blue-500/20 font-extrabold'
-                      : isSavedTab
-                        ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 hover:bg-amber-500/20'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  {isSavedTab && <Bookmark size={13} className={isActive ? 'fill-white' : 'fill-amber-500 text-amber-500'} />}
-                  <span>{cat}</span>
-                  {isSavedTab && (
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${isActive ? 'bg-white/20 text-white' : 'bg-amber-500/20 text-amber-900 dark:text-amber-200'}`}>
-                      {savedCount}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
+      {/* Quick Showcase Categories Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { type: 'Project Showcase' as PostType, label: 'Project Showcase', desc: 'Demo architectures & apps', icon: FolderGit2, color: 'text-blue-600 bg-blue-50' },
+          { type: 'Case Study' as PostType, label: 'Case Study', desc: 'Problem, approach & outcome', icon: Layers, color: 'text-purple-600 bg-purple-50' },
+          { type: 'Achievement' as PostType, label: 'Achievement', desc: 'Certifications & milestones', icon: Award, color: 'text-amber-600 bg-amber-50' },
+          { type: 'Technical / Knowledge Sharing' as PostType, label: 'Knowledge Sharing', desc: 'SQL, system design tips', icon: Sparkles, color: 'text-emerald-600 bg-emerald-50' }
+        ].map((item) => {
+          const Icon = item.icon
+          return (
+            <button
+              key={item.type}
+              type="button"
+              onClick={() => openCreateModal(item.type)}
+              className="p-3.5 rounded-2xl bg-white border border-slate-200/90 hover:border-indigo-300 hover:shadow-md transition-all text-left group flex items-start gap-3 cursor-pointer"
+            >
+              <div className={`w-10 h-10 rounded-xl ${item.color} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform`}>
+                <Icon size={20} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-extrabold text-slate-800 group-hover:text-indigo-600 transition-colors truncate">
+                  {item.label}
+                </div>
+                <div className="text-[11px] text-slate-500 truncate font-medium">{item.desc}</div>
+              </div>
+            </button>
+          )
+        })}
+      </div>
 
-          {/* Search Input */}
-          <div className="relative min-w-[240px]">
-            <Search size={15} className="text-slate-400 absolute left-3 top-3" />
+      {/* Search & Tabs Navigation */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs space-y-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          {/* Dynamic Search */}
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
+              id="feedSearchInput"
               type="text"
+              aria-label="Search posts, case studies, technologies, or authors"
+              placeholder="Search posts, case studies, technologies, or authors..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search posts, tags, companies..."
-              className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+              className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
               >
                 <X size={14} />
               </button>
             )}
           </div>
-        </div>
-
-        {/* Popular Tags Row */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 text-xs">
-          <span className="text-slate-400 font-bold flex items-center gap-1">
-            <Tag size={13} />
-            <span>Popular Tags:</span>
-          </span>
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => {
-                setActiveTag(activeTag === tag ? null : tag)
-                if (activeTag !== tag) setSelectedCategory('All Posts')
-              }}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
-                activeTag === tag
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'bg-slate-50 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 border border-slate-200/60'
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
 
           {activeTag && (
-            <button
-              onClick={() => setActiveTag(null)}
-              className="text-xs font-bold text-rose-600 hover:underline ml-2"
-            >
-              Clear Tag Filter ✕
-            </button>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200 shrink-0">
+              <Tag size={13} />
+              <span>Tag: {activeTag}</span>
+              <button
+                type="button"
+                onClick={() => setActiveTag(null)}
+                aria-label="Remove tag filter"
+                className="hover:text-indigo-900 ml-1"
+              >
+                <X size={13} />
+              </button>
+            </div>
           )}
+        </div>
+
+        {/* Tab Filters */}
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pt-1 border-t border-slate-100" role="tablist">
+          {[
+            { id: 'all', label: 'All Feed' },
+            { id: 'connections', label: 'My Connections' },
+            { id: 'my_posts', label: 'My Posts & Portfolio' },
+            { id: 'case_studies', label: 'Case Studies' },
+            { id: 'projects', label: 'Project Showcases' },
+            { id: 'achievements', label: 'Achievements' },
+            { id: 'saved', label: 'Saved Items' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              role="tab"
+              id={`tab-${tab.id}`}
+              aria-selected={activeTab === tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Main Feed Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Feed Posts (8 Cols) */}
-        <div className="lg:col-span-8 space-y-5">
-          {filteredPosts.length === 0 ? (
-            selectedCategory === 'Saved Posts' ? (
-              <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-10 sm:p-14 text-center space-y-4 shadow-sm backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto border border-amber-500/20 shadow-inner">
-                  <Bookmark size={32} className="fill-amber-500/30 text-amber-500" />
-                </div>
-                <div className="space-y-1.5 max-w-md mx-auto">
-                  <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">No Saved Posts Yet</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                    You haven't bookmarked any posts yet. Click the bookmark icon <Bookmark size={12} className="inline fill-amber-500 text-amber-500 mx-0.5" /> on any post in the community feed to save important hiring notices, interview guides, and project showcases here for instant reference.
-                  </p>
-                </div>
-                <div className="pt-2">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedCategory('All Posts')
-                      setSearchParams({})
-                    }}
-                    className="font-bold text-xs"
-                  >
-                    <Flame size={14} />
-                    <span>Explore Community Feeds</span>
-                  </Button>
+      {/* Feed List Grid */}
+      {isLoading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="p-6 bg-white border border-slate-200 rounded-3xl animate-pulse space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-slate-200" />
+                <div className="space-y-2">
+                  <div className="w-36 h-4 bg-slate-200 rounded" />
+                  <div className="w-24 h-3 bg-slate-200 rounded" />
                 </div>
               </div>
-            ) : (
-              <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-12 text-center space-y-3 backdrop-blur-sm">
-                <MessageSquare size={36} className="mx-auto text-slate-300 dark:text-slate-600" />
-                <h3 className="text-base font-bold text-slate-800 dark:text-white">No posts found</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                  No community posts match your selected filter or search term. Be the first to share an update!
-                </p>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setShowAddModal(true)}
-                  className="font-bold text-xs mt-2"
-                >
-                  <Plus size={14} />
-                  <span>Create New Post</span>
-                </Button>
-              </div>
-            )
-          ) : (
-            filteredPosts.map((post) => {
-              const isCompany = post.authorType === 'company'
-              const isCommentOpen = activeCommentPostId === post.id
-
-              return (
-                <div
-                  key={post.id}
-                  className="bg-white/95 dark:bg-slate-900/95 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm hover:shadow-md dark:hover:shadow-2xl dark:hover:shadow-blue-500/5 transition-all space-y-4 backdrop-blur-sm"
-                >
-                  {/* Post Author Header */}
-                  <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={
-                          post.authorAvatar ||
-                          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
-                        }
-                        alt={post.authorName}
-                        className="w-12 h-12 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shadow-xs shrink-0"
-                      />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">{post.authorName}</h3>
-                          {isCompany ? (
-                            <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 rounded-full text-[10px] font-bold border border-blue-200/60 dark:border-blue-800">
-                              🏢 Verified Company
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 rounded-full text-[10px] font-bold border border-emerald-200/60 dark:border-emerald-800">
-                              👤 Candidate
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{post.authorRole}</p>
-                        <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1.5">
-                          <Clock size={10} />
-                          <span>{new Date(post.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                          {post.companyRating && (
-                            <>
-                              <span>•</span>
-                              <span className="text-amber-600 dark:text-amber-400 font-bold">{post.companyRating} ★ Employer Rating</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {post.isBookmarked && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
-                          <Bookmark size={10} className="fill-amber-500 text-amber-500" />
-                          <span>Saved</span>
-                        </span>
-                      )}
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
-                        {post.category}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Post Title & Description */}
-                  <div className="space-y-2">
-                    <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-snug">
-                      {post.title}
-                    </h2>
-                    <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line font-normal">
-                      {post.description}
-                    </div>
-                  </div>
-
-                  {/* Attached Image */}
-                  {post.imageUrl && (
-                    <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-80 bg-slate-950">
-                      <img
-                        src={post.imageUrl}
-                        alt="Post media"
-                        className="w-full h-full object-cover hover:scale-102 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
-
-                  {/* Attached Action Links */}
-                  {post.links && post.links.length > 0 && (
-                    <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/70 space-y-2">
-                      <div className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                        <LinkIcon size={12} />
-                        <span>Attached Resources & Verified Links:</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {post.links.map((link, idx) => (
-                          <a
-                            key={idx}
-                            href={link.url}
-                            target={link.url.startsWith('http') ? '_blank' : undefined}
-                            rel="noreferrer"
-                            onClick={(e) => {
-                              if (link.url.startsWith('/')) {
-                                e.preventDefault()
-                                nav(link.url)
-                              }
-                            }}
-                            className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:text-blue-800 rounded-xl text-xs font-bold border border-blue-200/80 dark:border-blue-800/80 flex items-center gap-1.5 transition-all shadow-xs"
-                          >
-                            {link.iconType === 'github' ? (
-                              <Github size={13} />
-                            ) : link.iconType === 'job' ? (
-                              <Briefcase size={13} />
-                            ) : link.iconType === 'portfolio' ? (
-                              <Globe size={13} />
-                            ) : (
-                              <ExternalLink size={13} />
-                            )}
-                            <span>{link.title}</span>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {post.tags.map((tag) => (
-                      <button
-                        key={tag}
-                        onClick={() => {
-                          setActiveTag(tag)
-                          setSelectedCategory('All Posts')
-                        }}
-                        className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/50 hover:bg-indigo-100 px-2.5 py-0.5 rounded-md transition-colors border border-indigo-100/60 dark:border-indigo-900/50 cursor-pointer"
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Interactive Action Bar: Likes, Comments, Bookmark, Share */}
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      {/* Like Button */}
-                      <button
-                        onClick={() => handleLike(post.id)}
-                        className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                          post.hasLiked
-                            ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
-                            : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
-                        }`}
-                      >
-                        <Heart
-                          size={14}
-                          className={post.hasLiked ? 'fill-rose-500 text-rose-500 animate-bounce' : ''}
-                        />
-                        <span>{post.likes} Likes</span>
-                      </button>
-
-                      {/* Comment Toggle Button */}
-                      <button
-                        onClick={() =>
-                          setActiveCommentPostId(isCommentOpen ? null : post.id)
-                        }
-                        className="px-3 py-1.5 rounded-xl font-bold bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        <MessageSquare size={14} />
-                        <span>{post.comments.length} Comments</span>
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      {/* Bookmark Button */}
-                      <button
-                        onClick={() => handleBookmark(post.id)}
-                        className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                          post.isBookmarked
-                            ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700 shadow-xs'
-                            : 'bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-slate-200/80 dark:border-slate-700'
-                        }`}
-                        title={post.isBookmarked ? 'Saved to bookmarks' : 'Save post'}
-                      >
-                        <Bookmark
-                          size={15}
-                          className={post.isBookmarked ? 'fill-amber-500' : ''}
-                        />
-                      </button>
-
-                      {/* Share Button */}
-                      <button
-                        onClick={() => {
-                          navigator.clipboard?.writeText(window.location.href)
-                          showToast('Post link copied to clipboard!')
-                        }}
-                        className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
-                        title="Share post"
-                      >
-                        <Share2 size={15} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Collapsible Comments Section */}
-                  {isCommentOpen && (
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3 animate-in fade-in duration-150">
-                      {/* Existing comments */}
-                      {post.comments.length > 0 && (
-                        <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
-                          {post.comments.map((c) => (
-                            <div
-                              key={c.id}
-                              className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/70 dark:border-slate-700 text-xs space-y-1"
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <img
-                                    src={c.authorAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
-                                    alt={c.authorName}
-                                    className="w-6 h-6 rounded-full object-cover"
-                                  />
-                                  <span className="font-bold text-slate-900 dark:text-white">{c.authorName}</span>
-                                  <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
-                                    • {c.authorRole}
-                                  </span>
-                                </div>
-                                <span className="text-[10px] text-slate-400">
-                                  {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                              </div>
-                              <p className="text-slate-700 dark:text-slate-300 font-normal pl-8">{c.content}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Add comment input */}
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleAddComment(post.id)
-                          }}
-                          placeholder="Write a comment or ask a question..."
-                          className="flex-1 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
-                        />
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleAddComment(post.id)}
-                          className="font-bold text-xs"
-                        >
-                          <Send size={13} />
-                          <span>Reply</span>
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })
-          )}
+              <div className="w-3/4 h-5 bg-slate-200 rounded" />
+              <div className="w-full h-24 bg-slate-100 rounded-2xl" />
+            </div>
+          ))}
         </div>
-
-        {/* Right Sidebar: Saved Posts Quick Widget, Guidelines, Top Tags, Quick Actions (4 Cols) */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Saved Posts Quick Access Card */}
-          <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-3.5 backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 font-extrabold text-sm text-slate-900 dark:text-white">
-                <Bookmark size={16} className="fill-amber-500 text-amber-500" />
-                <span>My Saved Posts</span>
-              </div>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
-                {savedCount} {savedCount === 1 ? 'Post' : 'Posts'}
-              </span>
-            </div>
-
-            {savedCount === 0 ? (
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                No bookmarked posts yet. Click the bookmark icon 🔖 on any post in the feed to save it for quick access.
-              </p>
-            ) : (
-              <div className="space-y-2 pt-1">
-                {savedPosts.slice(0, 3).map((sp) => (
-                  <div
-                    key={sp.id}
-                    className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700/60 hover:border-amber-400/60 transition-all space-y-1.5 group cursor-pointer"
-                    onClick={() => {
-                      setSelectedCategory('Saved Posts')
-                      setSearchParams({ view: 'saved' })
-                    }}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                        {sp.category}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleBookmark(sp.id)
-                        }}
-                        className="text-amber-600 dark:text-amber-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors p-1"
-                        title="Remove bookmark"
-                      >
-                        <Bookmark size={13} className="fill-amber-500" />
-                      </button>
-                    </div>
-                    <h5 className="font-bold text-xs text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {sp.title}
-                    </h5>
-                    <div className="text-[10px] text-slate-400">
-                      By {sp.authorName}
-                    </div>
-                  </div>
-                ))}
-
-                {savedCount > 3 && (
-                  <p className="text-[11px] text-slate-400 font-semibold text-center pt-1">
-                    +{savedCount - 3} more saved items
-                  </p>
-                )}
-
-                <button
-                  onClick={() => {
-                    setSelectedCategory('Saved Posts')
-                    setSearchParams({ view: 'saved' })
-                  }}
-                  className="w-full mt-2 py-2 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  <Bookmark size={13} className="fill-amber-500 text-amber-500" />
-                  <span>View All Saved Posts ({savedCount})</span>
-                </button>
-              </div>
-            )}
+      ) : filteredPosts.length === 0 ? (
+        /* Empty State */
+        <div className="p-12 text-center bg-white border border-slate-200 rounded-3xl shadow-2xs space-y-4 max-w-lg mx-auto my-8">
+          <div className="w-16 h-16 rounded-3xl bg-indigo-50 text-indigo-600 mx-auto flex items-center justify-center shadow-xs">
+            <MessageSquare size={28} />
           </div>
-
-          {/* Post Creation Quick Widget */}
-          <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-3xl p-6 shadow-xl space-y-4">
-            <div className="flex items-center gap-2 text-amber-300 text-xs font-bold">
-              <Sparkles size={15} />
-              <span>Showcase on Gettin</span>
-            </div>
-            <h3 className="text-lg font-extrabold">Boost Recruiter Visibility</h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Candidates who publish project case studies or STAR interview experiences receive <strong className="text-white">3.4x more interview invitations</strong>.
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-extrabold text-slate-900">
+              {activeTab === 'saved'
+                ? 'No saved posts'
+                : activeTab === 'my_posts'
+                ? 'You haven’t posted yet'
+                : searchQuery
+                ? 'No matching posts found'
+                : 'No posts in this feed'}
+            </h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+              {activeTab === 'saved'
+                ? 'Click the bookmark icon on any post to save it to your personal reference library.'
+                : activeTab === 'my_posts'
+                ? 'Showcase a project architecture, write a case study, or share an achievement to stand out to recruiters.'
+                : searchQuery
+                ? 'Try searching for different keywords, technologies, or author names.'
+                : 'Publish your first case study or connect with more peers to populate your feed.'}
             </p>
+          </div>
+          <div className="pt-2 flex justify-center">
             <Button
               variant="primary"
               size="md"
-              onClick={() => setShowAddModal(true)}
-              className="w-full bg-white text-indigo-900 hover:bg-slate-100 font-bold text-xs border-none"
+              onClick={() => openCreateModal('Project Showcase')}
+              className="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 border-none"
             >
-              <Plus size={15} />
-              <span>Publish a Case Study / Post</span>
+              <Plus size={14} />
+              <span>Create Your First Post</span>
             </Button>
           </div>
-
-          {/* Guidelines Card */}
-          <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-3 text-xs backdrop-blur-sm">
-            <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <Award size={15} className="text-blue-600 dark:text-blue-400" />
-              <span>Community Guidelines</span>
-            </h4>
-            <ul className="space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <span>Include quantifiable outcomes in project descriptions (e.g. % speed, ₹ savings).</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <span>Attach working GitHub and live demo URLs to your posts.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <span>Contact privacy is always protected — companies communicate via Gettin portal.</span>
-              </li>
-            </ul>
-          </div>
         </div>
-      </div>
+      ) : (
+        /* Post Cards */
+        <div className="space-y-6">
+          {filteredPosts.map((post) => {
+            const isAuthor = post.authorId === currentUserId
+            const connectionStatus = isAuthor ? 'self' : connectionService.getConnectionStatus(post.authorId)
+            const isCommentsOpen = activeCommentPostId === post.id
 
-      {/* Add Post Full Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
-              <div>
-                <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 rounded-full text-[10px] font-extrabold uppercase">
-                  Community Publisher
-                </span>
-                <h2 className="text-xl font-extrabold text-slate-900 mt-1">Create a New Post</h2>
-                <p className="text-xs text-slate-500">Share your projects, interview learnings, or hiring announcements</p>
+            return (
+              <article
+                key={post.id}
+                id={`postCard-${post.id}`}
+                className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-3xl p-6 sm:p-7 shadow-2xs hover:shadow-sm transition-all space-y-4"
+              >
+                {/* Post Author Header */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3.5 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => nav(isAuthor ? '/profile' : `/network/user/${post.authorId}`)}
+                      className="shrink-0 group/avatar cursor-pointer"
+                      title={`View ${post.authorName}'s Profile`}
+                    >
+                      {post.authorAvatar ? (
+                        <img
+                          src={post.authorAvatar}
+                          alt={post.authorName}
+                          className="w-12 h-12 rounded-2xl object-cover border border-slate-100 shadow-xs group-hover/avatar:scale-105 transition-transform"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center font-bold text-base shadow-xs group-hover/avatar:scale-105 transition-transform">
+                          {post.authorName.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                    </button>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => nav(isAuthor ? '/profile' : `/network/user/${post.authorId}`)}
+                          className="text-sm font-extrabold text-slate-900 hover:text-indigo-600 transition-colors truncate text-left cursor-pointer"
+                        >
+                          {post.authorName}
+                        </button>
+
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                          {post.postType}
+                        </span>
+
+                        {/* Visibility Badge */}
+                        <span
+                          className="text-slate-400"
+                          title={`Visibility: ${post.visibility}`}
+                        >
+                          {post.visibility === 'public' ? (
+                            <Globe size={13} className="text-slate-400" />
+                          ) : post.visibility === 'connections' ? (
+                            <Users size={13} className="text-blue-500" />
+                          ) : (
+                            <Lock size={13} className="text-amber-500" />
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="text-xs text-slate-500 font-medium truncate mt-0.5">
+                        {post.authorRole}
+                      </div>
+
+                      <div className="text-[11px] text-slate-400 font-medium mt-0.5">
+                        {new Date(post.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        {post.updatedAt && <span className="italic ml-1">(edited)</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Top Right: Connection Status & Author Dropdown */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Connection Button */}
+                    {!isAuthor && (
+                      <div>
+                        {connectionStatus === 'connected' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <UserCheck size={13} />
+                            <span>Connected</span>
+                          </span>
+                        ) : connectionStatus === 'pending_sent' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            <Clock size={13} />
+                            <span>Request Sent</span>
+                          </span>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleConnectWithAuthor(post.authorId, post.authorName)}
+                            className="text-xs font-bold border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                            aria-label={`Connect with ${post.authorName}`}
+                          >
+                            <UserPlus size={13} />
+                            <span>Connect</span>
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Author Edit / Delete Menu */}
+                    {isAuthor && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(post)}
+                          aria-label="Edit post"
+                          className="p-1.5 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                          title="Edit Post"
+                        >
+                          <Edit3 size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeletingPostId(post.id)}
+                          aria-label="Delete post"
+                          className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          title="Delete Post"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Post Title */}
+                <h2 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight leading-snug">
+                  {post.title}
+                </h2>
+
+                {/* Post Description / Formatted Rich Content */}
+                <FormattedContent content={post.description} className="text-slate-700 font-normal pt-1" />
+
+                {/* Attached Media Gallery (Images & Videos) */}
+                {post.media && post.media.length > 0 && (
+                  <div className="pt-2">
+                    <div
+                      className={`grid gap-3 ${
+                        post.media.length === 1 ? 'grid-cols-1' : post.media.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'
+                      }`}
+                    >
+                      {post.media.map((med) => (
+                        <div
+                          key={med.id}
+                          className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 group/med shadow-xs"
+                        >
+                          {med.type === 'video' ? (
+                            <div className="relative">
+                              <video
+                                src={med.url}
+                                controls
+                                className="w-full max-h-80 object-contain rounded-2xl bg-black"
+                              />
+                              {med.name && (
+                                <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/60 text-white text-[10px] font-mono truncate max-w-[80%]">
+                                  {med.name}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div
+                              onClick={() => setActiveMediaLightbox(med)}
+                              className="cursor-pointer overflow-hidden max-h-80 flex items-center justify-center"
+                            >
+                              <img
+                                src={med.url}
+                                alt={med.name || post.title}
+                                className="w-full h-full object-cover group-hover/med:scale-105 transition-transform duration-300 max-h-80"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Attached Links (ONLY Label + URL) */}
+                {post.links && post.links.length > 0 && (
+                  <div className="pt-2 flex flex-wrap gap-2">
+                    {post.links.map((link, idx) => (
+                      <a
+                        key={idx}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-xs font-bold text-slate-800 hover:text-indigo-700 transition-all shadow-2xs group/link"
+                      >
+                        <ExternalLink size={13} className="text-slate-400 group-hover/link:text-indigo-600 transition-colors" />
+                        <span>{link.label}</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                {/* Hashtags */}
+                {post.hashtags && post.hashtags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {post.hashtags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setActiveTag(tag)}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                      >
+                        {tag.startsWith('#') ? tag : `#${tag}`}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Interactive Action Bar */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3 text-xs font-bold text-slate-600 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    {/* Like Button */}
+                    <button
+                      type="button"
+                      id={`likePostBtn-${post.id}`}
+                      onClick={() => handleToggleLike(post.id)}
+                      aria-label={`${post.hasLiked ? 'Unlike' : 'Like'} post. Current count: ${post.likes}`}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                        post.hasLiked
+                          ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                          : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      <Heart size={15} className={`transition-transform ${post.hasLiked ? 'fill-rose-600 scale-110' : ''}`} />
+                      <span>{post.likes}</span>
+                    </button>
+
+                    {/* Comment Button */}
+                    <button
+                      type="button"
+                      id={`commentToggleBtn-${post.id}`}
+                      onClick={() => setActiveCommentPostId(isCommentsOpen ? null : post.id)}
+                      aria-label="View and add comments"
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                        isCommentsOpen
+                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                          : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      <MessageSquare size={15} />
+                      <span>{post.comments?.length || 0} Comments</span>
+                    </button>
+
+                    {/* Bookmark Button */}
+                    <button
+                      type="button"
+                      id={`bookmarkBtn-${post.id}`}
+                      onClick={() => handleToggleBookmark(post.id)}
+                      aria-label={`${post.isBookmarked ? 'Remove bookmark' : 'Bookmark post'}`}
+                      className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                        post.isBookmarked
+                          ? 'bg-amber-50 text-amber-600 border-amber-200'
+                          : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                      }`}
+                      title={post.isBookmarked ? 'Saved to bookmarks' : 'Save post'}
+                    >
+                      <Bookmark size={15} className={post.isBookmarked ? 'fill-amber-600' : ''} />
+                    </button>
+
+                    {/* Share Button */}
+                    <button
+                      type="button"
+                      id={`shareBtn-${post.id}`}
+                      onClick={() => handleSharePost(post)}
+                      aria-label="Share post link"
+                      className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all cursor-pointer"
+                      title="Copy post link"
+                    >
+                      <Share2 size={15} />
+                    </button>
+                  </div>
+
+                  {post.viewsCount && (
+                    <div className="text-[11px] text-slate-400 font-semibold flex items-center gap-1">
+                      <Eye size={13} />
+                      <span>{post.viewsCount} views</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Inline Threaded Comments Section */}
+                {isCommentsOpen && (
+                  <div className="pt-4 border-t border-slate-100 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                    {/* Add Comment Input */}
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={
+                          profile?.profilePhoto ||
+                          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'
+                        }
+                        alt="Your avatar"
+                        className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200"
+                      />
+                      <div className="flex-1 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:bg-white transition-all">
+                        <input
+                          type="text"
+                          placeholder="Write a constructive comment or feedback..."
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault()
+                              handleAddComment(post.id)
+                            }
+                          }}
+                          className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleAddComment(post.id)}
+                          disabled={!commentText.trim()}
+                          className="p-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-40 disabled:hover:bg-indigo-600 transition-all cursor-pointer"
+                        >
+                          <Send size={13} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Comments List */}
+                    {post.comments && post.comments.length > 0 ? (
+                      <div className="space-y-3 pt-1">
+                        {post.comments.map((comment) => (
+                          <div key={comment.id} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-start gap-3">
+                            <img
+                              src={
+                                comment.authorAvatar ||
+                                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'
+                              }
+                              alt={comment.authorName}
+                              className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200"
+                            />
+                            <div className="flex-1 space-y-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-extrabold text-xs text-slate-900">{comment.authorName}</span>
+                                  <span className="text-[10px] text-slate-500 font-medium">{comment.authorRole}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] text-slate-400">
+                                    {new Date(comment.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                                  </span>
+                                  {(comment.authorId === currentUserId || isAuthor) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteComment(post.id, comment.id)}
+                                      aria-label="Delete comment"
+                                      className="text-slate-400 hover:text-rose-600 p-0.5"
+                                      title="Delete comment"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-xs text-slate-700 leading-relaxed font-normal">{comment.content}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-3 text-xs text-slate-400">
+                        No comments yet. Start the conversation!
+                      </div>
+                    )}
+                  </div>
+                )}
+              </article>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* CREATE / EDIT POST MODAL                                                  */}
+      {/* ========================================================================= */}
+      {showCreateModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="createPostModalTitle"
+          className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
+        >
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-6 bg-slate-900 text-white flex items-center justify-between gap-4 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold">
+                  <Edit3 size={20} />
+                </div>
+                <div>
+                  <h2 id="createPostModalTitle" className="text-lg font-black text-white">
+                    {editingPost ? 'Edit Post / Showcase' : 'Create Candidate Post / Showcase'}
+                  </h2>
+                  <p className="text-xs text-slate-300">
+                    Posting as <strong>{profile?.name || 'Avinash Tiwari'}</strong> ({profile?.headline || 'Lead Business Analyst'})
+                  </p>
+                </div>
               </div>
+
               <button
-                onClick={() => setShowAddModal(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                aria-label="Close modal"
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleCreatePost} className="space-y-4 text-xs">
-              {/* Author Mode Selection */}
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-slate-800">Post Author Mode</div>
-                  <div className="text-slate-500 text-[11px]">Select whether you are posting as a Candidate or Company</div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormAuthorType('candidate')}
-                    className={`px-3 py-1.5 rounded-xl font-bold transition-colors ${
-                      formAuthorType === 'candidate'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-slate-700 border border-slate-200'
-                    }`}
-                  >
-                    👤 Candidate
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormAuthorType('company')}
-                    className={`px-3 py-1.5 rounded-xl font-bold transition-colors ${
-                      formAuthorType === 'company'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-slate-700 border border-slate-200'
-                    }`}
-                  >
-                    🏢 Company
-                  </button>
+            {/* Modal Form Body */}
+            <form onSubmit={handleSubmitPost} className="p-6 overflow-y-auto space-y-5 flex-1 text-xs sm:text-sm">
+              {/* Post Type Selector */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700">Select Post Type</label>
+                <div className="flex flex-wrap gap-2">
+                  {POST_TYPES.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setFormPostType(t)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        formPostType === t
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {formAuthorType === 'company' && (
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                    Company Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formCompanyName}
-                    onChange={(e) => setFormCompanyName(e.target.value)}
-                    placeholder="e.g. Northstar Analytics"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                    required
-                  />
-                </div>
-              )}
-
-              {/* Title & Category */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="sm:col-span-2">
-                  <label className="block font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                    Post Title / Headline *
-                  </label>
-                  <input
-                    type="text"
-                    value={formTitle}
-                    onChange={(e) => setFormTitle(e.target.value)}
-                    placeholder="e.g. Revenue Forecasting Engine with SQL & Power BI"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                    Category *
-                  </label>
-                  <select
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                  >
-                    <option value="Candidate Showcase">Candidate Showcase</option>
-                    <option value="Interview Experience">Interview Experience</option>
-                    <option value="Company Hiring">Company Hiring</option>
-                    <option value="Career Tips">Career Tips</option>
-                    <option value="Tech Insight">Tech Insight</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                  Post Description & Content (Supports Multi-line) *
+              {/* Title */}
+              <div className="space-y-1.5">
+                <label htmlFor="postTitleInput" className="block text-xs font-bold text-slate-700">
+                  Post Title <span className="text-rose-500">*</span>
                 </label>
-                <textarea
-                  value={formDescription}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                  placeholder="Share details, problem statement, key results, learnings, or open job requirements..."
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 h-32 leading-relaxed"
+                <input
+                  id="postTitleInput"
+                  type="text"
                   required
+                  placeholder="e.g. Architecting a Real-Time Reconciliation Pipeline on Snowflake"
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
                 />
               </div>
 
-              {/* Attached Links (Option 1 & Option 2) */}
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
-                <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                  <LinkIcon size={13} className="text-blue-600" />
-                  <span>Attach Verified Links (GitHub, Portfolio, Live Demo, Article, Job)</span>
+              {/* Description with Formatting Toolbar */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="postDescInput" className="block text-xs font-bold text-slate-700">
+                    Content / Description <span className="text-rose-500">*</span>
+                  </label>
+
+                  {/* Formatting Toolbar */}
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => insertFormatting('\n### ')}
+                      title="Heading 3 (###)"
+                      className="px-1.5 py-0.5 rounded-lg hover:bg-white text-slate-700 hover:shadow-2xs font-extrabold text-[11px]"
+                    >
+                      H3
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertFormatting('**', '**')}
+                      title="Bold"
+                      className="p-1 rounded-lg hover:bg-white text-slate-700 hover:shadow-2xs"
+                    >
+                      <Bold size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertFormatting('*', '*')}
+                      title="Italic"
+                      className="p-1 rounded-lg hover:bg-white text-slate-700 hover:shadow-2xs"
+                    >
+                      <Italic size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertFormatting('\n• ')}
+                      title="Bullet List"
+                      className="p-1 rounded-lg hover:bg-white text-slate-700 hover:shadow-2xs"
+                    >
+                      <List size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertFormatting('\n1. ')}
+                      title="Numbered List"
+                      className="p-1 rounded-lg hover:bg-white text-slate-700 hover:shadow-2xs"
+                    >
+                      <ListOrdered size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertFormatting('[Link Title](', ')')}
+                      title="Insert Link"
+                      className="p-1 rounded-lg hover:bg-white text-slate-700 hover:shadow-2xs"
+                    >
+                      <LinkIcon size={13} />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <input
-                    type="text"
-                    value={linkTitle1}
-                    onChange={(e) => setLinkTitle1(e.target.value)}
-                    placeholder="Link 1 Label (e.g. GitHub Repo)"
-                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs"
-                  />
-                  <input
-                    type="text"
-                    value={linkUrl1}
-                    onChange={(e) => setLinkUrl1(e.target.value)}
-                    placeholder="URL (e.g. https://github.com/...)"
-                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs"
-                  />
-                  <select
-                    value={linkType1}
-                    onChange={(e) => setLinkType1(e.target.value as any)}
-                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold"
-                  >
-                    <option value="github">GitHub Repo</option>
-                    <option value="live">Live Demo</option>
-                    <option value="portfolio">Public Portfolio</option>
-                    <option value="article">Article / Blog</option>
-                    <option value="job">Job Application</option>
-                  </select>
+                <textarea
+                  id="postDescInput"
+                  ref={descriptionTextareaRef}
+                  required
+                  rows={6}
+                  placeholder="Share details about your problem statement, technical solution, architecture, lessons learned, or career insights..."
+                  value={formDescription}
+                  onChange={(e) => setFormDescription(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-normal text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-xs sm:text-sm"
+                />
+              </div>
+
+              {/* Direct Media Upload (Images & Videos) */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700">
+                  Upload Media (Images & Videos)
+                </label>
+                
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/jpeg,image/png,image/webp,image/jpg,video/mp4,video/quicktime,video/webm"
+                  multiple
+                  onChange={handleMediaFilesSelected}
+                  className="hidden"
+                  id="directMediaUploadInput"
+                />
+
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-slate-200 hover:border-indigo-400 bg-slate-50 hover:bg-indigo-50/50 rounded-2xl p-5 text-center cursor-pointer transition-all space-y-1.5"
+                >
+                  <Upload size={22} className="mx-auto text-indigo-600" />
+                  <div className="text-xs font-bold text-slate-800">
+                    Click to browse and upload Images or Videos
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-medium">
+                    Supports JPG, PNG, WEBP, MP4, MOV (Max 10MB per image, 50MB per video)
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <input
-                    type="text"
-                    value={linkTitle2}
-                    onChange={(e) => setLinkTitle2(e.target.value)}
-                    placeholder="Link 2 Label (e.g. Live Demo URL)"
-                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs"
-                  />
-                  <input
-                    type="text"
-                    value={linkUrl2}
-                    onChange={(e) => setLinkUrl2(e.target.value)}
-                    placeholder="URL (e.g. https://...)"
-                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs"
-                  />
-                  <select
-                    value={linkType2}
-                    onChange={(e) => setLinkType2(e.target.value as any)}
-                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold"
+                {mediaUploadError && (
+                  <div className="p-2.5 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold flex items-center gap-2">
+                    <AlertCircle size={14} />
+                    <span>{mediaUploadError}</span>
+                  </div>
+                )}
+
+                {/* Previews */}
+                {formMedia.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+                    {formMedia.map((med) => (
+                      <div
+                        key={med.id}
+                        className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 group/thumb h-28"
+                      >
+                        {med.type === 'video' ? (
+                          <div className="w-full h-full flex flex-col items-center justify-center p-2 text-white text-center">
+                            <Play size={24} className="text-indigo-400 mb-1" />
+                            <span className="text-[10px] font-mono truncate w-full">{med.name}</span>
+                          </div>
+                        ) : (
+                          <img
+                            src={med.url}
+                            alt={med.name || 'Preview'}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMedia(med.id)}
+                          aria-label="Remove media"
+                          className="absolute top-1.5 right-1.5 p-1 rounded-full bg-slate-900/80 text-white hover:bg-rose-600 transition-colors"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Links Section (ONLY Label + URL) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Attached External Links (Label + URL)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddLinkRow}
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
                   >
-                    <option value="live">Live Demo</option>
-                    <option value="github">GitHub Repo</option>
-                    <option value="portfolio">Public Portfolio</option>
-                    <option value="article">Article / Blog</option>
-                    <option value="job">Job Application</option>
-                  </select>
+                    <Plus size={13} />
+                    <span>Add Link</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {formLinks.map((link, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Label (e.g. GitHub Repo)"
+                        value={link.label}
+                        onChange={(e) => handleUpdateLinkRow(idx, 'label', e.target.value)}
+                        className="w-1/3 p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                      <input
+                        type="url"
+                        placeholder="URL (https://github.com/...)"
+                        value={link.url}
+                        onChange={(e) => handleUpdateLinkRow(idx, 'url', e.target.value)}
+                        className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                      {formLinks.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveLinkRow(idx)}
+                          aria-label="Remove link row"
+                          className="p-2 text-slate-400 hover:text-rose-600 rounded-xl"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Tags & Image URL */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                    Tags (Comma / space separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={formTags}
-                    onChange={(e) => setFormTags(e.target.value)}
-                    placeholder="#powerbi, #sql, #interview-experience"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                    Image / Screenshot URL (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={formImageUrl}
-                    onChange={(e) => setFormImageUrl(e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                  />
+              {/* Hashtags */}
+              <div className="space-y-1.5">
+                <label htmlFor="hashtagsInput" className="block text-xs font-bold text-slate-700">
+                  Hashtags (Space separated)
+                </label>
+                <input
+                  id="hashtagsInput"
+                  type="text"
+                  placeholder="#sql #powerbi #fintech #casestudy"
+                  value={formHashtags}
+                  onChange={(e) => setFormHashtags(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* Visibility Controls */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700">Post Visibility</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'public' as PostVisibility, label: '🌐 Public', desc: 'Visible to everyone' },
+                    { id: 'connections' as PostVisibility, label: '👥 Connections', desc: 'Accepted peers only' },
+                    { id: 'private' as PostVisibility, label: '🔒 Private', desc: 'Visible only to you' }
+                  ].map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setFormVisibility(v.id)}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                        formVisibility === v.id
+                          ? 'border-indigo-600 bg-indigo-50/70 text-indigo-900 shadow-2xs font-extrabold'
+                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold'
+                      }`}
+                    >
+                      <div className="text-xs">{v.label}</div>
+                      <div className="text-[10px] text-slate-500 font-normal">{v.desc}</div>
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+              {/* Modal Actions */}
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="md"
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-xs font-bold"
                 >
-                  Cancel
+                  <span>Cancel</span>
                 </Button>
-                <Button variant="primary" size="md" type="submit" className="font-bold">
-                  <Send size={14} />
-                  <span>Publish Post</span>
+
+                <Button
+                  variant="primary"
+                  size="md"
+                  type="submit"
+                  className="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 border-none"
+                >
+                  <span>{editingPost ? 'Update Post' : 'Publish Post'}</span>
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* DELETE CONFIRMATION MODAL                                                 */}
+      {/* ========================================================================= */}
+      {deletingPostId && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+        >
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-sm p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 font-bold">
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">Delete Post?</h3>
+                <p className="text-xs text-slate-500">This action cannot be undone.</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed font-medium">
+              Are you sure you want to delete this post from your feed and portfolio?
+            </p>
+
+            <div className="pt-2 flex items-center justify-end gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDeletingPostId(null)}
+                className="text-xs font-bold"
+              >
+                <span>Cancel</span>
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleConfirmDeletePost}
+                className="bg-rose-600 hover:bg-rose-700 text-xs font-bold border-none"
+              >
+                <span>Delete</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MEDIA LIGHTBOX MODAL                                                      */}
+      {/* ========================================================================= */}
+      {activeMediaLightbox && (
+        <div
+          onClick={() => setActiveMediaLightbox(null)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200"
+        >
+          <div className="relative max-w-4xl max-h-[90vh] flex items-center justify-center">
+            {activeMediaLightbox.type === 'video' ? (
+              <video src={activeMediaLightbox.url} controls autoPlay className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl" />
+            ) : (
+              <img src={activeMediaLightbox.url} alt={activeMediaLightbox.name || 'Enlarged media'} className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl" />
+            )}
+            <button
+              type="button"
+              onClick={() => setActiveMediaLightbox(null)}
+              className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white hover:bg-white hover:text-black transition-colors"
+            >
+              <X size={18} />
+            </button>
           </div>
         </div>
       )}

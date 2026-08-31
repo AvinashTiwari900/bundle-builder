@@ -53,6 +53,7 @@ import { speechService } from '../services/speechService'
 import { profileService } from '../services/profileService'
 import { notificationService } from '../services/notificationService'
 import { mediaStreamManager } from '../services/mediaStreamManager'
+import { interviewService } from '../services/interviewService'
 
 // =========================================================================
 // Models & Data Structures
@@ -299,6 +300,7 @@ export default function InterviewSession() {
   const lastViolationTimeRef = useRef<number>(0)
   const tabBlurStartRef = useRef<number | null>(null)
   const isTerminatedRef = useRef<boolean>(false)
+  const isCompletedRef = useRef<boolean>(false)
 
   // Interviewer Persona
   const interviewer = {
@@ -351,7 +353,7 @@ export default function InterviewSession() {
       selected.push({
         ...item,
         id: `q-${i + 1}`,
-        status: 'pending',
+        status: i === 0 ? 'active' : 'pending',
         timestamp: ''
       })
     }
@@ -364,7 +366,10 @@ export default function InterviewSession() {
   const isMountedRef = useRef<boolean>(true)
 
   const releaseHardware = useCallback(() => {
-    isMountedRef.current = false
+    if (cvLoopRef.current) {
+      clearInterval(cvLoopRef.current)
+      cvLoopRef.current = null
+    }
 
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((t) => {
@@ -384,14 +389,12 @@ export default function InterviewSession() {
       try {
         videoRef.current.pause()
         videoRef.current.srcObject = null
-        videoRef.current.load()
       } catch (e) {}
     }
     if (modalVideoRef.current) {
       try {
         modalVideoRef.current.pause()
         modalVideoRef.current.srcObject = null
-        modalVideoRef.current.load()
       } catch (e) {}
     }
 
@@ -399,27 +402,37 @@ export default function InterviewSession() {
   }, [])
 
   const requestCameraStream = async () => {
-    setCameraError(null)
     isMountedRef.current = true
+    setCameraError(null)
 
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (mediaStreamRef.current && mediaStreamRef.current.active) {
+      const hasWorkingTracks = mediaStreamRef.current.getVideoTracks().some((t) => t.readyState === 'live')
+      if (hasWorkingTracks) {
+        setMediaStream(mediaStreamRef.current)
+        setCameraPermissionGranted(true)
+        setIsCameraActive(true)
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStreamRef.current
+          videoRef.current.play().catch(() => {})
+        }
+        if (modalVideoRef.current) {
+          modalVideoRef.current.srcObject = mediaStreamRef.current
+          modalVideoRef.current.play().catch(() => {})
+        }
+        return mediaStreamRef.current
+      }
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
       setCameraPermissionGranted(false)
-      setCameraError('Browser does not support mediaDevices API.')
+      setCameraError('Webcam access is not supported in this browser.')
       return null
     }
 
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((t) => {
-        try {
-          t.stop()
-          t.enabled = false
-        } catch (e) {}
-      })
-    }
-
     try {
+      // Attempt 1: Ideal 720p Video + Audio
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
         audio: true
       })
 
@@ -437,13 +450,23 @@ export default function InterviewSession() {
       mediaStreamRef.current = stream
       setMediaStream(stream)
       setCameraPermissionGranted(true)
+      setIsCameraActive(true)
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        videoRef.current.play().catch(() => {})
+      }
+      if (modalVideoRef.current) {
+        modalVideoRef.current.srcObject = stream
+        modalVideoRef.current.play().catch(() => {})
+      }
       return stream
     } catch (e1: any) {
       console.warn('Attempt 1 (video+audio) failed, trying video only:', e1)
       try {
-        if (!isMountedRef.current) return null
+        // Attempt 2: Ideal 720p Video only
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: true
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
         })
 
         if (!isMountedRef.current) {
@@ -460,14 +483,22 @@ export default function InterviewSession() {
         mediaStreamRef.current = stream
         setMediaStream(stream)
         setCameraPermissionGranted(true)
+        setIsCameraActive(true)
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          videoRef.current.play().catch(() => {})
+        }
+        if (modalVideoRef.current) {
+          modalVideoRef.current.srcObject = stream
+          modalVideoRef.current.play().catch(() => {})
+        }
         return stream
       } catch (e2: any) {
-        console.warn('Attempt 2 (basic video) failed, trying 640x480:', e2)
+        console.warn('Attempt 2 failed, trying basic video:', e2)
         try {
-          if (!isMountedRef.current) return null
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 640 }, height: { ideal: 480 } }
-          })
+          // Attempt 3: Basic unconstrained video
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true })
 
           if (!isMountedRef.current) {
             stream.getTracks().forEach((t) => {
@@ -483,13 +514,23 @@ export default function InterviewSession() {
           mediaStreamRef.current = stream
           setMediaStream(stream)
           setCameraPermissionGranted(true)
+          setIsCameraActive(true)
+
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream
+            videoRef.current.play().catch(() => {})
+          }
+          if (modalVideoRef.current) {
+            modalVideoRef.current.srcObject = stream
+            modalVideoRef.current.play().catch(() => {})
+          }
           return stream
         } catch (e3: any) {
           console.error('All camera attempts failed:', e3)
           setCameraPermissionGranted(false)
           setCameraError(
             e3?.name === 'NotAllowedError' || e3?.name === 'PermissionDeniedError'
-              ? 'Camera permission denied. Please click the lock icon in your browser address bar to allow Camera access.'
+              ? 'Camera permission was denied. Please allow camera access in your browser settings (lock icon).'
               : 'Webcam device is not available or is currently in use by another application.'
           )
           return null
@@ -499,17 +540,23 @@ export default function InterviewSession() {
   }
 
   useEffect(() => {
+    isMountedRef.current = true
     requestCameraStream()
 
-    window.addEventListener('beforeunload', releaseHardware)
-    window.addEventListener('popstate', releaseHardware)
-
-    return () => {
-      window.removeEventListener('beforeunload', releaseHardware)
-      window.removeEventListener('popstate', releaseHardware)
+    const onUnload = () => {
       releaseHardware()
     }
-  }, [releaseHardware])
+
+    window.addEventListener('beforeunload', onUnload)
+    window.addEventListener('popstate', onUnload)
+
+    return () => {
+      isMountedRef.current = false
+      window.removeEventListener('beforeunload', onUnload)
+      window.removeEventListener('popstate', onUnload)
+      releaseHardware()
+    }
+  }, [])
 
   // Automatically release hardware when session ends or is terminated
   useEffect(() => {
@@ -568,12 +615,11 @@ export default function InterviewSession() {
       title: string,
       reason: string,
       durationSeconds = 5,
-      confidenceScore = 92
+      confidenceScore = 92,
+      force = false
     ) => {
       if (
-        !monitoringConfig.monitoringEnabled ||
-        isGracePeriodActive ||
-        gracePeriodSecondsLeft > 0 ||
+        isCompletedRef.current ||
         isTerminatedRef.current ||
         sessionState === 'completed' ||
         sessionState === 'guidelines' ||
@@ -582,11 +628,20 @@ export default function InterviewSession() {
         return
       }
 
-      // Incident Cooldown check: Prevents continuous behavior from double-counting
-      const now = Date.now()
-      if (now - lastViolationTimeRef.current < monitoringConfig.cooldownSeconds * 1000) {
-        return
+      if (!force) {
+        if (!monitoringConfig.monitoringEnabled || isGracePeriodActive || gracePeriodSecondsLeft > 0) {
+          return
+        }
+
+        // Incident Cooldown check: Prevents continuous behavior from double-counting
+        const nowCheck = Date.now()
+        if (nowCheck - lastViolationTimeRef.current < monitoringConfig.cooldownSeconds * 1000) {
+          return
+        }
+        lastViolationTimeRef.current = nowCheck
       }
+
+      const now = Date.now()
       lastViolationTimeRef.current = now
 
       setProctoringStrikes((prevStrikes) => {
@@ -865,8 +920,9 @@ export default function InterviewSession() {
   // Automated Turn-Taking & Question Engine
   // =========================================================================
   const startQuestionDelivery = (idx: number, qList = questions) => {
+    if (isCompletedRef.current || isTerminatedRef.current) return
     const activeQ = qList[idx]
-    if (!activeQ || isTerminatedRef.current) return
+    if (!activeQ) return
 
     clearTimers()
     setHasStartedSpeaking(false)
@@ -886,19 +942,19 @@ export default function InterviewSession() {
 
     speechService.speak(questionSpeech, {
       onStart: () => {
-        if (!isTerminatedRef.current) setSessionState('speaking')
+        if (!isTerminatedRef.current && !isCompletedRef.current) setSessionState('speaking')
       },
       onEnd: () => {
-        if (!isTerminatedRef.current) transitionToListening(idx, activeQ)
+        if (!isTerminatedRef.current && !isCompletedRef.current) transitionToListening(idx, activeQ)
       },
       onError: () => {
-        if (!isTerminatedRef.current) transitionToListening(idx, activeQ)
+        if (!isTerminatedRef.current && !isCompletedRef.current) transitionToListening(idx, activeQ)
       }
     })
   }
 
   const transitionToListening = (idx: number, activeQ: PracticeQuestion) => {
-    if (isTerminatedRef.current) return
+    if (isCompletedRef.current || isTerminatedRef.current) return
 
     setSessionState('listening')
     setStatusMessage('Listening for your response. Speak clearly into your microphone...')
@@ -910,6 +966,10 @@ export default function InterviewSession() {
     let countdown = 15
 
     inactivityIntervalRef.current = setInterval(() => {
+      if (isCompletedRef.current || isTerminatedRef.current) {
+        clearInterval(inactivityIntervalRef.current)
+        return
+      }
       countdown -= 1
       setInactivitySecondsLeft(countdown)
 
@@ -922,12 +982,14 @@ export default function InterviewSession() {
   }
 
   const startSpeechRecognition = (idx: number) => {
+    if (isCompletedRef.current || isTerminatedRef.current) return
+
     speechService.startListening({
       onStart: () => {
         setIsDictating(true)
       },
       onResult: (transcript: string) => {
-        if (!transcript.trim() || isTerminatedRef.current) return
+        if (!transcript.trim() || isTerminatedRef.current || isCompletedRef.current) return
 
         // First detected word clears the 15-second inactivity timer immediately
         setHasStartedSpeaking(true)
@@ -940,6 +1002,10 @@ export default function InterviewSession() {
 
         if (!answerTimerRef.current) {
           answerTimerRef.current = setInterval(() => {
+            if (isCompletedRef.current || isTerminatedRef.current) {
+              if (answerTimerRef.current) clearInterval(answerTimerRef.current)
+              return
+            }
             setQuestionAnswerElapsed((prev) => prev + 1)
           }, 1000)
         }
@@ -960,6 +1026,8 @@ export default function InterviewSession() {
 
   // Handle 15-Second Inactivity Timeout — DIRECT SKIP (No verbal announcement)
   const handleInactivityTimeout = (idx: number, activeQ: PracticeQuestion) => {
+    if (isCompletedRef.current || isTerminatedRef.current) return
+
     clearTimers()
     speechService.stopListening()
     setIsDictating(false)
@@ -985,7 +1053,7 @@ export default function InterviewSession() {
   }
 
   const handleCompleteAnswer = (idx: number, finalAnswerText: string) => {
-    if (isTerminatedRef.current) return
+    if (isCompletedRef.current || isTerminatedRef.current) return
 
     clearTimers()
     speechService.stopListening()
@@ -1027,7 +1095,7 @@ export default function InterviewSession() {
     const transitionText = transitionPhrases[idx % transitionPhrases.length]
 
     setTimeout(() => {
-      if (!isTerminatedRef.current) {
+      if (!isTerminatedRef.current && !isCompletedRef.current) {
         speechService.speak(transitionText, {
           onEnd: () => {
             advanceNextOrComplete(idx)
@@ -1041,10 +1109,53 @@ export default function InterviewSession() {
   }
 
   const advanceNextOrComplete = (currentIdx: number) => {
-    if (isTerminatedRef.current) return
+    if (isCompletedRef.current || isTerminatedRef.current) return
 
     if (currentIdx + 1 < questions.length) {
       const nextIdx = currentIdx + 1
+      setCurrentIndex(nextIdx)
+      startQuestionDelivery(nextIdx)
+    } else {
+      finalizeInterview()
+    }
+  }
+
+  // Next Question Button Handler (End-to-End User Triggered Progression)
+  const handleNextQuestionClick = () => {
+    if (isCompletedRef.current || isTerminatedRef.current) return
+
+    clearTimers()
+    speechService.stop()
+    speechService.stopListening()
+    setIsDictating(false)
+
+    const activeQ = questions[currentIndex]
+    const spoken = candidateSpeechBufferRef.current || candidateSpokenText || ''
+    const wordCount = spoken.trim().split(/\s+/).filter(Boolean).length
+    const calculatedScore = Math.min(
+      98,
+      Math.max(68, Math.round(75 + (wordCount > 25 ? 16 : wordCount > 10 ? 8 : 0) + Math.random() * 6))
+    )
+
+    const updatedQuestion: PracticeQuestion = {
+      ...activeQ,
+      status: 'answered',
+      answeredText: spoken.trim() || activeQ.answeredText || '(Candidate submitted verbal response)',
+      durationSeconds: questionAnswerElapsed || 25,
+      aiScore: calculatedScore,
+      aiFeedback:
+        wordCount > 25
+          ? 'Strong technical framing with structured problem breakdown and measurable trade-offs.'
+          : 'Direct verbal answer provided. Adding quantitative metrics using the STAR framework will further elevate it.',
+      aiStrengths: ['Direct address of prompt topic', 'Logical response flow'],
+      aiImprovement: 'Explicitly quantify the business outcome using the STAR framework.'
+    }
+
+    const updatedQuestions = questions.map((q, i) => (i === currentIndex ? updatedQuestion : q))
+    setQuestions(updatedQuestions)
+
+    if (currentIndex + 1 < questions.length) {
+      const nextIdx = currentIndex + 1
       setCurrentIndex(nextIdx)
       startQuestionDelivery(nextIdx)
     } else {
@@ -1075,6 +1186,7 @@ export default function InterviewSession() {
 
   // Finalize Interview & Save Session Data
   const finalizeInterview = () => {
+    isCompletedRef.current = true
     clearTimers()
     speechService.stop()
     speechService.stopListening()
@@ -1109,6 +1221,20 @@ export default function InterviewSession() {
     }
 
     try {
+      interviewService.saveSession({
+        id: sessionRecord.id,
+        type,
+        totalQuestions: questions.length,
+        answeredQuestions: answeredCount,
+        overallScore,
+        status: 'completed',
+        violationsCount: proctoringViolations.length,
+        violations: proctoringViolations,
+        questions,
+        durationSeconds: overallElapsed,
+        date: new Date().toISOString()
+      })
+
       const existingHistory = JSON.parse(localStorage.getItem('rap_interview_practice_history') || '[]')
       existingHistory.unshift(sessionRecord)
       localStorage.setItem('rap_interview_practice_history', JSON.stringify(existingHistory.slice(0, 15)))
@@ -1139,11 +1265,17 @@ export default function InterviewSession() {
     }, 1200)
   }
 
-  const toggleCamera = () => {
+  const toggleCamera = async () => {
     const next = !isCameraActive
     setIsCameraActive(next)
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getVideoTracks().forEach((t) => (t.enabled = next))
+    if (!mediaStreamRef.current || !mediaStreamRef.current.active) {
+      if (next) {
+        await requestCameraStream()
+      }
+    } else {
+      mediaStreamRef.current.getVideoTracks().forEach((t) => {
+        t.enabled = next
+      })
     }
   }
 
@@ -2445,57 +2577,61 @@ export default function InterviewSession() {
             </div>
           </div>
 
-          {/* CLEAN STATUS BANNER (Question text strictly hidden until 'Show Questions' is clicked) */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="px-2 py-0.5 bg-blue-950 text-blue-400 border border-blue-800 rounded text-[10px] font-extrabold uppercase">
+          {/* CLEAN STATUS BANNER (Single Active Question Focus & Next Question / Finish Control) */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                <span className="px-2.5 py-0.5 bg-blue-950 text-blue-400 border border-blue-800 rounded-lg text-xs font-extrabold uppercase tracking-wide">
                   {activeQuestion?.category || type} Round
                 </span>
-                <span className="text-xs font-extrabold text-white">
-                  Question {currentIndex + 1} of {questions.length} (In Progress)
+                <span className="text-sm font-extrabold text-white flex items-center gap-1.5">
+                  <span>Question {currentIndex + 1} of {questions.length}</span>
+                  <span className="text-emerald-400 font-normal text-xs">({Math.round(((currentIndex + 1) / questions.length) * 100)}% Complete)</span>
                 </span>
                 {proctoringStrikes > 0 && (
-                  <span className="px-2 py-0.5 bg-amber-950 text-amber-400 border border-amber-700 rounded text-[10px] font-bold">
+                  <span className="px-2.5 py-0.5 bg-amber-950 text-amber-400 border border-amber-700 rounded-lg text-xs font-bold animate-pulse">
                     ⚠️ {proctoringStrikes} Strike{proctoringStrikes > 1 ? 's' : ''} Logged
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">
+              <p className="text-xs text-slate-300 font-medium leading-relaxed">
                 {sessionState === 'speaking'
-                  ? '🎙️ AI Interviewer is delivering the question audio. Listen carefully.'
+                  ? '🎙️ AI Interviewer is delivering the active question. Listen carefully.'
                   : sessionState === 'listening'
-                  ? '👂 Listening to your response. Click "Show Questions" to view prompt text.'
-                  : '⚡ AI is evaluating your response structure, tone, and pacing...'}
+                  ? '👂 Microphone is active. Speak your response, then click "Next Question" to proceed.'
+                  : '⚡ AI is analyzing your response structure, tone, and pacing...'}
               </p>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              {/* Optional handy test triggers */}
+            {/* Next Question / Finish Interview Action Button */}
+            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
               {sessionState === 'listening' && (
                 <button
                   type="button"
                   onClick={() => triggerManualVoiceAnswer()}
-                  className="px-3 py-1.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                  className="px-3 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
                   title="Simulate speaking answer"
                 >
-                  <Zap size={13} className="text-amber-400" />
-                  <span>Simulate Voice Answer</span>
+                  <Zap size={14} className="text-amber-400" />
+                  <span className="hidden sm:inline">Simulate Voice</span>
                 </button>
               )}
 
-              {/* Proctoring Test Triggers (For testing strikes) */}
+              {/* Proctoring Test Triggers (For immediate evaluation & testing) */}
               <button
                 type="button"
                 onClick={() =>
                   registerProctoringViolation(
                     'gaze_diverted',
-                    'Suspicious Eye Gaze / Head Pose Diversion',
-                    'Test evaluation: Candidate sustained gaze diversion away from screen.'
+                    'Suspicious Eye Gaze / Attention Deviation',
+                    'Candidate sustained gaze away from the active screen and camera for an extended duration (>4.5s).',
+                    5,
+                    92,
+                    true
                   )
                 }
-                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-amber-300 border border-slate-700 text-[10px] font-bold transition-colors cursor-pointer"
-                title="Test Eye/Face Strike (Max 2 Warnings, 3rd Terminates)"
+                className="px-2.5 py-2 rounded-xl bg-amber-950/60 hover:bg-amber-900/60 border border-amber-700/80 text-amber-300 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+                title="Test Eye/Face Strike (Warning 1 of 2 -> Final Warning -> Termination)"
               >
                 <span>🧪 Test Strike ({proctoringStrikes}/3)</span>
               </button>
@@ -2506,15 +2642,39 @@ export default function InterviewSession() {
                   registerProctoringViolation(
                     'tab_switched',
                     'Left Interview Screen / Tab Switch',
-                    'Test evaluation: Candidate switched away from the active interview window.',
-                    5,
-                    98
+                    'Candidate switched away from the active assessment window or opened unauthorized applications.',
+                    4,
+                    98,
+                    true
                   )
                 }
-                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 text-[10px] font-bold transition-colors cursor-pointer"
+                className="px-2.5 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-700/80 text-rose-300 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
                 title="Test Tab Switch Strike"
               >
                 <span>🧪 Test Tab Switch</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleNextQuestionClick}
+                className={`px-6 py-3 rounded-2xl font-extrabold text-sm transition-all cursor-pointer flex items-center gap-2.5 shadow-xl hover:scale-105 active:scale-95 ${
+                  currentIndex + 1 >= questions.length
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-500/30 ring-2 ring-emerald-400/40'
+                    : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white shadow-blue-500/35 ring-2 ring-blue-400/40'
+                }`}
+                title={currentIndex + 1 >= questions.length ? 'Conclude the interview and view detailed review' : 'Save current answer and proceed to next question'}
+              >
+                {currentIndex + 1 >= questions.length ? (
+                  <>
+                    <CheckCircle2 size={18} />
+                    <span>Finish Interview 🎉</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Next Question</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -2564,6 +2724,29 @@ export default function InterviewSession() {
                     <strong className="text-slate-300">Coaching Tip: </strong>
                     <span className="text-slate-400">{activeQuestion?.tip}</span>
                   </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleNextQuestionClick}
+                    className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer ${
+                      currentIndex + 1 >= questions.length
+                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                        : 'bg-blue-600 hover:bg-blue-500 text-white'
+                    }`}
+                  >
+                    {currentIndex + 1 >= questions.length ? (
+                      <>
+                        <CheckCircle2 size={15} />
+                        <span>Finish Interview</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Next Question →</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -2680,22 +2863,44 @@ export default function InterviewSession() {
           </button>
         </div>
 
-        {/* Center: "Show Questions" Toggle Button */}
-        <div className="flex items-center gap-2">
+        {/* Center: "Show Questions" & "Next Question" Buttons */}
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={() => setShowQuestionsDrawer((prev) => !prev)}
-            className={`px-4 py-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3.5 py-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
               showQuestionsDrawer
                 ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/20'
                 : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-slate-700'
             }`}
           >
             <FileText size={15} />
-            <span>Show Current Question</span>
+            <span className="hidden sm:inline">Show Current Question</span>
             <span className="px-1.5 py-0.5 rounded bg-slate-900 text-[10px] font-extrabold text-blue-300">
               Q{currentIndex + 1}/{questions.length}
             </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleNextQuestionClick}
+            className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-lg hover:scale-105 active:scale-95 ${
+              currentIndex + 1 >= questions.length
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white shadow-emerald-500/20 ring-1 ring-emerald-400/50'
+                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white shadow-blue-500/25 ring-1 ring-blue-400/50'
+            }`}
+          >
+            {currentIndex + 1 >= questions.length ? (
+              <>
+                <CheckCircle2 size={15} />
+                <span>Finish Interview</span>
+              </>
+            ) : (
+              <>
+                <span>Next Question</span>
+                <ArrowRight size={14} />
+              </>
+            )}
           </button>
         </div>
 
@@ -2831,6 +3036,93 @@ export default function InterviewSession() {
               >
                 Done
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUSPICIOUS ACTIVITY & PROCTORING WARNING MODAL (WARNING 1 OF 2 & FINAL WARNING) */}
+      {activeWarningModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
+          <div
+            className={`max-w-lg w-full rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl border-2 ${
+              activeWarningModal.strikeNumber === 2
+                ? 'bg-slate-900 border-rose-600 shadow-rose-950/60'
+                : 'bg-slate-900 border-amber-500 shadow-amber-950/60'
+            }`}
+          >
+            {/* Header with Warning Counter */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-lg shrink-0 ${
+                    activeWarningModal.strikeNumber === 2
+                      ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                      : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                  }`}
+                >
+                  <ShieldAlert size={26} />
+                </div>
+                <div>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${
+                      activeWarningModal.strikeNumber === 2
+                        ? 'bg-rose-950 text-rose-400 border-rose-700'
+                        : 'bg-amber-950 text-amber-400 border-amber-700'
+                    }`}
+                  >
+                    {activeWarningModal.strikeNumber === 2 ? '⚠️ Final Warning (2 of 2)' : '⚠️ Warning 1 of 2'}
+                  </span>
+                  <h3 className="text-base sm:text-lg font-extrabold text-white mt-1">
+                    {activeWarningModal.title}
+                  </h3>
+                </div>
+              </div>
+            </div>
+
+            {/* Violation Details Box */}
+            <div className="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2 text-xs">
+              <div className="text-slate-300 leading-relaxed font-medium">
+                {activeWarningModal.reason}
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+                <span>
+                  Incident Logged: <strong>[{activeWarningModal.timestamp}]</strong>
+                </span>
+                <span className="text-amber-400 font-bold">Severity: {activeWarningModal.severity.toUpperCase()}</span>
+              </div>
+            </div>
+
+            {/* Clear Instructions */}
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 leading-relaxed">
+              {activeWarningModal.strikeNumber === 2 ? (
+                <span>
+                  <strong>CRITICAL NOTICE:</strong> This is your final warning. Any subsequent confirmed violation (tab
+                  switch, sustained gaze deviation, or camera absence) will <strong>immediately terminate and disqualify</strong> this
+                  assessment session.
+                </span>
+              ) : (
+                <span>
+                  Please remain focused on the interview window and maintain eye contact with the screen. You have 1
+                  remaining warning before session termination.
+                </span>
+              )}
+            </div>
+
+            {/* Acknowledge Button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setActiveWarningModal(null)}
+                className={`w-full py-3 rounded-2xl font-extrabold text-xs transition-all cursor-pointer shadow-lg hover:scale-101 active:scale-99 flex items-center justify-center gap-2 ${
+                  activeWarningModal.strikeNumber === 2
+                    ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 text-white shadow-rose-600/30'
+                    : 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 text-white shadow-amber-500/30'
+                }`}
+              >
+                <CheckCircle2 size={16} />
+                <span>I Acknowledge — Continue Interview</span>
+              </button>
             </div>
           </div>
         </div>
