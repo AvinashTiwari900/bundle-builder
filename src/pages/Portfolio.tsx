@@ -31,7 +31,9 @@ import {
   MoreVertical,
   SlidersHorizontal,
   Check,
-  FileText
+  FileText,
+  X,
+  ZoomIn
 } from 'lucide-react'
 import { profileService } from '../services/profileService'
 import Button from '../components/ui/Button'
@@ -42,9 +44,21 @@ export default function PortfolioPage() {
   const [isPanelView, setIsPanelView] = useState(false) // Toggle Company / Panel Member View
   const [maskContactInfo, setMaskContactInfo] = useState(true) // Privacy toggle
   const [showMenu, setShowMenu] = useState(false) // Three dots dropdown state
+  const [showPhotoModal, setShowPhotoModal] = useState(false) // Profile Photo Lightbox Modal
   const [toast, setToast] = useState<string | null>(null)
 
   const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showPhotoModal) {
+        setShowPhotoModal(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showPhotoModal])
 
   // Load profile data directly from profileService
   useEffect(() => {
@@ -283,16 +297,30 @@ export default function PortfolioPage() {
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
             {/* Left: Avatar + Names & Badges */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-5">
-              {/* Candidate Avatar */}
-              <div className="relative -mt-16 sm:-mt-20 shrink-0">
+              {/* Candidate Avatar with Click-to-Expand Preview */}
+              <div 
+                className="relative -mt-16 sm:-mt-20 shrink-0 group cursor-pointer"
+                onClick={() => setShowPhotoModal(true)}
+                title="Click to view full profile photo"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    setShowPhotoModal(true)
+                  }
+                }}
+              >
                 <img
                   src={
                     profile.profilePhoto ||
-                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80'
                   }
                   alt={profile.name || 'Candidate'}
-                  className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl object-cover border-4 border-white shadow-xl bg-white"
+                  className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl object-cover border-4 border-white shadow-xl bg-white transition-all duration-200 group-hover:scale-105 group-hover:shadow-2xl group-hover:border-indigo-100"
                 />
+                <div className="absolute inset-0 bg-slate-950/30 rounded-3xl opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center text-white backdrop-blur-[1px]">
+                  <ZoomIn size={22} className="drop-shadow-md transform group-hover:scale-110 transition-transform" />
+                </div>
               </div>
 
               {/* Candidate Identity Block (Strictly Below Cover Image) */}
@@ -604,6 +632,78 @@ export default function PortfolioPage() {
           </div>
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* PROFILE PHOTO LIGHTBOX MODAL POPUP                                        */}
+      {/* ========================================================================= */}
+      {showPhotoModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+          onClick={() => setShowPhotoModal(false)}
+        >
+          <div 
+            className="relative bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-100 bg-slate-50/70">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                  <User size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 leading-tight">
+                    {profile.name || 'Candidate Profile Photo'}
+                  </h3>
+                  <p className="text-[11px] font-semibold text-slate-500">
+                    {profile.headline || profile.currentRole || 'Lead Business Analyst'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                id="closePhotoModalBtn"
+                onClick={() => setShowPhotoModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Photo Container */}
+            <div className="p-4 sm:p-6 bg-slate-900/5 flex items-center justify-center">
+              <div className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200/80 bg-white max-h-[70vh] flex items-center justify-center">
+                <img
+                  src={
+                    profile.profilePhoto ||
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80'
+                  }
+                  alt={profile.name || 'Candidate Profile Photo'}
+                  className="w-full h-auto max-h-[60vh] object-contain rounded-2xl"
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 sm:p-5 flex items-center justify-between bg-white border-t border-slate-100 text-xs">
+              <div className="flex items-center gap-1.5 text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                <CheckCircle2 size={13} className="text-emerald-600" />
+                <span>Verified Candidate Identity</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowPhotoModal(false)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all cursor-pointer shadow-sm"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

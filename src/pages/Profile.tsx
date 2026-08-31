@@ -34,7 +34,8 @@ import {
   FolderGit2,
   FileText,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ZoomIn
 } from 'lucide-react'
 import { profileService, EducationEntry, ExperienceEntry, ProjectEntry } from '../services/profileService'
 import Button from '../components/ui/Button'
@@ -48,6 +49,7 @@ export default function ProfilePage() {
   // Mode: 'details' (Show Details View) vs 'edit' (Edit Profile Form)
   const [viewMode, setViewMode] = useState<'details' | 'edit'>('details')
   const [activeEditTab, setActiveEditTab] = useState<'basics' | 'skills' | 'experience' | 'education' | 'projects' | 'privacy'>('basics')
+  const [showPhotoModal, setShowPhotoModal] = useState(false) // Profile Photo Lightbox Modal
 
   const [newSkill, setNewSkill] = useState('')
   const [newCertName, setNewCertName] = useState('')
@@ -541,19 +543,37 @@ export default function ProfilePage() {
                     <img
                       src={
                         profile.profilePhoto ||
-                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'
+                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80'
                       }
                       alt={profile.name || 'Candidate'}
-                      className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl object-cover border-4 border-white shadow-xl bg-white"
+                      className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl object-cover border-4 border-white shadow-xl bg-white transition-all duration-200 group-hover:scale-105 group-hover:shadow-2xl cursor-pointer"
+                      onClick={() => setShowPhotoModal(true)}
                     />
-                    <button
-                      type="button"
-                      onClick={() => avatarFileInputRef.current?.click()}
-                      className="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                      title="Click to change profile avatar photo"
-                    >
-                      <Camera size={22} />
-                    </button>
+                    {/* Hover Quick Actions: View Photo / Change Photo */}
+                    <div className="absolute inset-0 bg-slate-950/40 rounded-3xl flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[1px] pointer-events-none">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowPhotoModal(true)
+                        }}
+                        className="p-2 rounded-xl bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition-colors cursor-pointer pointer-events-auto"
+                        title="View Full Profile Photo"
+                      >
+                        <ZoomIn size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          avatarFileInputRef.current?.click()
+                        }}
+                        className="p-2 rounded-xl bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition-colors cursor-pointer pointer-events-auto"
+                        title="Change Profile Photo"
+                      >
+                        <Camera size={18} />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">
@@ -1930,6 +1950,85 @@ export default function ProfilePage() {
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <Button variant="ghost" size="sm" onClick={() => setProjModal(false)}>Cancel</Button>
               <Button variant="primary" size="sm" onClick={saveProject} className="bg-indigo-600 hover:bg-indigo-700 font-bold text-white">Save Project</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PROFILE PHOTO LIGHTBOX MODAL POPUP                                        */}
+      {/* ========================================================================= */}
+      {showPhotoModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+          onClick={() => setShowPhotoModal(false)}
+        >
+          <div 
+            className="relative bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-100 bg-slate-50/70">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                  <User size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 leading-tight">
+                    {profile?.name || 'Candidate Profile Photo'}
+                  </h3>
+                  <p className="text-[11px] font-semibold text-slate-500">
+                    {profile?.headline || profile?.currentRole || 'Lead Business Analyst'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                id="closeProfilePhotoModalBtn"
+                onClick={() => setShowPhotoModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Photo Container */}
+            <div className="p-4 sm:p-6 bg-slate-900/5 flex items-center justify-center">
+              <div className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200/80 bg-white max-h-[70vh] flex items-center justify-center">
+                <img
+                  src={
+                    profile?.profilePhoto ||
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80'
+                  }
+                  alt={profile?.name || 'Candidate Profile Photo'}
+                  className="w-full h-auto max-h-[60vh] object-contain rounded-2xl"
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 sm:p-5 flex items-center justify-between bg-white border-t border-slate-100 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPhotoModal(false)
+                  avatarFileInputRef.current?.click()
+                }}
+                className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Camera size={14} />
+                <span>Upload New Photo</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowPhotoModal(false)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all cursor-pointer shadow-sm"
+              >
+                Close Preview
+              </button>
             </div>
           </div>
         </div>
