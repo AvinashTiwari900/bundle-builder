@@ -352,11 +352,10 @@ export default function VoiceScreening() {
               type="button"
               id="selectSarahRecruiterBtn"
               onClick={() => setInterviewerMode('recruiter')}
-              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative overflow-hidden ${
-                interviewerMode === 'recruiter'
+              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative overflow-hidden ${interviewerMode === 'recruiter'
                   ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-200'
                   : 'border-slate-200 bg-white hover:border-slate-300'
-              }`}
+                }`}
             >
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-extrabold shrink-0 shadow-md">
@@ -387,11 +386,10 @@ export default function VoiceScreening() {
               type="button"
               id="selectAlexTechBtn"
               onClick={() => setInterviewerMode('technical')}
-              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative overflow-hidden ${
-                interviewerMode === 'technical'
+              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative overflow-hidden ${interviewerMode === 'technical'
                   ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-200'
                   : 'border-slate-200 bg-white hover:border-slate-300'
-              }`}
+                }`}
             >
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-extrabold shrink-0 shadow-md">
@@ -524,11 +522,10 @@ export default function VoiceScreening() {
               <button
                 type="button"
                 onClick={toggleMute}
-                className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
-                  isAudioMuted
+                className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${isAudioMuted
                     ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
                     : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                }`}
+                  }`}
                 title={isAudioMuted ? 'Unmute AI Voice' : 'Mute AI Voice'}
               >
                 {isAudioMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
@@ -605,11 +602,10 @@ export default function VoiceScreening() {
                 type="button"
                 id="toggleCandidateMicBtn"
                 onClick={toggleSpeechRecognition}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
-                  isListening
+                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${isListening
                     ? 'bg-rose-500 text-white animate-pulse shadow-md shadow-rose-200'
                     : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200'
-                }`}
+                  }`}
               >
                 {isListening ? <Mic size={14} /> : <MicOff size={14} />}
                 <span>{isListening ? '🔴 Recording Speech (Tap to stop)' : '🎙️ Speak with Microphone'}</span>
@@ -712,11 +708,10 @@ export default function VoiceScreening() {
               {turns.map((turn) => (
                 <div
                   key={turn.id}
-                  className={`p-4 rounded-2xl text-xs space-y-1.5 ${
-                    turn.speaker === 'ai'
+                  className={`p-4 rounded-2xl text-xs space-y-1.5 ${turn.speaker === 'ai'
                       ? 'bg-slate-50 border border-slate-200/80'
                       : 'bg-indigo-50/70 border border-indigo-100 ml-6'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="font-extrabold text-slate-900 flex items-center gap-1">
