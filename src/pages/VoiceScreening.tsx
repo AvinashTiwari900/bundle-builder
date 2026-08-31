@@ -31,11 +31,15 @@ import {
   AlertCircle,
   DollarSign,
   Calendar,
-  Briefcase
+  Briefcase,
+  Activity,
+  Volume2 as Waves,
+  Loader2
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import { profileService } from '../services/profileService'
 import { speechService } from '../services/speechService'
+import { sarvamVoiceClient } from '../services/sarvamVoiceClient'
 import {
   AiVoicePracticeService,
   CandidateContext,
@@ -49,7 +53,7 @@ export default function VoiceScreening() {
   const nav = useNavigate()
   const profile = profileService.get() || {}
 
-  // Candidate Context
+  // Candidate Context sourced directly from Profile
   const candidateContext: CandidateContext = {
     name: profile.name || 'Avinash Tiwari',
     role: profile.headline || profile.currentRole || 'Lead Business Analyst',
@@ -76,6 +80,13 @@ export default function VoiceScreening() {
   const [turns, setTurns] = useState<ConversationTurn[]>([])
   const [currentDifficulty, setCurrentDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate')
 
+  // Live Interaction States
+  const [interactionState, setInteractionState] = useState<'idle' | 'ai_speaking' | 'listening' | 'processing' | 'thinking'>('idle')
+  const [sarvamStatus, setSarvamStatus] = useState<{ sarvamActive: boolean; provider: string }>({
+    sarvamActive: false,
+    provider: 'Sarvam AI / Web Speech'
+  })
+
   // Audio & Input State
   const [isAiSpeaking, setIsAiSpeaking] = useState(false)
   const [isListening, setIsListening] = useState(false)
@@ -88,6 +99,13 @@ export default function VoiceScreening() {
   const [evaluation, setEvaluation] = useState<InterviewEvaluation | null>(null)
 
   const chatScrollRef = useRef<HTMLDivElement>(null)
+
+  // Check backend Sarvam service status on mount
+  useEffect(() => {
+    sarvamVoiceClient.checkBackendStatus().then((status) => {
+      setSarvamStatus(status)
+    })
+  }, [])
 
   // Auto-scroll chat buffer
   useEffect(() => {
@@ -108,8 +126,8 @@ export default function VoiceScreening() {
   // Cleanup speech on unmount
   useEffect(() => {
     return () => {
-      speechService.stop()
-      speechService.stopListening()
+      sarvamVoiceClient.stopAudioPlayback()
+      sarvamVoiceClient.cancelRecording()
     }
   }, [])
 
@@ -120,12 +138,22 @@ export default function VoiceScreening() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
-  // Speak AI text aloud
-  const speakText = (text: string) => {
+  // Play AI text via Sarvam TTS or Web Speech fallback
+  const playAiVoice = (text: string, audioBase64: string | null = null, audioFormat = 'audio/wav') => {
     if (isAudioMuted) return
-    speechService.speak(text, {
-      onStart: () => setIsAiSpeaking(true),
-      onEnd: () => setIsAiSpeaking(false)
+
+    setInteractionState('ai_speaking')
+    setIsAiSpeaking(true)
+
+    sarvamVoiceClient.playAiAudio(text, audioBase64, audioFormat, {
+      onStart: () => {
+        setIsAiSpeaking(true)
+        setInteractionState('ai_speaking')
+      },
+      onEnd: () => {
+        setIsAiSpeaking(false)
+        setInteractionState('idle')
+      }
     })
   }
 
@@ -133,79 +161,111 @@ export default function VoiceScreening() {
   const toggleMute = () => {
     const nextMute = !isAudioMuted
     setIsAudioMuted(nextMute)
-    speechService.setMuted(nextMute)
     if (nextMute) {
-      speechService.stop()
+      sarvamVoiceClient.stopAudioPlayback()
       setIsAiSpeaking(false)
+      setInteractionState('idle')
     } else {
       const lastAiTurn = [...turns].reverse().find((t) => t.speaker === 'ai')
       if (lastAiTurn) {
-        speakText(lastAiTurn.text)
+        playAiVoice(lastAiTurn.text)
       }
     }
   }
 
-  // Dictation handler (Speech to Text)
-  const toggleSpeechRecognition = () => {
+  // Barge-in: Interrupt AI Speech and start recording candidate
+  const handleBargeInAndListen = () => {
+    sarvamVoiceClient.stopAudioPlayback()
+    setIsAiSpeaking(false)
+    toggleSpeechRecording()
+  }
+
+  // Toggle Candidate Speech Recording (MediaRecorder + Sarvam STT)
+  const toggleSpeechRecording = async () => {
     if (isListening) {
-      speechService.stopListening()
+      setInteractionState('processing')
       setIsListening(false)
+
+      const result = await sarvamVoiceClient.stopAudioRecordingAndTranscribe('en-IN')
+      if (result.transcript) {
+        setCandidateSpeechBuffer((prev) => (prev ? `${prev} ${result.transcript}` : result.transcript))
+      }
+      setInteractionState('idle')
     } else {
-      // Pause AI if speaking
-      speechService.stop()
+      // Interrupt AI if currently speaking
+      sarvamVoiceClient.stopAudioPlayback()
       setIsAiSpeaking(false)
 
-      const started = speechService.startListening({
-        onStart: () => setIsListening(true),
-        onResult: (text) => {
-          setCandidateSpeechBuffer((prev) => (prev ? prev + ' ' + text : text))
+      const started = await sarvamVoiceClient.startAudioRecording({
+        onStart: () => {
+          setIsListening(true)
+          setInteractionState('listening')
         },
-        onEnd: () => setIsListening(false),
         onError: (err) => {
-          console.warn('Speech recognition error:', err)
+          console.warn('Microphone error:', err)
           setIsListening(false)
+          setInteractionState('idle')
+          // Fallback to browser SpeechRecognition if MediaRecorder fails
+          speechService.startListening({
+            onStart: () => {
+              setIsListening(true)
+              setInteractionState('listening')
+            },
+            onResult: (text) => setCandidateSpeechBuffer((prev) => (prev ? `${prev} ${text}` : text)),
+            onEnd: () => {
+              setIsListening(false)
+              setInteractionState('idle')
+            }
+          })
         }
       })
+
       if (!started) {
         setIsListening(false)
+        setInteractionState('idle')
       }
     }
   }
 
-  // Start Practice Call
-  const startPracticeCall = () => {
+  // Start Practice Call via Backend / Sarvam AI
+  const startPracticeCall = async () => {
     setCallStatus('connected')
     setDuration(0)
     setTurns([])
     setCurrentDifficulty('intermediate')
+    setInteractionState('thinking')
 
-    const initialGreeting = AiVoicePracticeService.getInitialGreeting(candidateContext, targetRole, interviewerMode)
+    const initData = await sarvamVoiceClient.startSession(candidateContext, targetRole, interviewerMode, 'en-IN')
+
     const firstTurn: ConversationTurn = {
       id: `turn-${Date.now()}-ai`,
       speaker: 'ai',
-      text: initialGreeting,
+      text: initData.initialQuestion,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      difficulty: 'intermediate',
-      category: 'intro'
+      difficulty: initData.difficulty,
+      category: initData.initialCategory as any
     }
 
     setTurns([firstTurn])
-    speakText(initialGreeting)
+    playAiVoice(initData.initialQuestion, initData.audioBase64, initData.audioFormat || 'audio/wav')
   }
 
   // Submit Candidate's Answer (Analyze -> Follow-Up / Adapt)
-  const handleCandidateSubmit = (overrideAction?: 'normal' | 'repeat' | 'clarify' | 'skip') => {
-    const answerText = overrideAction === 'skip' ? "I don't know the exact answer to this. Could we explore a different topic?" : candidateSpeechBuffer.trim()
+  const handleCandidateSubmit = async (overrideAction?: 'normal' | 'repeat' | 'clarify' | 'skip') => {
+    const answerText = overrideAction === 'skip'
+      ? "I don't know the exact answer to this. Could we explore an adjacent topic?"
+      : candidateSpeechBuffer.trim()
 
     if (!answerText && !overrideAction) return
 
     // Stop recording if active
     if (isListening) {
-      speechService.stopListening()
+      sarvamVoiceClient.cancelRecording()
       setIsListening(false)
     }
 
     setIsProcessingAnswer(true)
+    setInteractionState('thinking')
 
     // Append candidate turn
     const candidateTurn: ConversationTurn = {
@@ -219,8 +279,41 @@ export default function VoiceScreening() {
     setTurns(updatedTurns)
     setCandidateSpeechBuffer('')
 
-    // Generate Adaptive AI response
-    setTimeout(() => {
+    try {
+      // Call backend Adaptive Question Engine (with Sarvam STT/TTS)
+      const turnData = await sarvamVoiceClient.sendTurn(
+        updatedTurns,
+        candidateContext,
+        targetRole,
+        currentDifficulty,
+        overrideAction || 'normal',
+        interviewerMode,
+        'en-IN'
+      )
+
+      setCurrentDifficulty(turnData.difficulty)
+
+      const aiTurn: ConversationTurn = {
+        id: `turn-${Date.now()}-ai`,
+        speaker: 'ai',
+        text: turnData.next_question,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        difficulty: turnData.difficulty,
+        category: turnData.category as any,
+        analysis: turnData.analysis
+      }
+
+      if (turnData.analysis) {
+        candidateTurn.analysis = turnData.analysis
+      }
+
+      setTurns([...updatedTurns, aiTurn])
+      setIsProcessingAnswer(false)
+
+      playAiVoice(turnData.next_question, turnData.audioBase64, turnData.audioFormat || 'audio/wav')
+    } catch (err) {
+      console.warn('Turn error, using client fallback:', err)
+      // Client fallback
       const nextQ = AiVoicePracticeService.generateNextQuestion(
         updatedTurns,
         candidateContext,
@@ -229,9 +322,6 @@ export default function VoiceScreening() {
         overrideAction || 'normal',
         interviewerMode
       )
-
-      setCurrentDifficulty(nextQ.difficulty)
-
       const aiTurn: ConversationTurn = {
         id: `turn-${Date.now()}-ai`,
         speaker: 'ai',
@@ -241,26 +331,26 @@ export default function VoiceScreening() {
         category: nextQ.category,
         analysis: nextQ.analysis
       }
-
-      if (nextQ.analysis) {
-        candidateTurn.analysis = nextQ.analysis
-      }
-
       setTurns([...updatedTurns, aiTurn])
       setIsProcessingAnswer(false)
-      speakText(nextQ.question)
-    }, 600)
+      playAiVoice(nextQ.question)
+    }
   }
 
   // End Practice Call & Generate Full Evaluation
-  const endPracticeCall = () => {
-    speechService.stop()
-    speechService.stopListening()
+  const endPracticeCall = async () => {
+    sarvamVoiceClient.stopAudioPlayback()
+    sarvamVoiceClient.cancelRecording()
     setIsListening(false)
     setIsAiSpeaking(false)
+    setInteractionState('idle')
 
-    // Generate structured diagnostics
-    const result = AiVoicePracticeService.generateEvaluation(turns, candidateContext, targetRole, interviewerMode)
+    // Request full diagnostic evaluation from backend
+    let result = await sarvamVoiceClient.evaluateSession(turns, candidateContext, targetRole, interviewerMode)
+    if (!result) {
+      result = AiVoicePracticeService.generateEvaluation(turns, candidateContext, targetRole, interviewerMode)
+    }
+
     setEvaluation(result)
     setCallStatus('completed')
 
@@ -268,8 +358,9 @@ export default function VoiceScreening() {
 
     const personaName = interviewerMode === 'recruiter' ? 'Sarah' : 'Alex'
     const closingVoiceMessage = `Great job on completing your 15-minute mock interview with ${personaName}. Your overall practice score is ${result.overallScore} out of 100. Review your detailed feedback breakdown below.`
+    
     setTimeout(() => {
-      speakText(closingVoiceMessage)
+      playAiVoice(closingVoiceMessage)
     }, 400)
   }
 
@@ -308,23 +399,24 @@ export default function VoiceScreening() {
       {/* Top Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              AI Voice Interview Practice Studio
+              RAS AI Voice Interview Practice Studio
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">
-              15-Min Simulation
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
+              <Sparkles size={12} className="text-indigo-600" />
+              <span>Sarvam AI Voice Integration</span>
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Practice realistic phone screening calls and technical interviews with AI talent partners. Improve your delivery, salary framing, and confidence.
+            Conduct realistic, adaptive mock interviews with Sarvam Speech-to-Text & Text-to-Speech models. Practice phone screens and technical rounds.
           </p>
         </div>
 
         {/* Practice Guarantee Badge */}
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold shrink-0">
           <Shield size={14} className="text-amber-600" />
-          <span>Practice Only · No Real Hiring Decision</span>
+          <span>Practice Only · No Real Hiring Decisions</span>
         </div>
       </div>
 
@@ -338,10 +430,10 @@ export default function VoiceScreening() {
               <Bot size={40} />
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-              Select Your 15-Minute AI Mock Practice Session
+              Select Your AI Mock Practice Interviewer
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Choose your practice persona to simulate realistic preliminary recruiter screening calls with Sarah or deep-dive technical rounds with Alex.
+              Powered by Indian English acoustics (Sarvam AI <code className="px-1 py-0.5 bg-slate-100 rounded text-indigo-700 font-mono text-[11px]">saarika:v2</code> STT & <code className="px-1 py-0.5 bg-slate-100 rounded text-indigo-700 font-mono text-[11px]">bulbul:v1</code> TTS).
             </p>
           </div>
 
@@ -352,13 +444,14 @@ export default function VoiceScreening() {
               type="button"
               id="selectSarahRecruiterBtn"
               onClick={() => setInterviewerMode('recruiter')}
-              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative overflow-hidden ${interviewerMode === 'recruiter'
+              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative overflow-hidden ${
+                interviewerMode === 'recruiter'
                   ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-200'
                   : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
+              }`}
             >
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-extrabold shrink-0 shadow-md">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-extrabold shrink-0 shadow-md text-xl">
                   👩‍💼
                 </div>
                 <div className="space-y-1">
@@ -386,13 +479,14 @@ export default function VoiceScreening() {
               type="button"
               id="selectAlexTechBtn"
               onClick={() => setInterviewerMode('technical')}
-              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative overflow-hidden ${interviewerMode === 'technical'
+              className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer relative overflow-hidden ${
+                interviewerMode === 'technical'
                   ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-200'
                   : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
+              }`}
             >
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-extrabold shrink-0 shadow-md">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-extrabold shrink-0 shadow-md text-xl">
                   👨‍💻
                 </div>
                 <div className="space-y-1">
@@ -469,7 +563,7 @@ export default function VoiceScreening() {
             >
               <Phone size={20} />
               <span>
-                Start 15-Min Voice Practice with {interviewerMode === 'recruiter' ? 'Sarah' : 'Alex'}
+                Start Adaptive Voice Practice with {interviewerMode === 'recruiter' ? 'Sarah' : 'Alex'}
               </span>
             </button>
           </div>
@@ -494,12 +588,15 @@ export default function VoiceScreening() {
               </div>
 
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-base sm:text-lg font-black text-white">
                     {interviewerMode === 'recruiter' ? 'Sarah — RAS AI Talent Partner' : 'Alex — Senior AI Interviewer'}
                   </h2>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                     Live Call ({formatTime(duration)} / 15:00)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
+                    {sarvamStatus.sarvamActive ? 'Sarvam AI Engine' : 'Web Speech Engine'}
                   </span>
                 </div>
                 <p className="text-xs text-slate-300">
@@ -522,10 +619,11 @@ export default function VoiceScreening() {
               <button
                 type="button"
                 onClick={toggleMute}
-                className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${isAudioMuted
+                className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
+                  isAudioMuted
                     ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
                     : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                  }`}
+                }`}
                 title={isAudioMuted ? 'Unmute AI Voice' : 'Mute AI Voice'}
               >
                 {isAudioMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
@@ -544,7 +642,7 @@ export default function VoiceScreening() {
             </div>
           </div>
 
-          {/* Active Question Showcase Card */}
+          {/* Active Status & Question Card */}
           {activeAiTurn && (
             <div className="bg-white border-2 border-indigo-200 rounded-3xl p-6 sm:p-7 shadow-md space-y-4 animate-in fade-in duration-200">
               <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -560,25 +658,58 @@ export default function VoiceScreening() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-1 text-xs text-slate-500">
-                  <span>Interviewer Voice:</span>
-                  <span className="font-bold text-slate-800">
-                    {isAiSpeaking ? '🔊 Speaking...' : 'Listening to candidate'}
-                  </span>
+                {/* Live State Visualizer Indicator */}
+                <div className="flex items-center gap-2 text-xs">
+                  {interactionState === 'ai_speaking' && (
+                    <span className="flex items-center gap-1.5 text-emerald-700 font-extrabold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 animate-pulse">
+                      <Waves size={14} className="animate-spin" />
+                      <span>AI Speaking</span>
+                    </span>
+                  )}
+                  {interactionState === 'listening' && (
+                    <span className="flex items-center gap-1.5 text-rose-700 font-extrabold bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200 animate-pulse">
+                      <Mic size={14} />
+                      <span>Listening...</span>
+                    </span>
+                  )}
+                  {interactionState === 'thinking' && (
+                    <span className="flex items-center gap-1.5 text-indigo-700 font-extrabold bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200">
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Thinking & Adapting...</span>
+                    </span>
+                  )}
+                  {interactionState === 'idle' && (
+                    <span className="flex items-center gap-1.5 text-slate-500 font-semibold">
+                      <span>Ready for Candidate Response</span>
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* Pulsating Voice Visualizer */}
+              {/* Pulsating Voice Visualizer with Barge-In Button */}
               {isAiSpeaking && (
-                <div className="flex items-center gap-1.5 py-2 px-3 bg-indigo-50/60 rounded-xl border border-indigo-100 w-fit">
-                  <span className="w-1.5 h-4 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <span className="w-1.5 h-6 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <span className="w-1.5 h-5 bg-indigo-600 rounded-full animate-bounce" />
-                  <span className="w-1.5 h-7 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.25s]" />
-                  <span className="w-1.5 h-3 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.1s]" />
-                  <span className="text-[11px] font-bold text-indigo-700 ml-1.5">
-                    {interviewerMode === 'recruiter' ? 'Sarah' : 'Alex'} is speaking...
-                  </span>
+                <div className="flex items-center justify-between gap-3 p-3 bg-indigo-50/70 rounded-2xl border border-indigo-100 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-4 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1.5 h-6 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1.5 h-5 bg-indigo-600 rounded-full animate-bounce" />
+                    <span className="w-1.5 h-7 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.25s]" />
+                    <span className="w-1.5 h-3 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.1s]" />
+                    <span className="text-xs font-bold text-indigo-900 ml-1">
+                      {interviewerMode === 'recruiter' ? 'Sarah' : 'Alex'} is speaking...
+                    </span>
+                  </div>
+
+                  {/* Barge-In Interrupt Action */}
+                  <button
+                    type="button"
+                    onClick={handleBargeInAndListen}
+                    className="px-3 py-1 rounded-xl bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 text-xs font-extrabold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                    title="Interrupt interviewer and speak"
+                  >
+                    <Mic size={13} className="text-rose-500" />
+                    <span>Interrupt & Speak 🎙️</span>
+                  </button>
                 </div>
               )}
 
@@ -594,21 +725,22 @@ export default function VoiceScreening() {
             <div className="flex items-center justify-between">
               <label htmlFor="candidateAnswerInput" className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                 <User size={14} className="text-indigo-600" />
-                <span>Your Spoken or Typed Response</span>
+                <span>Your Response (Spoken or Typed)</span>
               </label>
 
               {/* Candidate Mic Dictation Status */}
               <button
                 type="button"
                 id="toggleCandidateMicBtn"
-                onClick={toggleSpeechRecognition}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${isListening
+                onClick={toggleSpeechRecording}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
+                  isListening
                     ? 'bg-rose-500 text-white animate-pulse shadow-md shadow-rose-200'
                     : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200'
-                  }`}
+                }`}
               >
                 {isListening ? <Mic size={14} /> : <MicOff size={14} />}
-                <span>{isListening ? '🔴 Recording Speech (Tap to stop)' : '🎙️ Speak with Microphone'}</span>
+                <span>{isListening ? '🔴 Recording (Tap to Transcribe with Sarvam STT)' : '🎙️ Speak (Sarvam STT)'}</span>
               </button>
             </div>
 
@@ -620,15 +752,15 @@ export default function VoiceScreening() {
               onChange={(e) => setCandidateSpeechBuffer(e.target.value)}
               placeholder={
                 interviewerMode === 'recruiter'
-                  ? 'Speak or type your answer... Practice articulating your background, salary range, notice period flexibility, and career motivations.'
-                  : 'Speak via your microphone or type your response here... The AI will evaluate your technical claims, reasoning, and metrics.'
+                  ? 'Speak with your microphone or type your response... The AI will analyze your salary framing, notice period flexibility, and career motivations.'
+                  : 'Speak via microphone or type your response... The AI will evaluate your technical claims, models, tools, and trade-offs.'
               }
               className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none leading-relaxed"
             />
 
             {/* Dynamic Controls Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-              {/* Special Candidate Actions (Repeat, Clarify, Skip) */}
+              {/* Candidate Actions (Repeat, Clarify, Skip) */}
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
@@ -698,7 +830,7 @@ export default function VoiceScreening() {
           <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-2xs space-y-4">
             <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
               <MessageSquare size={14} className="text-indigo-600" />
-              <span>Live Interview Transcript & Highlights</span>
+              <span>Live Interview Transcript & Keyword Highlights</span>
             </h3>
 
             <div
@@ -708,10 +840,11 @@ export default function VoiceScreening() {
               {turns.map((turn) => (
                 <div
                   key={turn.id}
-                  className={`p-4 rounded-2xl text-xs space-y-1.5 ${turn.speaker === 'ai'
+                  className={`p-4 rounded-2xl text-xs space-y-1.5 ${
+                    turn.speaker === 'ai'
                       ? 'bg-slate-50 border border-slate-200/80'
                       : 'bg-indigo-50/70 border border-indigo-100 ml-6'
-                    }`}
+                  }`}
                 >
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="font-extrabold text-slate-900 flex items-center gap-1">
@@ -726,10 +859,10 @@ export default function VoiceScreening() {
 
                   <p className="text-slate-700 leading-relaxed font-normal">{turn.text}</p>
 
-                  {turn.analysis && turn.analysis.identifiedKeywords.length > 0 && (
+                  {turn.analysis && turn.analysis.identifiedKeywords?.length > 0 && (
                     <div className="flex items-center gap-1 flex-wrap pt-1">
                       <span className="text-[10px] text-slate-400 font-semibold">Analyzed keywords:</span>
-                      {turn.analysis.identifiedKeywords.map((k) => (
+                      {turn.analysis.identifiedKeywords.map((k: string) => (
                         <span key={k} className="px-1.5 py-0.5 rounded bg-white text-indigo-700 border border-indigo-200 text-[10px] font-bold">
                           {k}
                         </span>
@@ -753,7 +886,7 @@ export default function VoiceScreening() {
             <div className="space-y-2 max-w-xl">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                 <CheckCircle2 size={13} />
-                <span>15-Min Practice Session Completed</span>
+                <span>Practice Session Completed</span>
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
@@ -777,7 +910,7 @@ export default function VoiceScreening() {
             </div>
           </div>
 
-          {/* 5-Metric Category Rubric Breakdown */}
+          {/* Category Rubric Breakdown */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
             <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1.5">
               <span className="text-slate-500 font-bold">{evaluation.categoryLabels.category1}</span>

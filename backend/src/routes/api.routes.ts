@@ -7,6 +7,7 @@ import { PostsController } from '../controllers/posts.controller'
 import { ConnectionsController } from '../controllers/connections.controller'
 import { AIController } from '../controllers/ai.controller'
 import { DocumentsController } from '../controllers/documents.controller'
+import { VoicePracticeController } from '../controllers/voicePractice.controller'
 import { authMiddleware } from '../middlewares/auth.middleware'
 
 const router = Router()
@@ -63,5 +64,12 @@ router.get('/ai/ats-diagnostics', authMiddleware as any, AIController.atsDiagnos
 router.get('/documents', authMiddleware as any, DocumentsController.listDocuments as any)
 router.post('/documents/upload', authMiddleware as any, DocumentsController.uploadDocument as any)
 router.post('/documents/:id/verify-otp', authMiddleware as any, DocumentsController.verifyOTP as any)
+
+// 9. RAS AI Voice Interview Practice & Sarvam AI Routes
+router.get('/voice-practice/status', VoicePracticeController.getStatus)
+router.post('/voice-practice/session/start', VoicePracticeController.startSession)
+router.post('/voice-practice/transcribe', VoicePracticeController.transcribeAudio)
+router.post('/voice-practice/turn', VoicePracticeController.nextTurn)
+router.post('/voice-practice/evaluate', VoicePracticeController.evaluateSession)
 
 export default router
