@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Sparkles, ArrowRight, Eye, EyeOff, ShieldCheck, Zap, Bot, CheckCircle2 } from 'lucide-react'
-import { authService, DEMO_CREDENTIALS } from '../services/authService'
+import { Sparkles, ArrowRight, Eye, EyeOff, ShieldCheck, Zap, Bot, UserPlus } from 'lucide-react'
+import { authService } from '../services/authService'
 import { useAuth } from '../context/auth'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState(DEMO_CREDENTIALS.email)
-  const [password, setPassword] = useState(DEMO_CREDENTIALS.password)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [remember, setRemember] = useState(true)
@@ -20,28 +20,24 @@ export default function LoginPage() {
     authService.init()
   }, [])
 
-  const handleQuickDemo = async () => {
-    setError('')
-    setLoading(true)
-    try {
-      await login(DEMO_CREDENTIALS.email, DEMO_CREDENTIALS.password, true)
-      nav('/dashboard')
-    } catch (err: any) {
-      setError(err.message || 'Quick login failed')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
     setError('')
+
+    const cleanEmail = email.trim()
+    if (!cleanEmail) {
+      return setError('Please enter your registered email address.')
+    }
+    if (!password) {
+      return setError('Please enter your password.')
+    }
+
     setLoading(true)
     try {
-      await login(email, password, remember)
+      await login(cleanEmail, password, remember)
       nav('/dashboard')
     } catch (err: any) {
-      setError(err.message || 'Invalid credentials. Please use the Quick Demo Login.')
+      setError(err.message || 'Invalid email or password. Please check your credentials or create a new account.')
     } finally {
       setLoading(false)
     }
@@ -53,7 +49,7 @@ export default function LoginPage() {
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 bg-white/10 backdrop-blur-2xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden relative z-10">
+      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 bg-white/10 backdrop-blur-2xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden relative z-10 animate-in fade-in zoom-in-95 duration-200">
         {/* Left Side: Brand & Feature Highlights */}
         <div className="p-8 sm:p-10 flex flex-col justify-between bg-gradient-to-br from-blue-600/90 to-indigo-700/90 text-white relative">
           <div>
@@ -110,34 +106,16 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-8 pt-6 border-t border-white/20 flex items-center gap-2 text-xs text-blue-100">
-            <ShieldCheck size={16} className="text-emerald-300" />
-            <span>Pre-seeded with candidate demo profile</span>
+            <ShieldCheck size={16} className="text-emerald-300 shrink-0" />
+            <span>Enterprise-grade candidate security & privacy protection</span>
           </div>
         </div>
 
-        {/* Right Side: Login Form */}
+        {/* Right Side: Production Login Form */}
         <div className="p-8 sm:p-10 bg-white flex flex-col justify-center">
           <div className="mb-6">
             <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Welcome Back</h3>
-            <p className="text-sm text-slate-500 mt-1">Sign in to your candidate portal</p>
-          </div>
-
-          {/* Quick Demo Login Hero Action */}
-          <button
-            type="button"
-            onClick={handleQuickDemo}
-            disabled={loading}
-            className="w-full mb-5 py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2.5 transition-all transform hover:-translate-y-0.5 cursor-pointer"
-          >
-            <Sparkles size={17} className="text-amber-300" />
-            <span>⚡ Quick Demo Login (Avinash Tiwari)</span>
-          </button>
-
-          <div className="relative my-4 flex items-center justify-center">
-            <div className="border-t border-slate-200 w-full"></div>
-            <span className="bg-white px-3 text-xs text-slate-400 font-semibold uppercase tracking-wider shrink-0">
-              Or sign in with email
-            </span>
+            <p className="text-sm text-slate-500 mt-1">Sign in to your candidate account</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4" aria-label="Login form">
@@ -149,8 +127,10 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="name@domain.com"
                 required
+                autoComplete="email"
+                autoFocus
               />
             </div>
 
@@ -162,7 +142,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-medium"
+                  className="text-xs text-indigo-600 hover:underline flex items-center gap-1 font-medium cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
                   <span>{showPassword ? 'Hide' : 'Show'}</span>
@@ -174,6 +154,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                autoComplete="current-password"
               />
             </div>
 
@@ -183,37 +164,42 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                 />
                 <span>Remember this device</span>
               </label>
-              <span className="text-slate-400">Demo password pre-filled</span>
             </div>
 
             {error && (
-              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium">
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium animate-in fade-in">
                 {error}
               </div>
             )}
 
-            <Button
+            <button
               type="submit"
-              variant="outline"
-              size="lg"
-              className="w-full text-slate-800 font-bold hover:bg-slate-50"
               disabled={loading}
+              className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span>Continue with credentials</span>
+              <span>{loading ? 'Authenticating...' : 'Sign In to Candidate Portal'}</span>
               <ArrowRight size={16} />
-            </Button>
+            </button>
           </form>
 
-          <p className="mt-6 text-center text-xs text-slate-500">
-            Don't have an account?{' '}
-            <Link to="/register" className="font-bold text-blue-600 hover:underline">
-              Create Candidate Account
+          {/* Prominent Create Candidate Account CTA */}
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center space-y-3">
+            <p className="text-xs text-slate-500 font-semibold">
+              Don't have a candidate account yet?
+            </p>
+            <Link
+              to="/register"
+              id="createCandidateAccountBtn"
+              className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 font-extrabold text-xs transition-all shadow-2xs cursor-pointer"
+            >
+              <UserPlus size={15} />
+              <span>Create Candidate Account</span>
             </Link>
-          </p>
+          </div>
         </div>
       </div>
     </div>
