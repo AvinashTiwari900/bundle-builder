@@ -22,7 +22,8 @@ import {
   SkipForward,
   ShieldCheck,
   Check,
-  Save
+  Save,
+  Calendar
 } from 'lucide-react'
 import { profileService } from '../services/profileService'
 import { portfolioService } from '../services/portfolioService'
@@ -89,7 +90,9 @@ export default function PortfolioSetupPage() {
   const [experiences, setExperiences] = useState<any[]>([])
   const [newExpRole, setNewExpRole] = useState('')
   const [newExpCompany, setNewExpCompany] = useState('')
-  const [newExpDuration, setNewExpDuration] = useState('2024 - Present')
+  const [newExpStartDate, setNewExpStartDate] = useState('')
+  const [newExpEndDate, setNewExpEndDate] = useState('')
+  const [newExpCurrentlyWorking, setNewExpCurrentlyWorking] = useState(true)
   const [newExpDesc, setNewExpDesc] = useState('')
 
   // Education
@@ -196,19 +199,42 @@ export default function PortfolioSetupPage() {
     setSkills(skills.filter((s) => s !== skill))
   }
 
+  const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr) return ''
+    try {
+      const [y, m, d] = dateStr.split('-')
+      if (!y) return dateStr
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      const monthName = months[parseInt(m, 10) - 1] || m
+      return `${monthName} ${y}`
+    } catch {
+      return dateStr
+    }
+  }
+
   // Add Experience
   const handleAddExperience = () => {
-    if (!newExpRole.trim() || !newExpCompany.trim()) return
+    if (!newExpRole.trim() || !newExpCompany.trim() || !newExpStartDate) return
+    const startFormatted = formatDisplayDate(newExpStartDate)
+    const endFormatted = newExpCurrentlyWorking ? 'Present' : (formatDisplayDate(newExpEndDate) || 'Present')
+    const duration = `${startFormatted} – ${endFormatted}`
+
     const newExp = {
       id: 'exp-' + Date.now(),
       role: newExpRole.trim(),
       company: newExpCompany.trim(),
-      duration: newExpDuration.trim(),
+      startDate: newExpStartDate,
+      endDate: newExpCurrentlyWorking ? '' : newExpEndDate,
+      isCurrent: newExpCurrentlyWorking,
+      duration,
       description: newExpDesc.trim()
     }
     setExperiences([...experiences, newExp])
     setNewExpRole('')
     setNewExpCompany('')
+    setNewExpStartDate('')
+    setNewExpEndDate('')
+    setNewExpCurrentlyWorking(true)
     setNewExpDesc('')
   }
 
@@ -687,37 +713,115 @@ export default function PortfolioSetupPage() {
             </div>
 
             {/* Add Experience Card */}
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-              <div className="font-bold text-xs text-slate-800">Add Work Experience:</div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <Input
-                  value={newExpRole}
-                  onChange={(e) => setNewExpRole(e.target.value)}
-                  placeholder="Job Role (e.g. Business Analyst)"
-                />
-                <Input
-                  value={newExpCompany}
-                  onChange={(e) => setNewExpCompany(e.target.value)}
-                  placeholder="Company Name (e.g. Infosys)"
-                />
-                <Input
-                  value={newExpDuration}
-                  onChange={(e) => setNewExpDuration(e.target.value)}
-                  placeholder="Duration (e.g. 2023 - 2025)"
+            <div className="p-5 bg-slate-50/90 border border-slate-200/90 rounded-2xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="font-extrabold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Briefcase size={14} className="text-blue-600" />
+                  <span>Add Work Experience</span>
+                </div>
+                <span className="text-[11px] text-slate-400 font-medium">Fields marked * are required</span>
+              </div>
+
+              {/* Row 1: Role & Company */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Job Title / Role <span className="text-rose-500">*</span>
+                  </label>
+                  <Input
+                    value={newExpRole}
+                    onChange={(e) => setNewExpRole(e.target.value)}
+                    placeholder="e.g. Business Analyst, Software Engineer"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Company / Organization <span className="text-rose-500">*</span>
+                  </label>
+                  <Input
+                    value={newExpCompany}
+                    onChange={(e) => setNewExpCompany(e.target.value)}
+                    placeholder="e.g. Google, Infosys, Connplex"
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Date Pickers & Currently Working Checkbox */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {/* Start Date */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                    <Calendar size={13} className="text-blue-600" />
+                    <span>Start Date <span className="text-rose-500">*</span></span>
+                  </label>
+                  <input
+                    type="date"
+                    value={newExpStartDate}
+                    onChange={(e) => setNewExpStartDate(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer"
+                  />
+                </div>
+
+                {/* End Date & Currently Working */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                      <Calendar size={13} className="text-blue-600" />
+                      <span>End Date</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-700 cursor-pointer select-none bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-lg transition-colors border border-indigo-200/60">
+                      <input
+                        type="checkbox"
+                        checked={newExpCurrentlyWorking}
+                        onChange={(e) => {
+                          setNewExpCurrentlyWorking(e.target.checked)
+                          if (e.target.checked) {
+                            setNewExpEndDate('')
+                          }
+                        }}
+                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      />
+                      <span>Currently Working</span>
+                    </label>
+                  </div>
+
+                  {newExpCurrentlyWorking ? (
+                    <div className="w-full px-3.5 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-700 flex items-center gap-2 h-[42px]">
+                      <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                      <span>Present (Ongoing Employment)</span>
+                    </div>
+                  ) : (
+                    <input
+                      type="date"
+                      value={newExpEndDate}
+                      min={newExpStartDate || undefined}
+                      onChange={(e) => setNewExpEndDate(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer h-[42px]"
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Row 3: Description */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Key Accomplishments & Outcomes
+                </label>
+                <textarea
+                  value={newExpDesc}
+                  onChange={(e) => setNewExpDesc(e.target.value)}
+                  placeholder="Key accomplishments, technologies used, & quantifiable outcomes..."
+                  className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 h-20 shadow-2xs"
                 />
               </div>
-              <textarea
-                value={newExpDesc}
-                onChange={(e) => setNewExpDesc(e.target.value)}
-                placeholder="Key accomplishments & quantifiable outcomes..."
-                className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 h-16"
-              />
+
               <Button
                 type="button"
-                variant="outline"
+                variant="primary"
                 size="sm"
                 onClick={handleAddExperience}
-                className="font-bold text-xs"
+                disabled={!newExpRole.trim() || !newExpCompany.trim() || !newExpStartDate}
+                className="font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm cursor-pointer disabled:opacity-50"
               >
                 <Plus size={14} />
                 <span>Add Experience</span>
