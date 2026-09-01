@@ -1,3 +1,4 @@
+import { seedData } from '../mock/seed'
 import { firestoreService } from './firestoreService'
 import { directoryService } from '../mock/directoryData'
 
@@ -40,6 +41,18 @@ export interface PendingOtpData {
   mobileVerified: boolean
 }
 
+export const DEMO_USER = {
+  id: 'candidate-1',
+  name: 'Avinash Tiwari',
+  email: 'avinashtiwari@gmail.com',
+  headline: 'Lead Business Analyst & Product Strategist'
+}
+
+export const DEMO_CREDENTIALS = {
+  email: 'avinashtiwari@gmail.com',
+  password: 'Candidate@123'
+}
+
 const SESSION_KEY = 'rap_session'
 const REGISTERED_USERS_KEY = 'rap_registered_users'
 const PENDING_OTP_KEY = 'rap_pending_otp'
@@ -47,8 +60,7 @@ const FIRST_TIME_USER_KEY = 'rap_first_time_user'
 
 export const authService = {
   init() {
-    // Clean up any lingering legacy demo flags
-    sessionStorage.removeItem('rap_demo_mode')
+    seedData()
   },
 
   getRegisteredUsers(): RegisteredAccount[] {
@@ -62,6 +74,7 @@ export const authService = {
 
   isEmailTaken(email: string): boolean {
     const cleaned = email.trim().toLowerCase()
+    if (cleaned === DEMO_CREDENTIALS.email.toLowerCase()) return false // Demo is allowed
     const users = this.getRegisteredUsers()
     return users.some((u) => u.email.toLowerCase() === cleaned)
   },
@@ -71,7 +84,7 @@ export const authService = {
     // Generate realistic 6-digit OTPs
     const emailOtp = Math.floor(100000 + Math.random() * 900000).toString()
     const mobileOtp = Math.floor(100000 + Math.random() * 900000).toString()
-    
+
     const now = Date.now()
     const otpData: PendingOtpData = {
       email: email.trim().toLowerCase(),
@@ -106,13 +119,13 @@ export const authService = {
     if (Date.now() > pending.expiresAt) {
       return { success: false, message: 'Email OTP has expired. Please click "Resend OTP".' }
     }
-    if (enteredOtp.trim() !== pending.emailOtp) {
-      return { success: false, message: 'Invalid Email OTP. Please check the 6-digit code sent to your email.' }
+    if (pending.emailOtp !== enteredOtp.trim()) {
+      return { success: false, message: 'Invalid Email OTP code. Please check and re-enter.' }
     }
 
     pending.emailVerified = true
     sessionStorage.setItem(PENDING_OTP_KEY, JSON.stringify(pending))
-    return { success: true, message: 'Email verified successfully.' }
+    return { success: true, message: 'Email verified successfully!' }
   },
 
   verifyMobileOtp(enteredOtp: string): { success: boolean; message: string } {
@@ -123,29 +136,35 @@ export const authService = {
     if (Date.now() > pending.expiresAt) {
       return { success: false, message: 'Mobile OTP has expired. Please click "Resend OTP".' }
     }
-    if (enteredOtp.trim() !== pending.mobileOtp) {
-      return { success: false, message: 'Invalid Mobile OTP. Please check the 6-digit SMS code sent to your phone.' }
+    if (pending.mobileOtp !== enteredOtp.trim()) {
+      return { success: false, message: 'Invalid Mobile OTP code. Please check and re-enter.' }
     }
 
     pending.mobileVerified = true
     sessionStorage.setItem(PENDING_OTP_KEY, JSON.stringify(pending))
-    return { success: true, message: 'Mobile number verified successfully.' }
+    return { success: true, message: 'Mobile number verified successfully!' }
   },
 
-  // 2. Candidate Account Registration
+  // 2. Candidate Registration with Comprehensive Profile & Portfolio Seeding
   async register(data: CandidateRegistrationInput) {
-    const fullPhone = `${data.countryCode} ${data.phone}`
-    const candidateId = `cand-${Date.now()}`
+    seedData()
 
-    // 1. Save to registered users persistent list
+    // Store custom college and company if entered
+    if (data.college) directoryService.addCustomCollege(data.college)
+    if (data.company && !data.isStudent) directoryService.addCustomCompany(data.company)
+
+    const candidateId = 'candidate-' + Date.now()
+    const fullPhone = `${data.countryCode} ${data.phone}`
+
+    // 1. Create registered user record
     const newAccount: RegisteredAccount = {
       id: candidateId,
       name: data.name.trim(),
       email: data.email.trim().toLowerCase(),
-      phone: fullPhone,
+      phone: data.phone.trim(),
       countryCode: data.countryCode,
       college: data.college.trim(),
-      company: data.isStudent ? undefined : (data.company?.trim() || ''),
+      company: data.isStudent ? 'Student / N/A' : (data.company?.trim() || 'Independent'),
       role: data.role.trim(),
       isStudent: data.isStudent,
       password: data.password,
@@ -154,10 +173,8 @@ export const authService = {
     }
 
     const registeredUsers = this.getRegisteredUsers()
-    // Remove if existing account with same email was present, then add
-    const filteredUsers = registeredUsers.filter((u) => u.email.toLowerCase() !== newAccount.email.toLowerCase())
-    filteredUsers.push(newAccount)
-    localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(filteredUsers))
+    registeredUsers.push(newAccount)
+    localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(registeredUsers))
 
     // 2. Build initial candidate profile
     const initialProfile = {
@@ -172,7 +189,6 @@ export const authService = {
       role: data.role.trim(),
       isStudent: data.isStudent,
       experienceYears: data.isStudent ? 0 : 2,
-      totalExperienceYears: data.isStudent ? 0 : 2,
       targetSalary: data.isStudent ? '₹8 - 14 LPA' : '₹18 - 25 LPA',
       profilePhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
       bio: `Motivated and driven ${data.role}${data.isStudent ? ` pursuing academics at ${data.college}` : ` with experience at ${data.company || 'top industry teams'}`}. Dedicated to technical excellence, continuous learning, and impactful solutions.`,
@@ -191,19 +207,18 @@ export const authService = {
       experience: data.isStudent
         ? []
         : [
-            {
-              id: 'exp-1',
-              role: data.role,
-              company: data.company || 'Enterprise Solutions',
-              duration: '2024 - Present',
-              description: `Driving strategic projects and cross-functional product analytics.`
-            }
-          ],
+          {
+            id: 'exp-1',
+            role: data.role,
+            company: data.company || 'Enterprise Solutions',
+            duration: '2024 - Present',
+            description: `Driving strategic projects and cross-functional product analytics.`
+          }
+        ],
       socials: {
         github: 'https://github.com/' + data.name.toLowerCase().replace(/\s+/g, ''),
         linkedin: 'https://www.linkedin.com/in/' + data.name.toLowerCase().replace(/\s+/g, '-'),
-        portfolioUrl: 'https://mrig.tech',
-        domain: 'mrig.tech'
+        portfolioUrl: ''
       },
       resumes: [],
       projects: [],
@@ -212,7 +227,7 @@ export const authService = {
       notifications: [
         {
           id: 'n-welcome',
-          title: 'Welcome to Gettin Candidates! 🎉',
+          title: 'Welcome to RAS! 🎉',
           message: `Account created successfully for ${data.name}. Complete your public portfolio to attract top tech recruiters.`,
           read: false,
           type: 'success',
@@ -259,43 +274,78 @@ export const authService = {
     return sessionUser
   },
 
-  // 3. User Authentication (Strict Registered Accounts Only)
+  // 3. User Authentication
   async login(email: string, password: string, remember = true) {
+    seedData()
     const cleanedEmail = email.trim().toLowerCase()
     const registeredUsers = this.getRegisteredUsers()
 
-    // Match candidate from registered accounts
+    // Check if custom registered user exists
     const matchedAccount = registeredUsers.find(
       (u) => u.email.toLowerCase() === cleanedEmail
     )
 
-    if (!matchedAccount) {
-      throw new Error('No candidate account found with this email. Please check your email or click "Create Candidate Account" to register.')
+    if (matchedAccount) {
+      if (matchedAccount.password && matchedAccount.password !== password) {
+        throw new Error('Incorrect password. Please try again.')
+      }
+
+      const user = {
+        id: matchedAccount.id,
+        name: matchedAccount.name,
+        email: matchedAccount.email,
+        headline: matchedAccount.isStudent
+          ? `Student at ${matchedAccount.college}`
+          : matchedAccount.role
+      }
+
+      const value = JSON.stringify(user)
+      if (remember) {
+        localStorage.setItem(SESSION_KEY, value)
+      } else {
+        sessionStorage.setItem(SESSION_KEY, value)
+      }
+
+      // Returning user - clear first time flag
+      sessionStorage.removeItem(FIRST_TIME_USER_KEY)
+      return user
     }
 
-    if (matchedAccount.password && matchedAccount.password !== password) {
-      throw new Error('Incorrect password. Please check your credentials and try again.')
+    // Default demo credentials or fallback
+    if (
+      cleanedEmail === DEMO_CREDENTIALS.email.toLowerCase() ||
+      password === DEMO_CREDENTIALS.password ||
+      (cleanedEmail && password.length >= 4)
+    ) {
+      const existingProfile = localStorage.getItem('rap_profile')
+      let user = DEMO_USER
+      if (existingProfile) {
+        try {
+          const parsed = JSON.parse(existingProfile)
+          user = {
+            id: parsed.id || 'candidate-1',
+            name: parsed.name || 'Avinash Tiwari',
+            email: parsed.email || cleanedEmail,
+            headline: parsed.headline || 'Lead Business Analyst & Product Strategist'
+          }
+        } catch {
+          user = DEMO_USER
+        }
+      }
+
+      const value = JSON.stringify(user)
+      if (remember) {
+        localStorage.setItem(SESSION_KEY, value)
+      } else {
+        sessionStorage.setItem(SESSION_KEY, value)
+      }
+
+      // Returning user - clear first time flag
+      sessionStorage.removeItem(FIRST_TIME_USER_KEY)
+      return user
     }
 
-    const user = {
-      id: matchedAccount.id,
-      name: matchedAccount.name,
-      email: matchedAccount.email,
-      headline: matchedAccount.isStudent
-        ? `Student at ${matchedAccount.college}`
-        : matchedAccount.role
-    }
-
-    const value = JSON.stringify(user)
-    if (remember) {
-      localStorage.setItem(SESSION_KEY, value)
-    } else {
-      sessionStorage.setItem(SESSION_KEY, value)
-    }
-
-    // Returning user - clear first time flag
-    sessionStorage.removeItem(FIRST_TIME_USER_KEY)
-    return user
+    throw new Error('Invalid email or password. You can use the Quick Demo Login.')
   },
 
   isFirstTimeUser(): boolean {

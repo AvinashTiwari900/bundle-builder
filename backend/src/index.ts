@@ -55,17 +55,14 @@ const io = new SocketIOServer(server, {
 
 setupMeetingSockets(io)
 
-// 6. Start Server Listener (for standalone development / container environments)
-if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
-  server.listen(PORT, () => {
-    console.log('====================================================')
-    console.log(`🚀 Gettin Candidates API Server running on port ${PORT}`)
-    console.log(`📡 REST API Base: http://localhost:${PORT}/api/v1`)
-    console.log(`🔌 WebRTC Socket Signaling: ws://localhost:${PORT}`)
-    console.log(`💚 Health Check: http://localhost:${PORT}/health`)
-    console.log('====================================================')
-  })
-}
+// 6. Start Server Listener
+server.listen(PORT, () => {
+  console.log('====================================================')
+  console.log(`🚀 Gettin Candidates API Server running on port ${PORT}`)
+  console.log(`📡 REST API Base: http://localhost:${PORT}/api/v1`)
+  console.log(`🔌 WebRTC Socket Signaling: ws://localhost:${PORT}`)
+  console.log(`💚 Health Check: http://localhost:${PORT}/health`)
+  console.log('====================================================')
+})
 
 export { app, server }
-export default app

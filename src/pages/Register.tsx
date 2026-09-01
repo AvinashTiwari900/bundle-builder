@@ -295,9 +295,8 @@ export default function RegisterPage() {
           {/* Stepper Badge */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-xs font-bold text-slate-600">
             <span
-              className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] ${
-                step === 1 ? 'bg-blue-600 text-white' : 'bg-emerald-500 text-white'
-              }`}
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] ${step === 1 ? 'bg-blue-600 text-white' : 'bg-emerald-500 text-white'
+                }`}
             >
               {step === 1 ? '1' : '✓'}
             </span>
@@ -481,19 +480,16 @@ export default function RegisterPage() {
                   <div className="mt-1.5 flex items-center gap-2">
                     <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden flex gap-1">
                       <div
-                        className={`h-full flex-1 rounded-full transition-all ${
-                          pwdStrength.score >= 1 ? pwdStrength.color : 'bg-slate-200'
-                        }`}
+                        className={`h-full flex-1 rounded-full transition-all ${pwdStrength.score >= 1 ? pwdStrength.color : 'bg-slate-200'
+                          }`}
                       ></div>
                       <div
-                        className={`h-full flex-1 rounded-full transition-all ${
-                          pwdStrength.score >= 2 ? pwdStrength.color : 'bg-slate-200'
-                        }`}
+                        className={`h-full flex-1 rounded-full transition-all ${pwdStrength.score >= 2 ? pwdStrength.color : 'bg-slate-200'
+                          }`}
                       ></div>
                       <div
-                        className={`h-full flex-1 rounded-full transition-all ${
-                          pwdStrength.score >= 3 ? pwdStrength.color : 'bg-slate-200'
-                        }`}
+                        className={`h-full flex-1 rounded-full transition-all ${pwdStrength.score >= 3 ? pwdStrength.color : 'bg-slate-200'
+                          }`}
                       ></div>
                     </div>
                     <span className="text-[10px] font-bold text-slate-500 uppercase">
@@ -720,11 +716,10 @@ export default function RegisterPage() {
                 type="button"
                 onClick={handleResendOtp}
                 disabled={!canResend}
-                className={`font-bold flex items-center gap-1 ${
-                  canResend
+                className={`font-bold flex items-center gap-1 ${canResend
                     ? 'text-blue-600 hover:underline cursor-pointer'
                     : 'text-slate-400 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 <RefreshCw size={13} className={!canResend ? 'opacity-50' : ''} />
                 <span>Resend OTPs</span>
