@@ -2,10 +2,6 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import {
   UserPlus,
-  ShieldCheck,
-  Sparkles,
-  ArrowRight,
-  ArrowLeft,
   Mail,
   Phone,
   GraduationCap,
@@ -18,14 +14,12 @@ import {
   AlertCircle,
   RefreshCw,
   Clock,
-  Send,
-  Sparkle
+  ArrowRight,
+  ArrowLeft
 } from 'lucide-react'
 import { useAuth } from '../context/auth'
 import { authService, PendingOtpData } from '../services/authService'
 import { directoryService, COUNTRY_CODES } from '../mock/directoryData'
-import Button from '../components/ui/Button'
-import Input from '../components/ui/Input'
 import SearchableSelect from '../components/ui/SearchableSelect'
 
 export default function RegisterPage() {
@@ -38,7 +32,7 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState('')
   const [college, setCollege] = useState('')
   const [company, setCompany] = useState('')
-  const [role, setRole] = useState('Lead Business Analyst & Product Strategist')
+  const [role, setRole] = useState('')
   const [isStudent, setIsStudent] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -82,13 +76,13 @@ export default function RegisterPage() {
       setRole('Student')
       setCompany('')
     } else if (role === 'Student') {
-      setRole('Business Analyst')
+      setRole('')
     }
   }
 
   // Password strength calculation
   const getPasswordStrength = () => {
-    if (!password) return { score: 0, label: 'None', color: 'bg-slate-200' }
+    if (!password) return { score: 0, label: 'None', color: 'bg-slate-700' }
     let score = 0
     if (password.length >= 8) score += 1
     if (/[A-Z]/.test(password)) score += 1
@@ -127,7 +121,7 @@ export default function RegisterPage() {
     // 2. Email Validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email.trim())) {
-      return setError('Please enter a valid email address format (e.g. name@domain.com).')
+      return setError('Please enter a valid email address format.')
     }
 
     // 3. Email Uniqueness Check
@@ -147,7 +141,7 @@ export default function RegisterPage() {
     }
 
     // 6. Role & Company Validation
-    if (!role.trim()) {
+    if (!isStudent && !role.trim()) {
       return setError('Please select or enter your current role/status.')
     }
     if (!isStudent && !company.trim()) {
@@ -213,16 +207,6 @@ export default function RegisterPage() {
     setError('')
   }
 
-  // 1-Click Auto Fill Demo OTPs helper for smooth testing
-  const handleAutoFillDemoOtps = () => {
-    if (!pendingOtp) return
-    setEmailOtpInput(pendingOtp.emailOtp)
-    setMobileOtpInput(pendingOtp.mobileOtp)
-    setEmailVerified(true)
-    setMobileVerified(true)
-    setError('')
-  }
-
   // Complete Registration Final Action
   const handleCompleteRegistration = async () => {
     setError('')
@@ -253,7 +237,7 @@ export default function RegisterPage() {
         countryCode,
         college: college.trim(),
         company: isStudent ? undefined : company.trim(),
-        role: isStudent ? 'Student' : role.trim(),
+        role: isStudent ? 'Student' : (role.trim() || 'Professional'),
         isStudent,
         password
       })
@@ -270,137 +254,153 @@ export default function RegisterPage() {
   const pwdStrength = getPasswordStrength()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden">
-      {/* Decorative Glows */}
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div className="min-h-screen bg-[#0a0e1a] flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden font-sans">
+      {/* Subtle Purple & Blue Ambient Edge Glows */}
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/15 rounded-full blur-[140px] pointer-events-none"></div>
+      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-600/15 rounded-full blur-[140px] pointer-events-none"></div>
 
-      <div className="max-w-2xl w-full bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-10 relative z-10 animate-in fade-in zoom-in-95 duration-200">
-        {/* Header Branding & Steps */}
-        <div className="flex items-center justify-between pb-5 border-b border-slate-100 mb-6">
+      <div className="max-w-2xl w-full bg-[#0f172a]/95 backdrop-blur-2xl rounded-3xl border border-slate-800/80 shadow-2xl p-6 sm:p-10 relative z-10 animate-in fade-in zoom-in-95 duration-200">
+        {/* Header Section */}
+        <div className="flex items-center justify-between pb-5 border-b border-slate-800/80 mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold shadow-md shadow-blue-500/25">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold shadow-md shadow-blue-500/20 shrink-0">
               <UserPlus size={22} />
             </div>
             <div>
-              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                 Create Candidate Account
-              </h2>
-              <p className="text-xs text-slate-500">
+              </h1>
+              <p className="text-xs text-slate-400 font-medium">
                 Gettin Candidates — AI-Powered Job & Career Platform
               </p>
             </div>
           </div>
 
-          {/* Stepper Badge */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-xs font-bold text-slate-600">
+          {/* Pill-Shaped Step Indicator Badge */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/90 border border-slate-700/60 text-xs font-bold text-slate-300 shrink-0">
             <span
-              className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] ${step === 1 ? 'bg-blue-600 text-white' : 'bg-emerald-500 text-white'
-                }`}
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-extrabold ${
+                step === 1 ? 'bg-blue-600 text-white' : 'bg-emerald-500 text-white'
+              }`}
             >
               {step === 1 ? '1' : '✓'}
             </span>
-            <span>{step === 1 ? 'Account Details' : 'OTP Verification'}</span>
+            <span className="hidden sm:inline">{step === 1 ? 'Account Details' : 'OTP Verification'}</span>
           </div>
         </div>
 
         {/* Global Error Alert */}
         {error && (
-          <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-2xl font-medium flex items-start gap-2.5 animate-in fade-in duration-150">
-            <AlertCircle size={17} className="shrink-0 mt-0.5 text-rose-600" />
+          <div className="mb-5 p-3.5 bg-rose-950/50 border border-rose-800/80 text-rose-300 text-xs rounded-2xl font-medium flex items-start gap-2.5 animate-in fade-in duration-150">
+            <AlertCircle size={17} className="shrink-0 mt-0.5 text-rose-400" />
             <div className="flex-1">{error}</div>
           </div>
         )}
 
         {/* STEP 1: Registration Form */}
         {step === 1 && (
-          <form onSubmit={handleProceedToOtp} className="space-y-4" aria-label="Register Step 1">
+          <form onSubmit={handleProceedToOtp} className="space-y-4" aria-label="Create Candidate Account Form">
             {/* 1. Full Name */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
                 Full Name <span className="text-rose-500">*</span>
               </label>
-              <Input
+              <input
+                type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="First Name, Middle Name, Last Name (e.g. Avinash Tiwari)"
+                placeholder="Enter your name"
                 required
+                className="w-full px-4 py-3 bg-slate-900/80 border border-slate-700/70 rounded-xl text-xs font-medium text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40 transition-all"
               />
               <p className="text-[11px] text-slate-400 mt-1">
                 Enter your official legal name as shown on KYC certificates.
               </p>
             </div>
 
-            {/* 2. Email Address & 3. Mobile Number */}
+            {/* 2. Two-Column Row: Email Address & Mobile Number */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* Email Address */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
                   Email Address <span className="text-rose-500">*</span>
                 </label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="candidate@domain.com"
-                  icon={<Mail size={15} />}
-                  required
-                />
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-slate-500 pointer-events-none">
+                    <Mail size={15} />
+                  </span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter candidate email ID"
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-700/70 rounded-xl text-xs font-medium text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40 transition-all"
+                  />
+                </div>
                 <p className="text-[11px] text-slate-400 mt-1">An email OTP will be sent here.</p>
               </div>
 
+              {/* Mobile Number */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
                   Mobile Number <span className="text-rose-500">*</span>
                 </label>
                 <div className="flex gap-2">
                   <select
                     value={countryCode}
                     onChange={(e) => setCountryCode(e.target.value)}
-                    className="w-28 px-2.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500"
+                    className="w-28 px-2.5 py-3 bg-slate-900/80 border border-slate-700/70 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500 transition-all"
                   >
                     {COUNTRY_CODES.map((c) => (
-                      <option key={c.code + c.country} value={c.code}>
+                      <option key={c.code + c.country} value={c.code} className="bg-slate-900 text-white">
                         {c.flag} {c.code}
                       </option>
                     ))}
                   </select>
-                  <Input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="98765 43210"
-                    icon={<Phone size={15} />}
-                    className="flex-1"
-                    required
-                  />
+                  <div className="relative flex items-center flex-1">
+                    <span className="absolute left-3.5 text-slate-500 pointer-events-none">
+                      <Phone size={15} />
+                    </span>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Enter candidate mobile number"
+                      required
+                      className="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-700/70 rounded-xl text-xs font-medium text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40 transition-all"
+                    />
+                  </div>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">An SMS OTP will be sent here.</p>
               </div>
             </div>
 
-            {/* 4. College Name (Searchable dropdown with custom entry) */}
+            {/* 3. College / University Name */}
             <div>
               <SearchableSelect
                 label="College / University Name"
                 value={college}
                 onChange={(val) => setCollege(val)}
                 options={collegeList}
-                placeholder="Search college or type custom institution..."
+                placeholder="Enter college or university name"
                 icon={<GraduationCap size={16} />}
                 allowCustom={true}
                 onAddCustom={(customCollege) => directoryService.addCustomCollege(customCollege)}
                 required={true}
                 customTypeLabel="college"
                 helperText="Select from top universities or type and press enter to add custom."
+                theme="dark"
               />
             </div>
 
-            {/* Student Toggle & Role Selection */}
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+            {/* 4. Card / Panel: Student Toggle, Role & Company */}
+            <div className="p-4 sm:p-5 bg-slate-800/40 border border-slate-700/60 rounded-2xl space-y-3.5">
+              {/* Toggle Row */}
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-bold text-slate-800">Are you currently a student?</span>
-                  <p className="text-[11px] text-slate-500">
+                  <span className="text-xs font-bold text-white">Are you currently a student?</span>
+                  <p className="text-[11px] text-slate-400">
                     Students can skip current company requirements
                   </p>
                 </div>
@@ -411,34 +411,38 @@ export default function RegisterPage() {
                     onChange={(e) => handleToggleStudent(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                 </label>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200">
-                {/* 6. Role */}
+              <div className="border-t border-slate-700/60"></div>
+
+              {/* Two-Column Row Inside Card: Current Role & Current Company */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {/* Current Role / Status */}
                 <div>
                   <SearchableSelect
                     label="Current Role / Status"
                     value={role}
                     onChange={handleRoleChange}
                     options={roleList}
-                    placeholder="Select or enter job role..."
+                    placeholder="Enter current role or status"
                     icon={<Briefcase size={16} />}
                     allowCustom={true}
-                    required={true}
+                    required={!isStudent}
                     customTypeLabel="role"
+                    theme="dark"
                   />
                 </div>
 
-                {/* 5. Company Name (Optional for students) */}
+                {/* Current Company Name */}
                 <div>
                   <SearchableSelect
                     label="Current Company Name"
                     value={isStudent ? 'N/A (Student)' : company}
                     onChange={(val) => setCompany(val)}
                     options={companyList}
-                    placeholder={isStudent ? 'Not applicable for students' : 'Search or enter company...'}
+                    placeholder={isStudent ? 'Not applicable for students' : 'Enter current company name'}
                     icon={<Building2 size={16} />}
                     allowCustom={!isStudent}
                     onAddCustom={(c) => directoryService.addCustomCompany(c)}
@@ -446,181 +450,164 @@ export default function RegisterPage() {
                     required={!isStudent}
                     customTypeLabel="company"
                     helperText={isStudent ? 'Disabled for student candidates' : 'Required for working professionals'}
+                    theme="dark"
                   />
                 </div>
               </div>
             </div>
 
-            {/* 7. Password & 8. Confirm Password */}
+            {/* 5. Two-Column Row: Password & Confirm Password */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* Password */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
                     Password <span className="text-rose-500">*</span>
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-[11px] text-blue-600 hover:underline flex items-center gap-1 font-semibold"
+                    className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold cursor-pointer"
                   >
                     {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
                     <span>{showPassword ? 'Hide' : 'Show'}</span>
                   </button>
                 </div>
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min 8 chars, e.g. Pass@123"
-                  icon={<Lock size={15} />}
-                  required
-                />
-                {/* Strength Meter */}
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-slate-500 pointer-events-none">
+                    <Lock size={15} />
+                  </span>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-700/70 rounded-xl text-xs font-medium text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40 transition-all"
+                  />
+                </div>
+
+                {/* Password Strength Meter */}
                 {password && (
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden flex gap-1">
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden flex gap-1">
                       <div
-                        className={`h-full flex-1 rounded-full transition-all ${pwdStrength.score >= 1 ? pwdStrength.color : 'bg-slate-200'
-                          }`}
+                        className={`h-full flex-1 rounded-full transition-all ${
+                          pwdStrength.score >= 1 ? pwdStrength.color : 'bg-slate-700'
+                        }`}
                       ></div>
                       <div
-                        className={`h-full flex-1 rounded-full transition-all ${pwdStrength.score >= 2 ? pwdStrength.color : 'bg-slate-200'
-                          }`}
+                        className={`h-full flex-1 rounded-full transition-all ${
+                          pwdStrength.score >= 2 ? pwdStrength.color : 'bg-slate-700'
+                        }`}
                       ></div>
                       <div
-                        className={`h-full flex-1 rounded-full transition-all ${pwdStrength.score >= 3 ? pwdStrength.color : 'bg-slate-200'
-                          }`}
+                        className={`h-full flex-1 rounded-full transition-all ${
+                          pwdStrength.score >= 3 ? pwdStrength.color : 'bg-slate-700'
+                        }`}
                       ></div>
                     </div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">
                       {pwdStrength.label}
                     </span>
                   </div>
                 )}
               </div>
 
+              {/* Confirm Password */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
                     Confirm Password <span className="text-rose-500">*</span>
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="text-[11px] text-blue-600 hover:underline flex items-center gap-1 font-semibold"
+                    className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold cursor-pointer"
                   >
                     {showConfirmPassword ? <EyeOff size={13} /> : <Eye size={13} />}
                     <span>{showConfirmPassword ? 'Hide' : 'Show'}</span>
                   </button>
                 </div>
-                <Input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter password"
-                  icon={<Lock size={15} />}
-                  required
-                />
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-slate-500 pointer-events-none">
+                    <Lock size={15} />
+                  </span>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter password"
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-700/70 rounded-xl text-xs font-medium text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40 transition-all"
+                  />
+                </div>
                 {confirmPassword && password !== confirmPassword && (
-                  <p className="text-[11px] text-rose-500 mt-1 font-medium">
+                  <p className="text-[11px] text-rose-400 mt-1 font-medium">
                     Passwords do not match
                   </p>
                 )}
                 {confirmPassword && password === confirmPassword && (
-                  <p className="text-[11px] text-emerald-600 mt-1 font-medium flex items-center gap-1">
+                  <p className="text-[11px] text-emerald-400 mt-1 font-medium flex items-center gap-1">
                     <CheckCircle2 size={12} /> Passwords match
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Submit Button */}
+            {/* Bottom: Full-width Gradient Submit Button */}
             <div className="pt-3">
-              <Button type="submit" size="lg" className="w-full font-bold">
+              <button
+                type="submit"
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              >
                 <span>Proceed to OTP Verification</span>
                 <ArrowRight size={16} />
-              </Button>
-            </div>
-          </form>
-        )}
-
-        {/* STEP 2: Dual OTP Verification Screen */}
-        {step === 2 && pendingOtp && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            {/* Top Candidate Summary */}
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="text-xs space-y-1">
-                <div className="font-bold text-slate-900">{name} ({role})</div>
-                <div className="text-slate-600 flex items-center gap-2">
-                  <span>✉️ {email}</span>
-                  <span>·</span>
-                  <span>📱 {countryCode} {phone}</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 cursor-pointer"
-              >
-                <ArrowLeft size={14} />
-                <span>Edit Info</span>
               </button>
             </div>
 
-            {/* Live Interactive OTP Simulation Banner */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-blue-200/80 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-extrabold text-blue-800">
-                  <Sparkle size={15} className="text-blue-600 animate-spin" />
-                  <span>Dual OTP Simulator (Live Delivery)</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAutoFillDemoOtps}
-                  className="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-1.5 cursor-pointer transition-all"
-                >
-                  <Sparkles size={13} className="text-amber-300" />
-                  <span>⚡ 1-Click Auto-Fill OTPs</span>
-                </button>
+            <p className="text-center text-xs text-slate-400 pt-2">
+              Already have an account?{' '}
+              <Link to="/login" className="font-bold text-indigo-400 hover:underline">
+                Sign in here
+              </Link>
+            </p>
+          </form>
+        )}
+
+        {/* STEP 2: Dual OTP Verification */}
+        {step === 2 && pendingOtp && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="p-4 bg-slate-800/50 border border-slate-700/70 rounded-2xl flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold text-white">{name}</div>
+                <div className="text-[11px] text-slate-400">{email} • {countryCode} {phone}</div>
               </div>
-              <p className="text-[11px] text-slate-600">
-                In production, these codes are dispatched via AWS SES & Twilio SMS. For this interactive demo, enter the matching codes below:
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                <div className="p-2.5 bg-white/80 rounded-xl border border-blue-100">
-                  <span className="text-slate-500 block text-[10px] uppercase font-sans font-bold">
-                    Email OTP
-                  </span>
-                  <span className="text-blue-700 font-extrabold text-sm tracking-wider">
-                    {pendingOtp.emailOtp}
-                  </span>
-                </div>
-                <div className="p-2.5 bg-white/80 rounded-xl border border-blue-100">
-                  <span className="text-slate-500 block text-[10px] uppercase font-sans font-bold">
-                    Mobile OTP
-                  </span>
-                  <span className="text-purple-700 font-extrabold text-sm tracking-wider">
-                    {pendingOtp.mobileOtp}
-                  </span>
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setStep(1)
+                  setError('')
+                }}
+                className="text-xs text-indigo-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+              >
+                <ArrowLeft size={13} />
+                <span>Edit Details</span>
+              </button>
             </div>
 
-            {/* OTP Inputs Grid */}
             <div className="space-y-4">
-              {/* 1. Email OTP Field */}
-              <div className="p-4 bg-white border border-slate-200 rounded-2xl space-y-2">
+              {/* Email OTP Field */}
+              <div className="p-4 bg-slate-900/80 border border-slate-700/70 rounded-2xl space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                    <Mail size={15} className="text-blue-600" />
+                  <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5 uppercase">
+                    <Mail size={14} className="text-indigo-400" />
                     <span>Email OTP Code (6 Digits)</span>
                   </label>
-                  {emailVerified ? (
-                    <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-bold flex items-center gap-1">
-                      <CheckCircle2 size={12} /> Verified
+                  {emailVerified && (
+                    <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 size={13} /> Verified
                     </span>
-                  ) : (
-                    <span className="text-[11px] text-slate-400 font-medium">Pending Entry</span>
                   )}
                 </div>
 
@@ -630,42 +617,40 @@ export default function RegisterPage() {
                     maxLength={6}
                     value={emailOtpInput}
                     onChange={(e) => {
-                      const val = e.target.value.trim()
+                      const val = e.target.value.replace(/\D/g, '')
                       setEmailOtpInput(val)
-                      if (val.length === 6 && val === pendingOtp.emailOtp) {
-                        handleVerifyEmail(val)
-                      }
+                      if (val.length === 6) handleVerifyEmail(val)
                     }}
                     placeholder="Enter 6-digit email OTP"
-                    className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono tracking-widest text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500"
+                    className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm font-mono tracking-widest text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                     disabled={emailVerified}
                   />
-                  <Button
+                  <button
                     type="button"
-                    variant={emailVerified ? 'secondary' : 'primary'}
-                    size="md"
                     onClick={() => handleVerifyEmail()}
                     disabled={emailVerified || emailOtpInput.length < 6}
-                    className="font-bold text-xs"
+                    className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-colors ${
+                      emailVerified
+                        ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-40 cursor-pointer'
+                    }`}
                   >
-                    {emailVerified ? 'Verified' : 'Verify Email'}
-                  </Button>
+                    {emailVerified ? 'Verified' : 'Verify'}
+                  </button>
                 </div>
               </div>
 
-              {/* 2. Mobile OTP Field */}
-              <div className="p-4 bg-white border border-slate-200 rounded-2xl space-y-2">
+              {/* Mobile OTP Field */}
+              <div className="p-4 bg-slate-900/80 border border-slate-700/70 rounded-2xl space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                    <Phone size={15} className="text-purple-600" />
-                    <span>Mobile SMS OTP Code (6 Digits)</span>
+                  <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5 uppercase">
+                    <Phone size={14} className="text-emerald-400" />
+                    <span>Mobile SMS OTP (6 Digits)</span>
                   </label>
-                  {mobileVerified ? (
-                    <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-bold flex items-center gap-1">
-                      <CheckCircle2 size={12} /> Verified
+                  {mobileVerified && (
+                    <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 size={13} /> Verified
                     </span>
-                  ) : (
-                    <span className="text-[11px] text-slate-400 font-medium">Pending Entry</span>
                   )}
                 </div>
 
@@ -675,37 +660,37 @@ export default function RegisterPage() {
                     maxLength={6}
                     value={mobileOtpInput}
                     onChange={(e) => {
-                      const val = e.target.value.trim()
+                      const val = e.target.value.replace(/\D/g, '')
                       setMobileOtpInput(val)
-                      if (val.length === 6 && val === pendingOtp.mobileOtp) {
-                        handleVerifyMobile(val)
-                      }
+                      if (val.length === 6) handleVerifyMobile(val)
                     }}
-                    placeholder="Enter 6-digit mobile OTP"
-                    className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono tracking-widest text-slate-900 focus:bg-white focus:outline-none focus:border-purple-500"
+                    placeholder="Enter 6-digit SMS OTP"
+                    className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm font-mono tracking-widest text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                     disabled={mobileVerified}
                   />
-                  <Button
+                  <button
                     type="button"
-                    variant={mobileVerified ? 'secondary' : 'primary'}
-                    size="md"
                     onClick={() => handleVerifyMobile()}
                     disabled={mobileVerified || mobileOtpInput.length < 6}
-                    className="font-bold text-xs"
+                    className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-colors ${
+                      mobileVerified
+                        ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-40 cursor-pointer'
+                    }`}
                   >
-                    {mobileVerified ? 'Verified' : 'Verify Mobile'}
-                  </Button>
+                    {mobileVerified ? 'Verified' : 'Verify'}
+                  </button>
                 </div>
               </div>
             </div>
 
             {/* Resend Timer Row */}
-            <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+            <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
               <div className="flex items-center gap-1.5">
-                <Clock size={14} className="text-slate-400" />
+                <Clock size={14} className="text-slate-500" />
                 <span>
                   OTP Expires in:{' '}
-                  <strong className="font-mono text-slate-700">
+                  <strong className="font-mono text-slate-200">
                     {String(Math.floor(timerSeconds / 60)).padStart(2, '0')}:
                     {String(timerSeconds % 60).padStart(2, '0')}
                   </strong>
@@ -716,10 +701,11 @@ export default function RegisterPage() {
                 type="button"
                 onClick={handleResendOtp}
                 disabled={!canResend}
-                className={`font-bold flex items-center gap-1 ${canResend
-                    ? 'text-blue-600 hover:underline cursor-pointer'
-                    : 'text-slate-400 cursor-not-allowed'
-                  }`}
+                className={`font-bold flex items-center gap-1 ${
+                  canResend
+                    ? 'text-indigo-400 hover:underline cursor-pointer'
+                    : 'text-slate-600 cursor-not-allowed'
+                }`}
               >
                 <RefreshCw size={13} className={!canResend ? 'opacity-50' : ''} />
                 <span>Resend OTPs</span>
@@ -728,12 +714,11 @@ export default function RegisterPage() {
 
             {/* Final Complete Registration Action */}
             <div className="pt-3">
-              <Button
+              <button
                 type="button"
-                size="lg"
                 onClick={handleCompleteRegistration}
                 disabled={(!emailVerified && emailOtpInput !== pendingOtp?.emailOtp) || (!mobileVerified && mobileOtpInput !== pendingOtp?.mobileOtp) || loading}
-                className="w-full font-bold shadow-lg shadow-blue-500/25 cursor-pointer"
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
@@ -746,21 +731,13 @@ export default function RegisterPage() {
                     <ArrowRight size={16} />
                   </>
                 )}
-              </Button>
-              <p className="text-center text-[11px] text-slate-400 mt-2">
+              </button>
+              <p className="text-center text-[11px] text-slate-500 mt-2">
                 Upon registration, you will be redirected to the First-Time Portfolio Setup page.
               </p>
             </div>
           </div>
         )}
-
-        {/* Footer Link */}
-        <p className="mt-6 text-center text-xs text-slate-500">
-          Already have a candidate account?{' '}
-          <Link to="/login" className="font-bold text-blue-600 hover:underline">
-            Sign In Here
-          </Link>
-        </p>
       </div>
     </div>
   )
