@@ -3,23 +3,17 @@ import {
   FileText,
   Upload,
   Sparkles,
-  TrendingUp,
   CheckCircle2,
   Trash2,
   Download,
-  Eye,
-  AlertCircle,
-  Award,
-  Check,
-  Plus,
   Cloud,
   ExternalLink
 } from 'lucide-react'
-import { resumeService } from '../services/resumeService'
 import { profileService } from '../services/profileService'
 import { resumeAnalysisService } from '../services/resumeAnalysisService'
 import { cloudinaryService } from '../services/cloudinaryService'
 import { firestoreService } from '../services/firestoreService'
+import { resumeApiService } from '../services/resumeApiService'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 
@@ -33,6 +27,15 @@ export default function ResumePage() {
     const p = profileService.get()
     setProfile(p)
     setResumes(p?.resumes || [])
+
+    resumeApiService.list().then((backendResumes) => {
+      if (!backendResumes) return
+      const updated = profileService.get() || {}
+      updated.resumes = backendResumes
+      profileService.save(updated)
+      setProfile(updated)
+      setResumes(backendResumes)
+    })
   }, [])
 
   const showToast = (msg: string) => {
@@ -49,26 +52,25 @@ export default function ResumePage() {
     setUploading(true)
     try {
       // 1. Upload to Cloudinary
-      const cloudResult = await cloudinaryService.upload(file, 'rap_resumes')
+      const cloudResult = await cloudinaryService.upload(file, 'ras_resumes')
 
-      // 2. Save metadata & Cloudinary URL to Firestore & Local Profile
-      const newResume = {
-        id: 'res-' + Date.now(),
+      // 2. Create the real backend record (source of truth for the id)
+      const backendResume = await resumeApiService.create({
         name: file.name,
         size: file.size,
-        uploadedAt: new Date().toISOString(),
         isPrimary: resumes.length === 0,
         atsScore: Math.floor(Math.random() * 8) + 90,
         cloudinaryUrl: cloudResult.secure_url,
         cloudinaryPublicId: cloudResult.public_id
-      }
+      })
 
-      await firestoreService.saveResumeRecord(newResume)
+      // 3. Mirror into the local cache using the same id
+      await firestoreService.saveResumeRecord(backendResume)
 
       const updated = profileService.get() || {}
       setProfile(updated)
       setResumes(updated.resumes || [])
-      showToast('Uploaded to Cloudinary & synced with Firebase! 🎉')
+      showToast('Resume uploaded and saved! 🎉')
     } catch (err: any) {
       showToast('Upload failed: ' + err.message)
     } finally {
@@ -83,6 +85,7 @@ export default function ResumePage() {
     profileService.save(updated)
     setProfile(updated)
     setResumes(updated.resumes)
+    resumeApiService.remove(id)
     showToast('Resume deleted')
   }
 
@@ -95,6 +98,7 @@ export default function ResumePage() {
     profileService.save(updated)
     setProfile(updated)
     setResumes(updated.resumes)
+    resumeApiService.setPrimary(id)
     showToast('Primary resume updated')
   }
 
@@ -121,7 +125,7 @@ export default function ResumePage() {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Uploaded resumes are stored securely on Cloudinary CDN and indexed in Firebase Firestore
+            Uploaded resumes are stored securely on Cloudinary CDN and indexed in the RAS database
           </p>
         </div>
 
@@ -175,7 +179,7 @@ export default function ResumePage() {
               </div>
               <div className="p-2.5 bg-white/5 rounded-xl border border-white/10">
                 <div className="text-[10px] text-slate-400">Cloud Storage Sync</div>
-                <div className="text-sm font-extrabold text-blue-300 mt-0.5">Cloudinary + Firestore</div>
+                <div className="text-sm font-extrabold text-blue-300 mt-0.5">Cloudinary + PostgreSQL</div>
               </div>
             </div>
           </div>
@@ -191,7 +195,7 @@ export default function ResumePage() {
             <FileText size={36} className="mx-auto text-slate-300 mb-2" />
             <h4 className="text-sm font-bold text-slate-800">No resumes uploaded yet</h4>
             <p className="text-xs text-slate-500 mt-1">
-              Upload your resume to store it on Cloudinary CDN and link it on Firebase.
+              Upload your resume to store it on Cloudinary CDN and sync it to your account.
             </p>
           </div>
         ) : (

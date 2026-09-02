@@ -26,13 +26,15 @@ import { AuthProvider, useAuth } from './context/auth'
 import Layout from './components/Layout'
 
 function Protected({ children }: { children: JSX.Element }) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+  if (loading) return null
   if (!user) return <Navigate to="/login" replace />
   return <Layout>{children}</Layout>
 }
 
 function ProtectedStandalone({ children }: { children: JSX.Element }) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+  if (loading) return null
   if (!user) return <Navigate to="/login" replace />
   return children
 }

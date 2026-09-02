@@ -1,8 +1,8 @@
 # Recuritment-Automation-PlatForm
 
-> **AI-Powered Recruitment Automation Platform (RAP) — Candidate Experience & Career Portal**
+> **AI-Powered Recruitment Automation Software (RAS) — Candidate Experience & Career Portal**
 
-The **Recruitment Automation Platform (RAP)** transforms traditional hiring into an intelligent, automated, and scalable ecosystem. It covers the full candidate lifecycle from resume intake, automated ATS scoring, and AI-conducted preliminary HR voice screening to live proctored video interviews, multi-document KYC verification, and real-time application pipeline tracking.
+The **Recruitment Automation Software (RAS)** transforms traditional hiring into an intelligent, automated, and scalable ecosystem. It covers the full candidate lifecycle from resume intake, automated ATS scoring, and AI-conducted preliminary HR voice screening to live proctored video interviews, multi-document KYC verification, and real-time application pipeline tracking.
 
 ---
 

@@ -1,27 +1,17 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Layers,
-  Sparkles,
-  Calendar,
-  Briefcase,
-  MapPin,
   Clock,
-  ArrowRight,
   Video,
   CheckCircle2,
-  ChevronRight,
-  MoreVertical,
   Plus,
-  AlertCircle,
   Phone,
   ShieldCheck,
-  Mail,
-  X,
-  FileText
+  X
 } from 'lucide-react'
 import { profileService } from '../services/profileService'
 import { notificationService } from '../services/notificationService'
+import { jobService } from '../services/jobService'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 
@@ -46,6 +36,7 @@ export default function ApplicationsPage() {
 
   useEffect(() => {
     setProfile(profileService.get())
+    jobService.listMyApplications().then(() => setProfile(profileService.get()))
   }, [])
 
   const showToast = (msg: string) => {
@@ -66,6 +57,8 @@ export default function ApplicationsPage() {
       setSelectedAppForDrawer({ ...selectedAppForDrawer, status: nextStatus })
     }
 
+    jobService.updateApplicationStatus(appId, nextStatus)
+
     notificationService.create({
       title: 'Application Workflow Update',
       message: `Status moved to "${nextStatus}"`,
@@ -75,6 +68,15 @@ export default function ApplicationsPage() {
   }
 
   const badgeColors = ['bg-blue-600', 'bg-indigo-600', 'bg-purple-600', 'bg-emerald-600', 'bg-rose-600']
+
+  // Normalizes alias status values (e.g. 'Applied', 'Offer') to their canonical
+  // KANBAN_STAGES id, using the same alias mapping applied when grouping cards
+  // into columns above, so the per-card status <select> always matches an option.
+  const normalizeStatusToStageId = (status: string) => {
+    if (status === 'Applied') return 'Application Submitted'
+    if (status === 'Offer' || status === 'Offer / Selected') return 'Selected'
+    return status
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -206,7 +208,7 @@ export default function ApplicationsPage() {
                       {/* Move Stage Selector & Action */}
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
                         <select
-                          value={app.status}
+                          value={normalizeStatusToStageId(app.status)}
                           onChange={(e) => moveToStatus(app.id, e.target.value)}
                           className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 focus:outline-none focus:border-blue-500 max-w-[130px] truncate"
                         >

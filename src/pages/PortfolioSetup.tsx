@@ -4,7 +4,6 @@ import {
   Sparkles,
   ArrowRight,
   ArrowLeft,
-  ChevronRight,
   CheckCircle2,
   Plus,
   X,
@@ -12,16 +11,12 @@ import {
   User,
   Briefcase,
   GraduationCap,
-  Award,
   Code2,
   Linkedin,
   Github,
   Globe,
-  Share2,
   Trash2,
   SkipForward,
-  ShieldCheck,
-  Check,
   Save
 } from 'lucide-react'
 import { profileService } from '../services/profileService'
@@ -29,6 +24,7 @@ import { portfolioService } from '../services/portfolioService'
 import { authService } from '../services/authService'
 import { firestoreService } from '../services/firestoreService'
 import { cloudinaryService } from '../services/cloudinaryService'
+import { portfolioApiService } from '../services/portfolioApiService'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 
@@ -243,7 +239,7 @@ export default function PortfolioSetupPage() {
     if (!file) return
     try {
       setLoading(true)
-      const uploaded = await cloudinaryService.uploadFile(file)
+      const uploaded = await cloudinaryService.upload(file, 'ras_profile_photos')
       setProfilePhoto(uploaded.secure_url)
     } catch {
       const reader = new FileReader()
@@ -320,8 +316,23 @@ export default function PortfolioSetupPage() {
       }
       portfolioService.save(updatedPortfolio)
 
-      // 3. Sync to Firestore (non-blocking)
+      // 3. Sync to the backend (non-blocking)
       firestoreService.saveCandidateProfile(updatedProfile)
+      portfolioApiService.save(updatedPortfolio)
+      portfolioApiService.saveCoreProfile({
+        name: updatedProfile.name,
+        headline,
+        location,
+        experienceYears: Number(experienceYears),
+        profilePhoto,
+        bio,
+        skills,
+        education: updatedProfile.education,
+        experience: experiences,
+        certifications,
+        achievements,
+        socials: updatedPortfolio.socials
+      })
 
       // 4. Mark first-time onboarding completed
       authService.markFirstTimeComplete()
@@ -905,7 +916,8 @@ export default function PortfolioSetupPage() {
               <button
                 type="button"
                 onClick={handleSaveAndComplete}
-                className="text-[11px] font-bold text-blue-600 hover:underline px-2 py-1.5 cursor-pointer hidden md:inline-flex items-center gap-1"
+                disabled={loading}
+                className="text-[11px] font-bold text-blue-600 hover:underline px-2 py-1.5 cursor-pointer hidden md:inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Save portfolio with current details and go to dashboard"
               >
                 <Save size={13} />

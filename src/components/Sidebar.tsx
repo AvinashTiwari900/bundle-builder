@@ -44,8 +44,8 @@ export default function Sidebar() {
     { to: '/settings', label: 'Settings', icon: Settings }
   ]
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     nav('/login')
   }
 
@@ -57,7 +57,7 @@ export default function Sidebar() {
           <span>R</span>
         </div>
         <div>
-          <div className="brand-name">RAP Candidate</div>
+          <div className="brand-name">RAS Candidate</div>
           <div className="brand-subtitle">Career Platform</div>
         </div>
       </div>

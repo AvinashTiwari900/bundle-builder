@@ -11,15 +11,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Calendar,
-  Briefcase,
-  Layers,
-  FileText,
-  ShieldCheck,
-  Zap,
-  ExternalLink,
-  ChevronRight,
-  Clock,
-  Sparkle
+  ChevronRight
 } from 'lucide-react'
 import {
   aiCopilotService,
@@ -55,7 +47,7 @@ export default function AICopilotDrawer({
     {
       id: 'm-init',
       sender: 'ai',
-      text: "👋 Hi there! I'm your **RAP AI Copilot & Platform Navigation Assistant**.\n\nI can guide you through platform workflows (Portfolio, Job Applications, Interview Practice), provide career insights, or directly navigate you to any section of RAP. How can I help you right now?",
+      text: "👋 Hi there! I'm your **RAS AI Copilot & Platform Navigation Assistant**.\n\nI can guide you through platform workflows (Portfolio, Job Applications, Interview Practice), provide career insights, or directly navigate you to any section of RAS. How can I help you right now?",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       quickActions: AI_QUICK_ACTIONS.slice(0, 5)
     }
@@ -165,7 +157,7 @@ export default function AICopilotDrawer({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-base tracking-tight">RAP AI Copilot</h3>
+                <h3 className="font-extrabold text-base tracking-tight">RAS AI Copilot</h3>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 text-[10px] font-bold border border-emerald-400/30">
                   Online
                 </span>

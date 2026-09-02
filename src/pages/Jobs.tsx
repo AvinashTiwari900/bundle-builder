@@ -3,16 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Search,
   MapPin,
-  Building2,
-  DollarSign,
   Filter,
-  SlidersHorizontal,
   Bookmark,
   Briefcase,
   Sparkles,
   CheckCircle2,
   X,
-  ChevronRight,
   Send
 } from 'lucide-react'
 import { jobService } from '../services/jobService'
@@ -376,7 +372,7 @@ export default function JobsPage() {
             <div className="flex items-start justify-between pb-4 border-b border-slate-100">
               <div>
                 <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
-                  Apply with RAP Candidate Profile
+                  Apply with RAS Candidate Profile
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-0.5">
                   {selectedJobForModal.title}

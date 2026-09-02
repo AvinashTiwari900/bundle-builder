@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import {
-  User,
-  MapPin,
-  Mail,
-  Phone,
-  DollarSign,
-  Briefcase,
   CheckCircle2,
   Save,
   Plus,
   X,
-  Sparkles,
   Award,
-  GraduationCap,
-  Calendar,
-  Clock,
   Camera,
   Trash2
 } from 'lucide-react'

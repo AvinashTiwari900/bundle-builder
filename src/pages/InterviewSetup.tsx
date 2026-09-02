@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Play, ArrowLeft, Clock, Sliders, CheckCircle2, Sparkles, Video } from 'lucide-react'
+import { Play, ArrowLeft, Clock, Sparkles } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 

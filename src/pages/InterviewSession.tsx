@@ -6,11 +6,8 @@ import {
   ArrowRight,
   CheckCircle2,
   Award,
-  HelpCircle,
   RotateCcw,
-  Zap,
-  ThumbsUp,
-  Brain
+  Zap
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -79,13 +76,22 @@ export default function InterviewSession() {
   const params = new URLSearchParams(loc.search)
   const type = params.get('type') || 'Technical'
   const count = Math.min(8, Math.max(2, Number(params.get('count') || 4)))
+  // InterviewSetup passes `timer` (enabled flag) and `duration` (seconds per
+  // question, already in seconds — see InterviewSetup's timePerQuestion state).
+  const timerEnabled = params.get('timer') !== 'false'
+  const configuredDuration = Number(params.get('duration'))
+  const questionDuration = timerEnabled
+    ? Number.isFinite(configuredDuration) && configuredDuration > 0
+      ? configuredDuration
+      : 120
+    : 24 * 60 * 60 // timer disabled: large fallback so the countdown doesn't meaningfully constrain the candidate
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [questions, setQuestions] = useState<{ q: string; tip: string; modelAnswer: string }[]>([])
   const [userAnswers, setUserAnswers] = useState<string[]>([])
   const [currentText, setCurrentText] = useState('')
   const [showTip, setShowTip] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(120)
+  const [timeLeft, setTimeLeft] = useState(questionDuration)
   const [isCompleted, setIsCompleted] = useState(false)
 
   useEffect(() => {
@@ -117,7 +123,7 @@ export default function InterviewSession() {
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex(currentIndex + 1)
       setCurrentText(userAnswers[currentIndex + 1] || '')
-      setTimeLeft(120)
+      setTimeLeft(questionDuration)
       setShowTip(false)
     } else {
       setIsCompleted(true)

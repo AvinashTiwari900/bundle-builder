@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import {
   UserPlus,
-  ShieldCheck,
   Sparkles,
   ArrowRight,
   ArrowLeft,
@@ -18,7 +17,6 @@ import {
   AlertCircle,
   RefreshCw,
   Clock,
-  Send,
   Sparkle
 } from 'lucide-react'
 import { useAuth } from '../context/auth'
@@ -114,7 +112,7 @@ export default function RegisterPage() {
   }, [step, timerSeconds])
 
   // Step 1: Proceed to OTP Verification
-  const handleProceedToOtp = (e: React.FormEvent) => {
+  const handleProceedToOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
@@ -131,7 +129,7 @@ export default function RegisterPage() {
     }
 
     // 3. Email Uniqueness Check
-    if (authService.isEmailTaken(email.trim())) {
+    if (await authService.isEmailTaken(email.trim())) {
       return setError('An account with this email address already exists. Please log in or use another email.')
     }
 

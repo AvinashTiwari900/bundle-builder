@@ -122,8 +122,8 @@ export const PREDEFINED_ROLES = [
   'Management Trainee'
 ]
 
-const CUSTOM_COLLEGES_KEY = 'rap_custom_colleges'
-const CUSTOM_COMPANIES_KEY = 'rap_custom_companies'
+const CUSTOM_COLLEGES_KEY = 'ras_custom_colleges'
+const CUSTOM_COMPANIES_KEY = 'ras_custom_companies'
 
 export const directoryService = {
   getColleges(): string[] {

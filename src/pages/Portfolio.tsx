@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import {
   Globe,
-  Sparkles,
   Edit2,
-  ExternalLink,
   Github,
   Linkedin,
   Mail,
@@ -12,17 +10,12 @@ import {
   Save,
   Plus,
   X,
-  User,
-  Briefcase,
-  MapPin,
-  Award,
-  Layers,
-  Code2,
   Trash2
 } from 'lucide-react'
 import { portfolioService } from '../services/portfolioService'
 import { profileService } from '../services/profileService'
 import { firestoreService } from '../services/firestoreService'
+import { portfolioApiService } from '../services/portfolioApiService'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 
@@ -116,8 +109,28 @@ export default function PortfolioPage() {
     p.projects = form.featuredProjects
     profileService.save(p)
 
-    // 3. Sync to Firestore
+    // 3. Persist locally, then sync both the portfolio and core profile fields to the backend
     await firestoreService.saveCandidateProfile(p)
+    portfolioApiService.save({
+      name: form.name,
+      headline: form.headline,
+      location: form.location,
+      experienceYears: form.experienceYears,
+      avatar: form.avatar,
+      intro: form.intro,
+      about: form.about,
+      skills: form.skills,
+      featuredProjects: form.featuredProjects,
+      socials: form.socials
+    })
+    portfolioApiService.saveCoreProfile({
+      name: form.name,
+      headline: form.headline,
+      location: form.location,
+      experienceYears: form.experienceYears,
+      profilePhoto: form.avatar,
+      skills: form.skills
+    })
 
     setEditing(false)
     showToast('Public portfolio & profile saved successfully! 🎉')

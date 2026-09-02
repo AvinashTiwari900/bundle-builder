@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Sparkles, ArrowRight, Eye, EyeOff, ShieldCheck, Zap, Bot, CheckCircle2 } from 'lucide-react'
+import { Sparkles, ArrowRight, Eye, EyeOff, ShieldCheck, Zap, Bot } from 'lucide-react'
 import { authService, DEMO_CREDENTIALS } from '../services/authService'
 import { useAuth } from '../context/auth'
 import Button from '../components/ui/Button'
@@ -63,7 +63,7 @@ export default function LoginPage() {
                 R
               </div>
               <div>
-                <h1 className="text-xl font-extrabold tracking-tight">RAP Candidate</h1>
+                <h1 className="text-xl font-extrabold tracking-tight">RAS Candidate</h1>
                 <p className="text-xs text-blue-100 font-medium">AI Career Acceleration Platform</p>
               </div>
             </div>

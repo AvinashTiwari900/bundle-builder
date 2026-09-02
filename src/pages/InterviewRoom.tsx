@@ -11,15 +11,8 @@ import {
   Sparkles,
   Award,
   ArrowRight,
-  RotateCcw,
-  CheckCircle2,
   Clock,
-  Send,
-  Bot,
-  User,
-  Eye,
-  Users,
-  Maximize2
+  Bot
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import { profileService } from '../services/profileService'
@@ -44,6 +37,7 @@ export default function InterviewRoom() {
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [micMuted, setMicMuted] = useState(false)
   const [videoDisabled, setVideoDisabled] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
 
   // Interview Question State
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -76,25 +70,34 @@ export default function InterviewRoom() {
     }
   ]
 
+  const initMedia = async () => {
+    setCameraError(null)
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      setStream(s)
+      if (videoRef.current) {
+        videoRef.current.srcObject = s
+      }
+    } catch (err: any) {
+      setCameraError(
+        err?.name === 'NotAllowedError'
+          ? 'Camera/microphone permission was denied. Please allow access in your browser settings and retry.'
+          : err?.name === 'NotFoundError'
+          ? 'No camera or microphone was found on this device.'
+          : 'Unable to access camera or microphone.'
+      )
+    }
+  }
+
   // Initialize camera
   useEffect(() => {
-    async function initMedia() {
-      try {
-        const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        setStream(s)
-        if (videoRef.current) {
-          videoRef.current.srcObject = s
-        }
-      } catch (err) {
-        console.warn('Camera stream simulation active')
-      }
-    }
     initMedia()
 
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((t) => t.stop())
-      }
+      setStream((s) => {
+        if (s) s.getTracks().forEach((t) => t.stop())
+        return s
+      })
     }
   }, [])
 
@@ -393,7 +396,20 @@ export default function InterviewRoom() {
         <div className="lg:col-span-7 space-y-4">
           <div className="bg-slate-950 rounded-3xl overflow-hidden aspect-video relative flex items-center justify-center border border-slate-800 shadow-xl">
             {/* Camera View */}
-            {!videoDisabled ? (
+            {cameraError ? (
+              <div className="text-center text-slate-300 px-6 space-y-3">
+                <ShieldAlert size={32} className="mx-auto text-rose-400" />
+                <p className="text-xs text-rose-300 max-w-xs mx-auto">{cameraError}</p>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={initMedia}
+                  className="font-bold text-xs bg-blue-600"
+                >
+                  Retry Camera & Mic
+                </Button>
+              </div>
+            ) : !videoDisabled ? (
               <video
                 ref={videoRef}
                 autoPlay

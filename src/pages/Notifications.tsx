@@ -3,7 +3,6 @@ import {
   Bell,
   CheckCircle2,
   Calendar,
-  Briefcase,
   Sparkles,
   Trash2,
   Check,
@@ -20,6 +19,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     setList(notificationService.list())
+    notificationService.sync().then(setList)
   }, [])
 
   const showToast = (msg: string) => {

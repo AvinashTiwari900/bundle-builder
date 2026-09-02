@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  candidate
+  recruiter
+  admin
+}
+
+enum JobStatus {
+  draft
+  open
+  closed
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(candidate)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  candidateProfile CandidateProfile?
+  portfolio        Portfolio?
+  resumes          Resume[]
+  documents        Document[]
+  projects         Project[]
+  notifications    Notification[]
+
+  // As a candidate
+  applications Application[] @relation("CandidateApplications")
+  // As a recruiter
+  jobsPosted   Job[]         @relation("RecruiterJobs")
+  recruiterApplications Application[] @relation("RecruiterApplications")
+}
+
+// Core candidate profile fields. education/experience/socials/settings kept as
+// JSONB to match the existing frontend shape closely and avoid a wave of extra
+// join tables in this phase - see plan doc for rationale.
+model CandidateProfile {
+  userId          String   @id
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  phone           String?
+  headline        String?
+  location        String?
+  college         String?
+  company         String?
+  role            String?
+  isStudent       Boolean  @default(false)
+  experienceYears Int      @default(0)
+  targetSalary    String?
+  profilePhoto    String?
+  bio             String?
+  skills          String[] @default([])
+  education       Json     @default("[]")
+  experience      Json     @default("[]")
+  socials         Json     @default("{}")
+  savedJobs       String[] @default([])
+  settings        Json     @default("{}")
+  certifications  String[] @default([])
+  achievements    String[] @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Not populated by the API yet this phase - table exists so Phase 2 and the
+// future recruiter app land on an already-correct shape.
+model Job {
+  id               String        @id @default(uuid())
+  title            String
+  company          String
+  location         String?
+  workMode         String?
+  employmentType   String?
+  experience       String?
+  salaryMin        Int?
+  salaryMax        Int?
+  skills           String[]      @default([])
+  description      String?
+  responsibilities String[]      @default([])
+  requirements     String[]      @default([])
+  postedDate       DateTime      @default(now())
+  industry         String?
+  ownerId          String
+  owner            User          @relation("RecruiterJobs", fields: [ownerId], references: [id], onDelete: Cascade)
+  status           JobStatus     @default(draft)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  applications     Application[]
+}
+
+model Application {
+  id            String            @id @default(uuid())
+  candidateId   String
+  candidate     User              @relation("CandidateApplications", fields: [candidateId], references: [id], onDelete: Cascade)
+  jobId         String
+  job           Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  recruiterId   String
+  recruiter     User              @relation("RecruiterApplications", fields: [recruiterId], references: [id], onDelete: Cascade)
+  // Plain string, not a DB enum: the frontend Kanban board uses a looser,
+  // aliased status vocabulary (e.g. "Applied" vs "Application Submitted") -
+  // validated against the allowed set in the API layer instead (see
+  // src/routes/applications.ts), matching how the rest of this API validates input.
+  status        String            @default("Applied")
+  matchScore    Int?
+  notes         String?
+  interviewDate DateTime?
+  appliedDate   DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@unique([candidateId, jobId])
+}
+
+model Resume {
+  id                 String   @id @default(uuid())
+  candidateId        String
+  candidate          User     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  name               String
+  size               Int?
+  uploadedAt         DateTime @default(now())
+  isPrimary          Boolean  @default(false)
+  atsScore           Int?
+  cloudinaryUrl      String?
+  cloudinaryPublicId String?
+}
+
+model Document {
+  id                 String   @id @default(uuid())
+  candidateId        String
+  candidate          User     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  name               String
+  type               String
+  uploadedAt         DateTime @default(now())
+  status             String   @default("Uploaded")
+  aiConfidence       Int?
+  extractedName      String?
+  extractedIdNumber  String?
+  cloudinaryUrl      String?
+  cloudinaryPublicId String?
+}
+
+model Project {
+  id              String   @id @default(uuid())
+  candidateId     String
+  candidate       User     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  name            String
+  role            String?
+  duration        String?
+  description     String?
+  responsibilities String?
+  outcomes        String?
+  technologies    String[] @default([])
+  link            String?
+  githubUrl       String?
+  createdAt       DateTime @default(now())
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  candidateId String
+  candidate   User     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  read        Boolean  @default(false)
+  type        String?
+  createdAt   DateTime @default(now())
+}
+
+model Portfolio {
+  userId          String   @id
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String?
+  headline        String?
+  location        String?
+  experienceYears Int?
+  avatar          String?
+  intro           String?
+  about           String?
+  skills          String[] @default([])
+  featuredProjects Json    @default("[]")
+  socials         Json     @default("{}")
+  updatedAt       DateTime @updatedAt
+}

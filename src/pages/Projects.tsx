@@ -8,12 +8,10 @@ import {
   Sparkles,
   Code2,
   Award,
-  Clock,
-  Briefcase,
-  Layers,
   Wand2
 } from 'lucide-react'
 import { profileService } from '../services/profileService'
+import { projectApiService } from '../services/projectApiService'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 
@@ -37,6 +35,14 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     setProfile(profileService.get())
+
+    projectApiService.list().then((backendProjects) => {
+      if (!backendProjects) return
+      const updated = profileService.get() || {}
+      updated.projects = backendProjects
+      profileService.save(updated)
+      setProfile(updated)
+    })
   }, [])
 
   const showToast = (msg: string) => {
@@ -46,12 +52,11 @@ export default function ProjectsPage() {
 
   const projects = profile?.projects || []
 
-  const handleAddProject = (e: React.FormEvent) => {
+  const handleAddProject = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
 
-    const newProj = {
-      id: 'proj-' + Date.now(),
+    const input = {
       name: name.trim(),
       role: role.trim(),
       duration: duration.trim(),
@@ -63,8 +68,14 @@ export default function ProjectsPage() {
         .map((s) => s.trim())
         .filter(Boolean),
       link: link.trim(),
-      githubUrl: githubUrl.trim() || 'https://github.com/avinash-tiwari',
-      createdAt: new Date().toISOString()
+      githubUrl: githubUrl.trim() || 'https://github.com/avinash-tiwari'
+    }
+
+    let newProj: any
+    try {
+      newProj = await projectApiService.create(input)
+    } catch {
+      newProj = { id: 'proj-' + Date.now(), ...input, createdAt: new Date().toISOString() }
     }
 
     const updated = profileService.get() || {}
@@ -107,6 +118,7 @@ export default function ProjectsPage() {
     profileService.save(updated)
     setProfile(updated)
     if (aiCritique?.id === id) setAiCritique(null)
+    projectApiService.remove(id)
     showToast('Project removed')
   }
 
@@ -314,7 +326,7 @@ export default function ProjectsPage() {
                 </div>
 
                 {/* AI Review Card if analyzed */}
-                {aiCritique?.id === proj.id && (
+                {aiCritique && aiCritique.id === proj.id && (
                   <div className="p-3.5 bg-indigo-50/80 border border-indigo-100 rounded-xl text-xs space-y-2 text-indigo-950 animate-in fade-in duration-150">
                     <div className="font-extrabold flex items-center justify-between text-indigo-900">
                       <span className="flex items-center gap-1.5">

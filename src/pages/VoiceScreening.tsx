@@ -1,18 +1,15 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Phone,
   PhoneOff,
-  Mic,
-  MicOff,
   Sparkles,
   Bot,
-  User,
-  CheckCircle2,
   Award,
   ArrowRight,
-  Clock,
-  Volume2
+  Volume2,
+  Mic,
+  MicOff
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import { profileService } from '../services/profileService'
@@ -23,6 +20,9 @@ interface VoiceQA {
   a: string
 }
 
+const SpeechRecognitionCtor: any =
+  typeof window !== 'undefined' ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition : null
+
 export default function VoiceScreening() {
   const nav = useNavigate()
   const [callStatus, setCallStatus] = useState<'incoming' | 'connected' | 'completed'>('incoming')
@@ -31,13 +31,18 @@ export default function VoiceScreening() {
   const [transcript, setTranscript] = useState<VoiceQA[]>([])
   const [isAiSpeaking, setIsAiSpeaking] = useState(false)
   const [duration, setDuration] = useState(0)
+  const [isListening, setIsListening] = useState(false)
+  const [micError, setMicError] = useState<string | null>(null)
+  const recognitionRef = useRef<any>(null)
+  const finalTranscriptRef = useRef('')
+  const speechSupported = !!SpeechRecognitionCtor
 
   const profile = profileService.get()
   const candidateName = profile?.name || 'Avinash Tiwari'
 
   const hrQuestions = [
     {
-      q: `Hello ${candidateName.split(' ')[0]}! This is Sarah from the RAP AI Recruitment Team at Northstar Analytics. I'd like to ask a few quick questions regarding your recent Senior Business Analyst application. Could you start with a brief overview of your current role?`,
+      q: `Hello ${candidateName.split(' ')[0]}! This is Sarah from the RAS AI Recruitment Team at Northstar Analytics. I'd like to ask a few quick questions regarding your recent Senior Business Analyst application. Could you start with a brief overview of your current role?`,
       sampleAnswer:
         'Sure Sarah! Currently I work as a Lead Business Analyst where I lead our revenue analytics team, build automated SQL data pipelines, and design executive BI dashboards.'
     },
@@ -70,13 +75,79 @@ export default function VoiceScreening() {
     return () => clearInterval(interval)
   }, [callStatus])
 
+  // Stop any speech synthesis / mic capture if the candidate navigates away mid-call
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis?.cancel()
+      recognitionRef.current?.stop()
+    }
+  }, [])
+
+  const speak = (text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.rate = 1
+    utterance.pitch = 1
+    utterance.onstart = () => setIsAiSpeaking(true)
+    utterance.onend = () => setIsAiSpeaking(false)
+    utterance.onerror = () => setIsAiSpeaking(false)
+    window.speechSynthesis.speak(utterance)
+  }
+
+  const stopListening = () => {
+    recognitionRef.current?.stop()
+    setIsListening(false)
+  }
+
+  const startListening = () => {
+    if (!speechSupported) return
+    setMicError(null)
+    const recognition = new SpeechRecognitionCtor()
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.lang = 'en-US'
+    finalTranscriptRef.current = userSpeech ? userSpeech + ' ' : ''
+
+    recognition.onresult = (event: any) => {
+      let interim = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const piece = event.results[i][0].transcript
+        if (event.results[i].isFinal) {
+          finalTranscriptRef.current += piece + ' '
+        } else {
+          interim += piece
+        }
+      }
+      setUserSpeech((finalTranscriptRef.current + interim).trim())
+    }
+
+    recognition.onerror = (event: any) => {
+      setMicError(
+        event.error === 'not-allowed'
+          ? 'Microphone permission was denied. Please allow access and try again.'
+          : event.error === 'no-speech'
+          ? 'No speech detected. Please try again.'
+          : 'Voice input failed. Please try again or type your answer.'
+      )
+      setIsListening(false)
+    }
+
+    recognition.onend = () => setIsListening(false)
+
+    recognitionRef.current = recognition
+    recognition.start()
+    setIsListening(true)
+  }
+
   const acceptCall = () => {
     setCallStatus('connected')
-    setIsAiSpeaking(true)
-    setTimeout(() => setIsAiSpeaking(false), 2000)
+    speak(hrQuestions[0].q)
   }
 
   const endCall = () => {
+    window.speechSynthesis?.cancel()
+    stopListening()
     setCallStatus('completed')
 
     // Attach screening record
@@ -98,16 +169,18 @@ export default function VoiceScreening() {
 
   const handleSendVoiceResponse = () => {
     if (!userSpeech.trim()) return
+    stopListening()
 
     const activeQ = hrQuestions[currentStep]
     const updated = [...transcript, { q: activeQ.q, a: userSpeech.trim() }]
     setTranscript(updated)
     setUserSpeech('')
+    finalTranscriptRef.current = ''
 
     if (currentStep + 1 < hrQuestions.length) {
-      setCurrentStep(currentStep + 1)
-      setIsAiSpeaking(true)
-      setTimeout(() => setIsAiSpeaking(false), 2000)
+      const nextIndex = currentStep + 1
+      setCurrentStep(nextIndex)
+      speak(hrQuestions[nextIndex].q)
     } else {
       endCall()
     }
@@ -143,7 +216,7 @@ export default function VoiceScreening() {
               <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs font-bold uppercase tracking-wider border border-blue-500/30">
                 Incoming AI HR Call
               </span>
-              <h2 className="text-xl font-extrabold mt-2">Sarah · RAP AI Talent Partner</h2>
+              <h2 className="text-xl font-extrabold mt-2">Sarah · RAS AI Talent Partner</h2>
               <p className="text-xs text-slate-400 mt-1">Northstar Analytics · Senior Business Analyst</p>
             </div>
 
@@ -215,12 +288,41 @@ export default function VoiceScreening() {
                 </button>
               </div>
 
-              <textarea
-                value={userSpeech}
-                onChange={(e) => setUserSpeech(e.target.value)}
-                placeholder="Speak your answer or type here..."
-                className="w-full p-3.5 bg-black/40 border border-white/20 rounded-2xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 h-24"
-              />
+              <div className="relative">
+                <textarea
+                  value={userSpeech}
+                  onChange={(e) => setUserSpeech(e.target.value)}
+                  placeholder={speechSupported ? 'Tap the mic and speak, or type here...' : 'Speak your answer or type here...'}
+                  className="w-full p-3.5 pr-14 bg-black/40 border border-white/20 rounded-2xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 h-24"
+                />
+                {speechSupported && (
+                  <button
+                    type="button"
+                    onClick={isListening ? stopListening : startListening}
+                    title={isListening ? 'Stop listening' : 'Speak your answer'}
+                    className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                      isListening
+                        ? 'bg-rose-500 hover:bg-rose-600 text-white animate-pulse'
+                        : 'bg-blue-600 hover:bg-blue-500 text-white'
+                    }`}
+                  >
+                    {isListening ? <MicOff size={15} /> : <Mic size={15} />}
+                  </button>
+                )}
+              </div>
+
+              {isListening && (
+                <div className="flex items-center gap-1.5 text-[11px] text-emerald-300 font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>Listening... speak now</span>
+                </div>
+              )}
+              {micError && <p className="text-[11px] text-rose-400 font-medium">{micError}</p>}
+              {!speechSupported && (
+                <p className="text-[11px] text-slate-400">
+                  Voice input isn't supported in this browser (try Chrome or Edge) — you can still type your answer above.
+                </p>
+              )}
             </div>
 
             {/* Call Action Controls */}

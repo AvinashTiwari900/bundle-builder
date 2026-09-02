@@ -2,22 +2,23 @@ import { seedData } from '../mock/seed'
 
 export const profileService = {
   get() {
-    const raw = localStorage.getItem('rap_profile')
+    const raw = localStorage.getItem('ras_profile')
     if (!raw) {
       seedData()
-      const after = localStorage.getItem('rap_profile')
+      const after = localStorage.getItem('ras_profile')
       return after ? JSON.parse(after) : null
     }
     try {
       return JSON.parse(raw)
     } catch {
       seedData(true)
-      return JSON.parse(localStorage.getItem('rap_profile')!)
+      const after = localStorage.getItem('ras_profile')
+      return after ? JSON.parse(after) : null
     }
   },
 
   save(profile: any) {
-    localStorage.setItem('rap_profile', JSON.stringify(profile))
+    localStorage.setItem('ras_profile', JSON.stringify(profile))
     return profile
   },
 

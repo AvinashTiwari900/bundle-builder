@@ -1,12 +1,8 @@
 import React, { useState } from 'react'
 import {
-  Settings,
   Shield,
-  Bell,
-  Sliders,
   Database,
   CheckCircle2,
-  Trash2,
   RefreshCw,
   Zap,
   Key,
@@ -15,7 +11,6 @@ import {
 } from 'lucide-react'
 import { profileService } from '../services/profileService'
 import { authService } from '../services/authService'
-import { isFirebaseConnected } from '../services/firebase'
 import { cloudinaryService } from '../services/cloudinaryService'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -57,7 +52,7 @@ export default function SettingsPage() {
           Platform Configuration & Integrations
         </h1>
         <p className="text-xs text-slate-500 mt-0.5">
-          Manage Cloudinary storage, Firebase Firestore sync, AI interview proctoring thresholds, and automation
+          Manage Cloudinary storage, backend API sync, AI interview proctoring thresholds, and automation
         </p>
       </div>
 
@@ -85,19 +80,19 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Firebase Box */}
+          {/* Backend API Box */}
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800">Firebase Firestore</span>
+              <span className="text-xs font-bold text-slate-800">RAS Backend API</span>
               <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1">
                 <Check size={11} />
                 <span>Configured</span>
               </span>
             </div>
             <div className="text-[11px] text-slate-500 space-y-1">
-              <div>Project ID: <strong className="text-slate-800 font-mono">recruitment-cebef</strong></div>
-              <div>Project Number: <strong className="text-slate-800 font-mono">398833030288</strong></div>
-              <div>Sync Mode: Cloud Firestore with Offline Fallback</div>
+              <div>Stack: Node / Express + PostgreSQL</div>
+              <div>Auth: Account login &amp; core profile</div>
+              <div>Sync Mode: Backend API with Local Offline Fallback</div>
             </div>
           </div>
         </div>

@@ -1,15 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import {
   Zap,
-  Sparkles,
   CheckCircle2,
   Sliders,
-  Play,
-  Briefcase,
-  Layers,
-  Building2,
-  MapPin,
-  Clock,
   ShieldCheck
 } from 'lucide-react'
 import { profileService } from '../services/profileService'

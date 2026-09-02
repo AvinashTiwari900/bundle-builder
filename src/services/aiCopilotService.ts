@@ -118,7 +118,7 @@ export const aiCopilotService = {
     // Take me to Voice Screening
     if (q.includes('voice screening') || q.includes('voice call') || q.includes('call sarah') || q.includes('ai call')) {
       return {
-        text: `Opening the AI Voice HR Screening Simulator with Sarah (RAP AI Talent Partner).`,
+        text: `Opening the AI Voice HR Screening Simulator with Sarah (RAS AI Talent Partner).`,
         suggestedRoute: '/voice-screening',
         card: {
           type: 'navigation',
@@ -212,7 +212,7 @@ export const aiCopilotService = {
     // Portfolio Creation Workflow
     if (q.includes('create my portfolio') || q.includes('how do i create my portfolio') || q.includes('create portfolio') || q.includes('portfolio workflow')) {
       return {
-        text: `Here is the step-by-step workflow to build an employer-ready public portfolio on RAP. I can guide you through each stage:`,
+        text: `Here is the step-by-step workflow to build an employer-ready public portfolio on RAS. I can guide you through each stage:`,
         card: {
           type: 'workflow',
           title: 'Portfolio Creation & Publishing Workflow',
@@ -238,7 +238,7 @@ export const aiCopilotService = {
     // Job Application Workflow
     if (q.includes('how can i apply for a job') || q.includes('apply for jobs') || q.includes('how to apply') || q.includes('job application workflow')) {
       return {
-        text: `Here is the complete end-to-end Job Application Workflow on RAP:`,
+        text: `Here is the complete end-to-end Job Application Workflow on RAS:`,
         card: {
           type: 'workflow',
           title: 'Job Discovery & Application Workflow',
@@ -374,10 +374,19 @@ export const aiCopilotService = {
       const allJobs = await jobService.list()
       const targetJob = allJobs.find((j: any) =>
         q.includes(j.title.toLowerCase()) || q.includes(j.company.toLowerCase())
-      ) || allJobs[0]
+      )
+
+      if (!targetJob) {
+        return {
+          text: `I couldn't find a job matching that in your listings. Could you tell me the exact job title or company you'd like to apply to?`,
+          quickActions: [
+            { label: 'Show me jobs suitable for my profile', query: 'Show me jobs suitable for my profile' }
+          ]
+        }
+      }
 
       return {
-        text: `⚠️ **Action Confirmation Required**:\n\nIn accordance with RAP security policies, the AI Copilot does not submit job applications without your explicit consent.\n\nWould you like to confirm submitting your application with primary resume **${profile.resumes?.[0]?.name || 'Avinash_Tiwari_Lead_BA.pdf'}**?`,
+        text: `⚠️ **Action Confirmation Required**:\n\nIn accordance with RAS security policies, the AI Copilot does not submit job applications without your explicit consent.\n\nWould you like to confirm submitting your application with primary resume **${profile.resumes?.[0]?.name || 'Avinash_Tiwari_Lead_BA.pdf'}**?`,
         card: {
           type: 'confirmation',
           title: `Apply to ${targetJob.company}`,
@@ -396,7 +405,7 @@ export const aiCopilotService = {
     // 5. Default Intelligent Assistant Response
     // ==========================================
     return {
-      text: `Hello ${candidateName}! I am your RAP AI Copilot & Platform Navigation Assistant. I can help you with:\n\n` +
+      text: `Hello ${candidateName}! I am your RAS AI Copilot & Platform Navigation Assistant. I can help you with:\n\n` +
         `• **Platform Navigation**: *"Take me to my portfolio"*, *"Open applications"*, *"Explore jobs"*\n` +
         `• **Workflow Guidance**: *"How do I create my portfolio?"*, *"How can I apply for a job?"*, *"How do I prepare for an interview?"*\n` +
         `• **Career Intelligence**: *"Analyze my resume ATS score"*, *"Show jobs suitable for my profile"*, *"What should I improve?"*\n` +

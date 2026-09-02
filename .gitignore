@@ -25,12 +25,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Firebase cache & debug logs
-.firebase/
-firebase-debug.log*
-firestore-debug.log*
-ui-debug.log*
-
 # Editor & IDE directories
 .vscode/*
 !.vscode/extensions.json

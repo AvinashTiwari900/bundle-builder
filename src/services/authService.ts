@@ -2,20 +2,7 @@ import { seedData } from '../mock/seed'
 import { firestoreService } from './firestoreService'
 import { directoryService } from '../mock/directoryData'
 
-export interface RegisteredAccount {
-  id: string
-  name: string
-  email: string
-  phone: string
-  countryCode: string
-  college: string
-  company?: string
-  role: string
-  isStudent: boolean
-  password?: string
-  createdAt: string
-  isFirstTimeUser?: boolean
-}
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
 
 export interface CandidateRegistrationInput {
   name: string
@@ -53,38 +40,134 @@ export const DEMO_CREDENTIALS = {
   password: 'Candidate@123'
 }
 
-const SESSION_KEY = 'rap_session'
-const REGISTERED_USERS_KEY = 'rap_registered_users'
-const PENDING_OTP_KEY = 'rap_pending_otp'
-const FIRST_TIME_USER_KEY = 'rap_first_time_user'
+const PENDING_OTP_KEY = 'ras_pending_otp'
+const FIRST_TIME_USER_KEY = 'ras_first_time_user'
+const PROFILE_KEY = 'ras_profile'
+const PORTFOLIO_KEY = 'ras_portfolio'
+
+interface ApiUser {
+  id: string
+  email: string
+  role: string
+}
+
+interface ApiMeResponse extends ApiUser {
+  profile: any
+}
+
+async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  return fetch(`${API_URL}${path}`, {
+    ...options,
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
+  })
+}
+
+async function readError(res: Response, fallback: string): Promise<string> {
+  try {
+    const body = await res.json()
+    return body?.error || fallback
+  } catch {
+    return fallback
+  }
+}
+
+function isDemoEmail(email: string): boolean {
+  return email.trim().toLowerCase() === DEMO_CREDENTIALS.email.toLowerCase()
+}
+
+// The backend (server/) now owns identity/auth and the core profile fields.
+// Resumes, applications, documents, projects, notifications and the
+// portfolio stay local-only for now (Phase 2 migrates those too) - this
+// reconciles the locally-cached "rich" profile with whatever the backend
+// knows about the signed-in user whenever a session is established.
+function syncLocalProfileWithBackend(apiUser: ApiUser, backendProfile: any) {
+  const existingRaw = localStorage.getItem(PROFILE_KEY)
+  let existing: any = null
+  try {
+    existing = existingRaw ? JSON.parse(existingRaw) : null
+  } catch {
+    existing = null
+  }
+
+  if (existing && existing.id === apiUser.id) {
+    return existing
+  }
+
+  if (isDemoEmail(apiUser.email)) {
+    // Fresh browser logging into the demo account - seed the full rich demo
+    // dataset locally (resumes, applications, projects, etc.) so the rest of
+    // the app has something to show, keyed to the real backend user id.
+    seedData(true)
+    const seeded = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')
+    seeded.id = apiUser.id
+    seeded.email = apiUser.email
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(seeded))
+    return seeded
+  }
+
+  // Fresh browser for a real (non-demo) account: only the core profile is
+  // known server-side, so sub-entities start empty until Phase 2.
+  const fresh = {
+    id: apiUser.id,
+    name: backendProfile?.name || '',
+    email: apiUser.email,
+    phone: backendProfile?.phone || '',
+    headline: backendProfile?.headline || '',
+    location: backendProfile?.location || '',
+    college: backendProfile?.college || '',
+    company: backendProfile?.company || '',
+    role: backendProfile?.role || '',
+    isStudent: backendProfile?.isStudent || false,
+    experienceYears: backendProfile?.experienceYears || 0,
+    targetSalary: backendProfile?.targetSalary || '',
+    profilePhoto:
+      backendProfile?.profilePhoto ||
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+    bio: backendProfile?.bio || '',
+    skills: backendProfile?.skills || [],
+    education: backendProfile?.education || [],
+    experience: backendProfile?.experience || [],
+    socials: backendProfile?.socials || {},
+    savedJobs: backendProfile?.savedJobs || [],
+    settings: backendProfile?.settings || {},
+    resumes: [],
+    projects: [],
+    applications: [],
+    documents: [],
+    notifications: []
+  }
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(fresh))
+  return fresh
+}
 
 export const authService = {
   init() {
     seedData()
   },
 
-  getRegisteredUsers(): RegisteredAccount[] {
+  async isEmailTaken(email: string): Promise<boolean> {
+    const cleaned = email.trim().toLowerCase()
+    if (isDemoEmail(cleaned)) return false
     try {
-      const raw = localStorage.getItem(REGISTERED_USERS_KEY)
-      return raw ? JSON.parse(raw) : []
+      const res = await apiFetch(`/auth/check-email?email=${encodeURIComponent(cleaned)}`)
+      if (!res.ok) return false
+      const data = await res.json()
+      return !!data.taken
     } catch {
-      return []
+      // Backend unreachable - don't block the form client-side; the real
+      // uniqueness check happens server-side on submit regardless.
+      return false
     }
   },
 
-  isEmailTaken(email: string): boolean {
-    const cleaned = email.trim().toLowerCase()
-    if (cleaned === DEMO_CREDENTIALS.email.toLowerCase()) return false // Demo is allowed
-    const users = this.getRegisteredUsers()
-    return users.some((u) => u.email.toLowerCase() === cleaned)
-  },
-
-  // 1. Dual OTP Generation & Verification
+  // 1. Dual OTP Generation & Verification (unchanged demo simulator - see
+  // Register.tsx's own copy: real delivery needs a paid SMS/email provider,
+  // a decision for later, not part of standing up the backend).
   generateOtps(email: string, phone: string, countryCode: string = '+91'): PendingOtpData {
-    // Generate realistic 6-digit OTPs
     const emailOtp = Math.floor(100000 + Math.random() * 900000).toString()
     const mobileOtp = Math.floor(100000 + Math.random() * 900000).toString()
-    
+
     const now = Date.now()
     const otpData: PendingOtpData = {
       email: email.trim().toLowerCase(),
@@ -93,7 +176,7 @@ export const authService = {
       emailOtp,
       mobileOtp,
       generatedAt: now,
-      expiresAt: now + 5 * 60 * 1000, // 5 minutes validity
+      expiresAt: now + 5 * 60 * 1000,
       emailVerified: false,
       mobileVerified: false
     }
@@ -145,47 +228,47 @@ export const authService = {
     return { success: true, message: 'Mobile number verified successfully!' }
   },
 
-  // 2. Candidate Registration with Comprehensive Profile & Portfolio Seeding
+  // 2. Candidate Registration - real account via the backend API, then the
+  // existing rich local profile/portfolio seeding keeps every other page
+  // (Jobs, Applications, Resume, Documents, Projects, Portfolio...) working
+  // exactly as before, keyed to the real backend-issued user id.
   async register(data: CandidateRegistrationInput) {
     seedData()
 
-    // Store custom college and company if entered
     if (data.college) directoryService.addCustomCollege(data.college)
     if (data.company && !data.isStudent) directoryService.addCustomCompany(data.company)
 
-    const candidateId = 'candidate-' + Date.now()
+    const email = data.email.trim().toLowerCase()
     const fullPhone = `${data.countryCode} ${data.phone}`
 
-    // 1. Create registered user record
-    const newAccount: RegisteredAccount = {
-      id: candidateId,
-      name: data.name.trim(),
-      email: data.email.trim().toLowerCase(),
-      phone: data.phone.trim(),
-      countryCode: data.countryCode,
-      college: data.college.trim(),
-      company: data.isStudent ? 'Student / N/A' : (data.company?.trim() || 'Independent'),
-      role: data.role.trim(),
-      isStudent: data.isStudent,
-      password: data.password,
-      createdAt: new Date().toISOString(),
-      isFirstTimeUser: true
+    const res = await apiFetch('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: data.name.trim(),
+        email,
+        password: data.password,
+        phone: fullPhone,
+        college: data.college.trim(),
+        company: data.isStudent ? undefined : data.company?.trim() || undefined,
+        role: data.role.trim(),
+        isStudent: data.isStudent
+      })
+    })
+    if (!res.ok) {
+      throw new Error(await readError(res, 'Registration failed. Please try again.'))
     }
+    const apiUser: ApiUser = await res.json()
+    const candidateId = apiUser.id
 
-    const registeredUsers = this.getRegisteredUsers()
-    registeredUsers.push(newAccount)
-    localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(registeredUsers))
-
-    // 2. Build initial candidate profile
     const initialProfile = {
       id: candidateId,
       name: data.name.trim(),
-      email: data.email.trim().toLowerCase(),
+      email,
       phone: fullPhone,
       headline: data.isStudent ? `Student at ${data.college}` : data.role,
       location: 'Bengaluru, India',
       college: data.college.trim(),
-      company: data.isStudent ? '' : (data.company?.trim() || ''),
+      company: data.isStudent ? '' : data.company?.trim() || '',
       role: data.role.trim(),
       isStudent: data.isStudent,
       experienceYears: data.isStudent ? 0 : 2,
@@ -227,7 +310,7 @@ export const authService = {
       notifications: [
         {
           id: 'n-welcome',
-          title: 'Welcome to RAP! 🎉',
+          title: 'Welcome to RAS! 🎉',
           message: `Account created successfully for ${data.name}. Complete your public portfolio to attract top tech recruiters.`,
           read: false,
           type: 'success',
@@ -236,9 +319,8 @@ export const authService = {
       ]
     }
 
-    localStorage.setItem('rap_profile', JSON.stringify(initialProfile))
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(initialProfile))
 
-    // 3. Build initial portfolio
     const initialPortfolio = {
       name: data.name.trim(),
       headline: initialProfile.headline,
@@ -251,101 +333,95 @@ export const authService = {
       featuredProjects: [],
       socials: initialProfile.socials
     }
-    localStorage.setItem('rap_portfolio', JSON.stringify(initialPortfolio))
+    localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(initialPortfolio))
 
-    // 4. Sync profile with Firestore
     await firestoreService.saveCandidateProfile(initialProfile)
 
-    // 5. Establish active user session
-    const sessionUser = {
-      id: candidateId,
-      name: data.name.trim(),
-      email: data.email.trim().toLowerCase(),
-      headline: initialProfile.headline
-    }
-    localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser))
-
-    // 6. Set first-time onboarding flag
     sessionStorage.setItem(FIRST_TIME_USER_KEY, 'true')
-
-    // Clean up pending OTP session
     sessionStorage.removeItem(PENDING_OTP_KEY)
 
-    return sessionUser
+    return { id: candidateId, name: data.name.trim(), email, headline: initialProfile.headline }
+  },
+
+  // Used only by the demo-account self-heal path in login() below - creates
+  // a real backend account for the demo credentials, then seeds the full
+  // rich local dataset (resumes, applications, projects...) so "Quick Demo
+  // Login" stays a true one-click action against a fresh database.
+  async registerDemoAccount() {
+    const res = await apiFetch('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: DEMO_USER.name,
+        email: DEMO_CREDENTIALS.email,
+        password: DEMO_CREDENTIALS.password,
+        phone: '+91 98765 43210',
+        college: 'Indian Institute of Technology, Delhi',
+        role: 'Lead Business Analyst & Product Strategist',
+        isStudent: false
+      })
+    })
+    if (!res.ok) {
+      throw new Error(await readError(res, 'Unable to set up the demo account. Please try again.'))
+    }
+    const apiUser: ApiUser = await res.json()
+
+    seedData(true)
+    const seeded = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')
+    seeded.id = apiUser.id
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(seeded))
+
+    sessionStorage.removeItem(FIRST_TIME_USER_KEY)
+    return { id: apiUser.id, name: seeded.name, email: apiUser.email, headline: seeded.headline }
   },
 
   // 3. User Authentication
   async login(email: string, password: string, remember = true) {
     seedData()
     const cleanedEmail = email.trim().toLowerCase()
-    const registeredUsers = this.getRegisteredUsers()
 
-    // Check if custom registered user exists
-    const matchedAccount = registeredUsers.find(
-      (u) => u.email.toLowerCase() === cleanedEmail
-    )
+    const res = await apiFetch('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: cleanedEmail, password, remember })
+    })
 
-    if (matchedAccount) {
-      if (matchedAccount.password && matchedAccount.password !== password) {
-        throw new Error('Incorrect password. Please try again.')
-      }
-
-      const user = {
-        id: matchedAccount.id,
-        name: matchedAccount.name,
-        email: matchedAccount.email,
-        headline: matchedAccount.isStudent
-          ? `Student at ${matchedAccount.college}`
-          : matchedAccount.role
-      }
-
-      const value = JSON.stringify(user)
-      if (remember) {
-        localStorage.setItem(SESSION_KEY, value)
-      } else {
-        sessionStorage.setItem(SESSION_KEY, value)
-      }
-
-      // Returning user - clear first time flag
+    if (res.ok) {
+      const apiUser: ApiUser = await res.json()
+      const meRes = await apiFetch('/auth/me')
+      const me: ApiMeResponse | null = meRes.ok ? await meRes.json() : null
+      const localProfile = syncLocalProfileWithBackend(apiUser, me?.profile)
       sessionStorage.removeItem(FIRST_TIME_USER_KEY)
-      return user
+      return { id: apiUser.id, name: localProfile.name, email: apiUser.email, headline: localProfile.headline }
     }
 
-    // Default demo credentials or fallback
-    if (
-      cleanedEmail === DEMO_CREDENTIALS.email.toLowerCase() ||
-      password === DEMO_CREDENTIALS.password ||
-      (cleanedEmail && password.length >= 4)
-    ) {
-      const existingProfile = localStorage.getItem('rap_profile')
-      let user = DEMO_USER
-      if (existingProfile) {
+    // Demo account self-heal: only the exact seeded demo credentials trigger
+    // this. Anything else that fails login is a real rejection below.
+    if (isDemoEmail(cleanedEmail) && password === DEMO_CREDENTIALS.password) {
+      const notFound = res.status === 401
+      if (notFound) {
         try {
-          const parsed = JSON.parse(existingProfile)
-          user = {
-            id: parsed.id || 'candidate-1',
-            name: parsed.name || 'Avinash Tiwari',
-            email: parsed.email || cleanedEmail,
-            headline: parsed.headline || 'Lead Business Analyst & Product Strategist'
-          }
+          return await this.registerDemoAccount()
         } catch {
-          user = DEMO_USER
+          // fall through to the generic error below if self-heal also fails
         }
       }
-
-      const value = JSON.stringify(user)
-      if (remember) {
-        localStorage.setItem(SESSION_KEY, value)
-      } else {
-        sessionStorage.setItem(SESSION_KEY, value)
-      }
-
-      // Returning user - clear first time flag
-      sessionStorage.removeItem(FIRST_TIME_USER_KEY)
-      return user
     }
 
-    throw new Error('Invalid email or password. You can use the Quick Demo Login.')
+    throw new Error(await readError(res, 'Invalid email or password. You can use the Quick Demo Login.'))
+  },
+
+  // Restores the session on app load by asking the backend who's currently
+  // authenticated (via the httpOnly cookie) - replaces the old synchronous
+  // localStorage session read.
+  async restoreSession() {
+    try {
+      const res = await apiFetch('/auth/me')
+      if (!res.ok) return null
+      const me: ApiMeResponse = await res.json()
+      const localProfile = syncLocalProfileWithBackend(me, me.profile)
+      return { id: me.id, name: localProfile.name, email: me.email, headline: localProfile.headline }
+    } catch {
+      return null
+    }
   },
 
   isFirstTimeUser(): boolean {
@@ -356,19 +432,16 @@ export const authService = {
     sessionStorage.removeItem(FIRST_TIME_USER_KEY)
   },
 
-  logout() {
-    localStorage.removeItem(SESSION_KEY)
-    sessionStorage.removeItem(SESSION_KEY)
-    sessionStorage.removeItem(FIRST_TIME_USER_KEY)
-  },
-
-  getSession() {
-    const raw = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY)
-    if (!raw) return null
+  async logout() {
     try {
-      return JSON.parse(raw)
+      await apiFetch('/auth/logout', { method: 'POST' })
     } catch {
-      return null
+      // best-effort - clear local state regardless so the UI reflects logged-out
     }
+    localStorage.removeItem(PROFILE_KEY)
+    localStorage.removeItem(PORTFOLIO_KEY)
+    localStorage.removeItem('ras_notifications')
+    sessionStorage.removeItem(FIRST_TIME_USER_KEY)
+    sessionStorage.removeItem(PENDING_OTP_KEY)
   }
 }

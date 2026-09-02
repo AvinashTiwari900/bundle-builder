@@ -3,13 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
   MapPin,
-  Building2,
   DollarSign,
   Briefcase,
   Sparkles,
   CheckCircle2,
   Bookmark,
-  Share2,
   Clock,
   ShieldCheck,
   Send
@@ -268,7 +266,7 @@ export default function JobDetails() {
               <span>Verified Employer</span>
             </div>
             <p className="text-slate-500">
-              Applications submitted through RAP Candidate Portal bypass generic recruiter queues and enter priority review.
+              Applications submitted through RAS Candidate Portal bypass generic recruiter queues and enter priority review.
             </p>
           </div>
         </div>

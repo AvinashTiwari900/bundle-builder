@@ -54,6 +54,7 @@ export default function JobComparisonModal({ job, onClose, onApply }: JobCompari
           <button
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"
+            aria-label="Close"
           >
             <X size={20} />
           </button>

@@ -5,17 +5,12 @@ import {
   Send,
   Bot,
   User,
-  Zap,
-  TrendingUp,
-  Award,
   ArrowRight,
   RotateCcw,
   Briefcase,
   Video,
   CheckCircle2,
   Calendar,
-  Layers,
-  FileText,
   ShieldCheck,
   Globe,
   AlertTriangle,
@@ -51,7 +46,7 @@ export default function AIAgent() {
     {
       id: 'm-1',
       sender: 'ai',
-      text: `Hello ${profile?.name?.split(' ')[0] || 'Avinash'}! 👋\n\nI am your **RAP AI Copilot & Platform Navigation Assistant**.\n\nI can guide you through end-to-end recruitment workflows, analyze your resume ATS match, recommend jobs, explain application feedback, or directly navigate you anywhere across the platform.\n\nHow can I help you today?`,
+      text: `Hello ${profile?.name?.split(' ')[0] || 'Avinash'}! 👋\n\nI am your **RAS AI Copilot & Platform Navigation Assistant**.\n\nI can guide you through end-to-end recruitment workflows, analyze your resume ATS match, recommend jobs, explain application feedback, or directly navigate you anywhere across the platform.\n\nHow can I help you today?`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       quickActions: AI_QUICK_ACTIONS.slice(0, 6)
     }
@@ -147,7 +142,7 @@ export default function AIAgent() {
             <span>Intelligent Chatbot & Platform Navigation Engine</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            RAP AI Career Copilot
+            RAS AI Career Copilot
           </h1>
           <p className="text-xs sm:text-sm text-blue-100 mt-1">
             Real-time candidate intelligence, workflow guidance, and instant platform navigation

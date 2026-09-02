@@ -9,13 +9,9 @@ import {
   ArrowRight,
   Briefcase,
   MapPin,
-  Building2,
-  DollarSign,
   Bookmark,
   CheckCircle2,
   Calendar,
-  AlertCircle,
-  ExternalLink,
   ChevronRight
 } from 'lucide-react'
 import { profileService } from '../services/profileService'

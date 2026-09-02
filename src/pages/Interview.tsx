@@ -6,10 +6,7 @@ import {
   ArrowLeft,
   Sparkles,
   CheckCircle2,
-  AlertCircle,
-  Play,
-  RotateCcw,
-  Volume2
+  Play
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -21,6 +18,7 @@ export default function InterviewPage() {
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [recording, setRecording] = useState(false)
   const [hasCamera, setHasCamera] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
   const [audioLevel, setAudioLevel] = useState(65)
   const [toast, setToast] = useState<string | null>(null)
 
@@ -30,17 +28,21 @@ export default function InterviewPage() {
   }
 
   const startCamera = async () => {
+    setCameraError(null)
     try {
       const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       setStream(s)
       setHasCamera(true)
-      if (videoRef.current) {
-        videoRef.current.srcObject = s
-      }
       showToast('Camera and microphone connected!')
-    } catch (err) {
-      setHasCamera(true)
-      showToast('Simulation camera enabled (Demo Mode)')
+    } catch (err: any) {
+      setHasCamera(false)
+      setCameraError(
+        err?.name === 'NotAllowedError'
+          ? 'Camera/microphone permission was denied. Please allow access in your browser settings and try again.'
+          : err?.name === 'NotFoundError'
+          ? 'No camera or microphone was found on this device.'
+          : 'Unable to access camera or microphone. Please check your device and browser permissions.'
+      )
     }
   }
 
@@ -51,6 +53,16 @@ export default function InterviewPage() {
     }
     setHasCamera(false)
   }
+
+  // The <video> element only mounts once hasCamera/stream flip true, so the
+  // ref isn't attached yet at the point startCamera() acquires the stream -
+  // assigning srcObject here (after the DOM has actually committed) is what
+  // makes the live feed actually render instead of a black box.
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream
+    }
+  }, [stream, hasCamera])
 
   useEffect(() => {
     return () => {
@@ -118,9 +130,11 @@ export default function InterviewPage() {
                 <Video size={28} />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-white">Camera Preview Inactive</h4>
-                <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-                  Click below to test browser camera permissions and audio input levels.
+                <h4 className="text-sm font-bold text-white">
+                  {cameraError ? 'Camera Connection Failed' : 'Camera Preview Inactive'}
+                </h4>
+                <p className={`text-xs mt-1 max-w-xs mx-auto ${cameraError ? 'text-rose-400' : 'text-slate-400'}`}>
+                  {cameraError || 'Click below to test browser camera permissions and audio input levels.'}
                 </p>
               </div>
               <Button
@@ -130,7 +144,7 @@ export default function InterviewPage() {
                 className="font-bold text-xs bg-blue-600"
               >
                 <Video size={16} />
-                <span>Connect Camera & Mic</span>
+                <span>{cameraError ? 'Retry Camera & Mic' : 'Connect Camera & Mic'}</span>
               </Button>
             </div>
           )}

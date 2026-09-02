@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Bell, Sparkles, User, X, CheckCircle2, ChevronDown, Bot } from 'lucide-react'
+import { Search, Bell, Sparkles, X, ChevronDown } from 'lucide-react'
 import { notificationService } from '../services/notificationService'
 import { profileService } from '../services/profileService'
 import Sidebar from './Sidebar'
@@ -66,6 +66,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <button
                 onClick={() => setSearchQuery('')}
                 className="text-slate-400 hover:text-slate-600"
+                aria-label="Clear search"
               >
                 <X size={14} />
               </button>
@@ -192,7 +193,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             setCopilotInitialQuery(undefined)
             setShowCopilot(true)
           }}
-          title="Ask RAP AI Copilot"
+          title="Ask RAS AI Copilot"
           className="floating-ai-btn group"
         >
           <Sparkles size={18} className="animate-spin-slow text-amber-300" />

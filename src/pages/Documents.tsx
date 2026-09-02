@@ -9,17 +9,14 @@ import {
   Eye,
   Key,
   X,
-  Plus,
   Sparkles,
-  AlertTriangle,
-  FileText,
   Cloud,
   ExternalLink
 } from 'lucide-react'
-import { documentService } from '../services/documentService'
 import { profileService } from '../services/profileService'
 import { cloudinaryService } from '../services/cloudinaryService'
 import { firestoreService } from '../services/firestoreService'
+import { documentApiService } from '../services/documentApiService'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 
@@ -38,7 +35,8 @@ export default function DocumentsPage() {
   const [docs, setDocs] = useState<any[]>([])
   const [selectedCategory, setSelectedCategory] = useState(DOCUMENT_CATEGORIES[0])
   const [selectedDocForOtp, setSelectedDocForOtp] = useState<any>(null)
-  const [otpValue, setOtpValue] = useState('123456')
+  const [otpValue, setOtpValue] = useState('')
+  const [generatedOtp, setGeneratedOtp] = useState('')
   const [activeAnalysisModal, setActiveAnalysisModal] = useState<any>(null)
   const [uploading, setUploading] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
@@ -47,6 +45,15 @@ export default function DocumentsPage() {
     const p = profileService.get()
     setProfile(p)
     setDocs(p?.documents || [])
+
+    documentApiService.list().then((backendDocs) => {
+      if (!backendDocs) return
+      const updated = profileService.get() || {}
+      updated.documents = backendDocs
+      profileService.save(updated)
+      setProfile(updated)
+      setDocs(backendDocs)
+    })
   }, [])
 
   const showToast = (msg: string) => {
@@ -61,28 +68,27 @@ export default function DocumentsPage() {
     setUploading(true)
     try {
       // 1. Upload file to Cloudinary
-      const cloudResult = await cloudinaryService.upload(file, 'rap_kyc_docs')
+      const cloudResult = await cloudinaryService.upload(file, 'ras_kyc_docs')
 
-      // 2. Save metadata & Cloudinary URL to Firestore
-      const newDoc = {
-        id: 'doc-' + Date.now(),
+      // 2. Create the real backend record (source of truth for the id)
+      const backendDoc = await documentApiService.create({
         name: file.name,
         type: selectedCategory,
-        uploadedAt: new Date().toISOString(),
         status: 'Pending Verification',
         aiConfidence: 98,
         extractedName: profile?.name || 'Avinash Tiwari',
         extractedIdNumber: 'XXXX-XXXX-4321',
         cloudinaryUrl: cloudResult.secure_url,
         cloudinaryPublicId: cloudResult.public_id
-      }
+      })
 
-      await firestoreService.saveDocumentRecord(newDoc)
+      // 3. Mirror into the local cache using the same id
+      await firestoreService.saveDocumentRecord(backendDoc)
 
       const updated = profileService.get() || {}
       setProfile(updated)
       setDocs(updated.documents || [])
-      showToast(`Uploaded ${file.name} to Cloudinary! Please verify via OTP.`)
+      showToast(`Uploaded ${file.name}! Please verify via OTP.`)
     } catch (err: any) {
       showToast('Upload failed: ' + err.message)
     } finally {
@@ -91,18 +97,19 @@ export default function DocumentsPage() {
   }
 
   const handleVerifyOtp = async () => {
-    if (otpValue.trim() !== '123456') {
-      return showToast('Invalid OTP. Please enter demo code: 123456')
+    if (otpValue.trim() !== generatedOtp) {
+      return showToast('Invalid OTP. Please re-check the demo code shown above.')
     }
 
     const updatedDoc = { ...selectedDocForOtp, status: 'Verified' }
     await firestoreService.saveDocumentRecord(updatedDoc)
+    documentApiService.updateStatus(selectedDocForOtp.id, 'Verified')
 
     const updated = profileService.get() || {}
     setProfile(updated)
     setDocs(updated.documents || [])
     setSelectedDocForOtp(null)
-    showToast('Document verified on Firebase & Cloudinary! 🎉')
+    showToast('Document verified successfully! 🎉')
   }
 
   const handleDelete = (id: string) => {
@@ -112,10 +119,23 @@ export default function DocumentsPage() {
     profileService.save(updated)
     setProfile(updated)
     setDocs(updated.documents)
+    documentApiService.remove(id)
     showToast('Document deleted')
   }
 
   const verifiedCount = docs.filter((d) => d.status === 'Verified').length
+
+  const openOtpModal = (doc: any) => {
+    setSelectedDocForOtp(doc)
+    setGeneratedOtp(Math.floor(100000 + Math.random() * 900000).toString())
+    setOtpValue('')
+  }
+
+  const closeOtpModal = () => {
+    setSelectedDocForOtp(null)
+    setGeneratedOtp('')
+    setOtpValue('')
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -140,7 +160,7 @@ export default function DocumentsPage() {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Submit required identity, academic, and compensation records stored on Cloudinary and indexed in Firebase
+            Submit required identity, academic, and compensation records stored on Cloudinary and indexed in the RAS database
           </p>
         </div>
       </div>
@@ -276,7 +296,7 @@ export default function DocumentsPage() {
                       <Button
                         variant="primary"
                         size="sm"
-                        onClick={() => setSelectedDocForOtp(doc)}
+                        onClick={() => openOtpModal(doc)}
                         className="text-xs font-bold"
                       >
                         <Key size={13} />
@@ -330,7 +350,7 @@ export default function DocumentsPage() {
                 <h3 className="text-base font-extrabold text-slate-900">OTP Identity Verification</h3>
               </div>
               <button
-                onClick={() => setSelectedDocForOtp(null)}
+                onClick={closeOtpModal}
                 className="text-slate-400 hover:text-slate-600"
               >
                 <X size={18} />
@@ -355,13 +375,13 @@ export default function DocumentsPage() {
                   className="w-full text-center text-xl tracking-widest font-extrabold py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
                 />
                 <p className="text-[11px] text-slate-400 mt-1 text-center">
-                  Demo code: <span className="font-bold text-slate-700">123456</span>
+                  Demo code: <span className="font-bold text-slate-700">{generatedOtp}</span>
                 </p>
               </div>
             </div>
 
             <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-              <Button variant="ghost" size="md" onClick={() => setSelectedDocForOtp(null)}>
+              <Button variant="ghost" size="md" onClick={closeOtpModal}>
                 Cancel
               </Button>
               <Button variant="primary" size="md" onClick={handleVerifyOtp} className="font-bold">
