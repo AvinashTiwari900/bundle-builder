@@ -43,6 +43,9 @@ router.get('/connections/user/:id', authMiddleware as any, ConnectionsController
 router.get('/meetings', authMiddleware as any, MeetingsController.listMeetings as any)
 router.get('/meetings/:code', MeetingsController.getMeetingByCode)
 router.post('/meetings/instant', authMiddleware as any, MeetingsController.createInstantMeeting as any)
+router.get('/meetings/:code/chats', MeetingsController.getMeetingChats)
+router.post('/meetings/:code/chats', MeetingsController.addMeetingChat)
+router.get('/meetings/:id/transcripts', MeetingsController.getTranscripts)
 router.post('/meetings/:id/transcript', MeetingsController.addTranscript)
 
 // 6. Posts & Saved Bookmarks Routes

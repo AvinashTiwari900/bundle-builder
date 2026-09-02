@@ -1,7 +1,8 @@
 import { Request, Response } from 'express'
 import { db } from '../config/db'
 import { AuthenticatedRequest } from '../middlewares/auth.middleware'
-import { Meeting } from '../models/types'
+import { Meeting, MeetingChatMessage } from '../models/types'
+import { getRoomChatHistory, saveRoomChatMessage, getRoomTranscripts, saveRoomTranscript } from '../sockets/meeting.socket'
 import { v4 as uuidv4 } from 'uuid'
 
 export class MeetingsController {
@@ -20,9 +21,17 @@ export class MeetingsController {
       return res.status(404).json({ success: false, message: 'Meeting room code not found.' })
     }
 
+    // Attach real-time saved chats and transcripts
+    const chats = getRoomChatHistory(meeting.code)
+    const transcripts = getRoomTranscripts(meeting.code)
+
     return res.status(200).json({
       success: true,
-      meeting
+      meeting: {
+        ...meeting,
+        chats: chats.length > 0 ? chats : meeting.chats || [],
+        transcripts: transcripts.length > 0 ? transcripts : meeting.transcripts || []
+      }
     })
   }
 
@@ -43,6 +52,7 @@ export class MeetingsController {
       durationSeconds: 0,
       isLive: true,
       transcripts: [],
+      chats: [],
       notes: [],
       createdAt: new Date().toISOString()
     }
@@ -56,24 +66,67 @@ export class MeetingsController {
     })
   }
 
+  static async getMeetingChats(req: Request, res: Response) {
+    const { code } = req.params
+    const chats = getRoomChatHistory(code)
+    const meeting = db.meetings.find((m) => m.code.toUpperCase() === code.toUpperCase())
+
+    return res.status(200).json({
+      success: true,
+      roomCode: code,
+      chats: chats.length > 0 ? chats : meeting?.chats || []
+    })
+  }
+
+  static async addMeetingChat(req: Request, res: Response) {
+    const { code } = req.params
+    const { senderId, senderName, text, timestamp } = req.body
+
+    if (!text?.trim()) {
+      return res.status(400).json({ success: false, message: 'Message text is required.' })
+    }
+
+    const savedMessage = saveRoomChatMessage(code, {
+      roomCode: code,
+      senderSocketId: 'rest-api',
+      senderId: senderId || 'user-participant',
+      senderName: senderName || 'Candidate',
+      text: text.trim(),
+      timestamp: timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    })
+
+    return res.status(201).json({
+      success: true,
+      message: 'Chat saved successfully.',
+      chat: savedMessage
+    })
+  }
+
   static async addTranscript(req: Request, res: Response) {
     const { id } = req.params
     const { speaker, text, timestamp } = req.body
 
-    const meeting = db.meetings.find((m) => m.id === id || m.code === id)
-    if (!meeting) {
-      return res.status(404).json({ success: false, message: 'Meeting not found.' })
+    if (!text?.trim()) {
+      return res.status(400).json({ success: false, message: 'Transcript text is required.' })
     }
 
-    meeting.transcripts.push({
-      speaker: speaker || 'Participant',
-      text,
-      timestamp: timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    })
+    const entry = saveRoomTranscript(id, speaker || 'Participant', text, timestamp)
 
     return res.status(200).json({
       success: true,
-      transcripts: meeting.transcripts
+      transcript: entry,
+      transcripts: getRoomTranscripts(id)
+    })
+  }
+
+  static async getTranscripts(req: Request, res: Response) {
+    const { id } = req.params
+    const transcripts = getRoomTranscripts(id)
+    const meeting = db.meetings.find((m) => m.id === id || m.code.toUpperCase() === id.toUpperCase())
+
+    return res.status(200).json({
+      success: true,
+      transcripts: transcripts.length > 0 ? transcripts : meeting?.transcripts || []
     })
   }
 }

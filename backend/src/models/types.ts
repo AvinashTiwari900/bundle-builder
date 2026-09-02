@@ -182,6 +182,15 @@ export interface InterviewSessionRecord {
   completedAt?: string
 }
 
+export interface MeetingChatMessage {
+  id: string
+  senderId: string
+  senderName: string
+  text: string
+  timestamp: string
+  createdAt?: string
+}
+
 export interface Meeting {
   id: string
   code: string
@@ -198,6 +207,7 @@ export interface Meeting {
     text: string
     timestamp: string
   }[]
+  chats?: MeetingChatMessage[]
   notes: {
     timestamp: string
     note: string
