@@ -39,3 +39,9 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(226, 232, 240, 0.8);
 }
+
+/* Mirror video stream */
+.mirror {
+  transform: scaleX(-1);
+}
+

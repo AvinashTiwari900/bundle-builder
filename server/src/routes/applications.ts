@@ -27,6 +27,8 @@ function toResponse(app: any, job: any) {
     jobId: app.jobId,
     jobTitle: job.title,
     company: job.company,
+    companyRating: job.companyRating,
+    hiringPeriod: job.hiringPeriod,
     location: job.location,
     workMode: job.workMode,
     salary: formatSalary(job.salaryMin, job.salaryMax),

@@ -3,14 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
   MapPin,
+  Building2,
   DollarSign,
   Briefcase,
   Sparkles,
   CheckCircle2,
   Bookmark,
+  Share2,
   Clock,
   ShieldCheck,
-  Send
+  Send,
+  Star,
+  Zap,
+  Award
 } from 'lucide-react'
 import { jobService } from '../services/jobService'
 import { profileService } from '../services/profileService'
@@ -52,7 +57,7 @@ export default function JobDetails() {
       setHasApplied(true)
       showToast('Application submitted successfully! 🚀')
     } else {
-      showToast(res.message)
+      showToast(res.message || 'Failed to submit application')
     }
   }
 
@@ -99,10 +104,16 @@ export default function JobDetails() {
               {job.company.charAt(0)}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
                   {job.company}
                 </span>
+                {job.companyRating && (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold flex items-center gap-1">
+                    <Star size={11} className="fill-amber-500 text-amber-500" />
+                    <span>{job.companyRating} ★ Employer Rating</span>
+                  </span>
+                )}
                 <span className="match-pill text-[11px]">
                   <Sparkles size={11} />
                   <span>94% Match</span>
@@ -115,11 +126,10 @@ export default function JobDetails() {
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <button
               onClick={handleToggleSave}
-              className={`p-3 rounded-xl border transition-colors ${
-                isSaved
-                  ? 'bg-amber-50 border-amber-300 text-amber-600'
-                  : 'bg-white border-slate-200 text-slate-400 hover:text-slate-700'
-              }`}
+              className={`p-3 rounded-xl border transition-colors ${isSaved
+                ? 'bg-amber-50 border-amber-300 text-amber-600'
+                : 'bg-white border-slate-200 text-slate-400 hover:text-slate-700'
+                }`}
               title={isSaved ? 'Remove from saved' : 'Save job'}
             >
               <Bookmark size={18} className={isSaved ? 'fill-amber-500' : ''} />
@@ -139,38 +149,38 @@ export default function JobDetails() {
 
         {/* Quick Meta Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 text-xs">
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <div className="text-slate-400 font-semibold mb-1 flex items-center gap-1">
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
+            <div className="text-slate-400 dark:text-slate-400 font-semibold mb-1 flex items-center gap-1">
               <MapPin size={13} />
-              <span>Location</span>
+              <span>Location & Mode</span>
             </div>
-            <div className="font-bold text-slate-800">{job.location} ({job.workMode})</div>
+            <div className="font-bold text-slate-800 dark:text-slate-200">{job.location} ({job.workMode})</div>
           </div>
 
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <div className="text-slate-400 font-semibold mb-1 flex items-center gap-1">
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
+            <div className="text-slate-400 dark:text-slate-400 font-semibold mb-1 flex items-center gap-1">
               <DollarSign size={13} />
               <span>Salary Range</span>
             </div>
-            <div className="font-bold text-slate-800">
+            <div className="font-extrabold text-slate-900 dark:text-slate-100">
               ₹{Math.round(job.salaryMin / 100000)}-{Math.round(job.salaryMax / 100000)} LPA
             </div>
           </div>
 
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <div className="text-slate-400 font-semibold mb-1 flex items-center gap-1">
-              <Briefcase size={13} />
-              <span>Experience</span>
+          <div className="p-3.5 bg-amber-500/10 dark:bg-amber-500/15 rounded-2xl border border-amber-500/20 dark:border-amber-500/30">
+            <div className="text-amber-800 dark:text-amber-300 font-semibold mb-1 flex items-center gap-1">
+              <Clock size={13} className="text-amber-600 dark:text-amber-400" />
+              <span>Hiring Period</span>
             </div>
-            <div className="font-bold text-slate-800">{job.experience}</div>
+            <div className="font-extrabold text-amber-900 dark:text-amber-200">{job.hiringPeriod || 'Immediate (0-15 Days)'}</div>
           </div>
 
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <div className="text-slate-400 font-semibold mb-1 flex items-center gap-1">
-              <Clock size={13} />
-              <span>Employment</span>
+          <div className="p-3.5 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-2xl border border-emerald-500/20 dark:border-emerald-500/30">
+            <div className="text-emerald-800 dark:text-emerald-300 font-semibold mb-1 flex items-center gap-1">
+              <Zap size={13} className="text-emerald-600 dark:text-emerald-400" />
+              <span>Recruiter Response</span>
             </div>
-            <div className="font-bold text-slate-800">{job.employmentType || 'Full-time'}</div>
+            <div className="font-extrabold text-emerald-900 dark:text-emerald-200">{job.companyResponseRate || '99% Response Rate'}</div>
           </div>
         </div>
       </div>
@@ -179,17 +189,17 @@ export default function JobDetails() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left 2 Cols: Details */}
         <div className="md:col-span-2 space-y-6">
-          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm space-y-6">
             <div>
-              <h2 className="text-base font-extrabold text-slate-900 mb-2">About the Position</h2>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white mb-2">About the Position</h2>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
                 {job.description} As a {job.title} at {job.company}, you will collaborate closely with product management, engineering, and business stakeholders to turn raw data into strategic insights and revenue drivers.
               </p>
             </div>
 
             <div>
-              <h3 className="text-sm font-extrabold text-slate-900 mb-3">Key Responsibilities</h3>
-              <ul className="space-y-2 text-xs sm:text-sm text-slate-600">
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-white mb-3">Key Responsibilities</h3>
+              <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
                 {(job.responsibilities || [
                   'Perform deep-dive data analysis and develop executive dashboards.',
                   'Gather business requirements and translate them into actionable functional specs.',
@@ -197,7 +207,7 @@ export default function JobDetails() {
                   'Present findings and predictive forecasts to cross-functional leadership.'
                 ]).map((resp: string, i: number) => (
                   <li key={i} className="flex items-start gap-2.5">
-                    <CheckCircle2 size={15} className="text-blue-600 shrink-0 mt-0.5" />
+                    <CheckCircle2 size={15} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                     <span>{resp}</span>
                   </li>
                 ))}
@@ -205,22 +215,36 @@ export default function JobDetails() {
             </div>
 
             <div>
-              <h3 className="text-sm font-extrabold text-slate-900 mb-3">Required Skillsets</h3>
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-white mb-3">Required Skillsets</h3>
               <div className="flex flex-wrap gap-2">
                 {(job.skills || []).map((skill: string) => (
                   <span
                     key={skill}
-                    className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-xl text-xs font-bold border border-blue-100"
+                    className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-bold border border-blue-100 dark:border-blue-800"
                   >
                     {skill}
                   </span>
                 ))}
               </div>
             </div>
+
+            {job.benefits && (
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white mb-3">Benefits & Perks</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300">
+                  {job.benefits.map((b: string, i: number) => (
+                    <div key={i} className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-100 dark:border-slate-700/80 flex items-center gap-2">
+                      <Award size={14} className="text-amber-500 shrink-0" />
+                      <span>{b}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right 1 Col: AI Match Breakdown & Quick Tips */}
+        {/* Right 1 Col: AI Match Breakdown & Quick Actions */}
         <div className="space-y-6">
           {/* AI Match Widget */}
           <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 shadow-xl space-y-4">
@@ -244,8 +268,8 @@ export default function JobDetails() {
                 <span className="font-bold text-white">92%</span>
               </div>
               <div className="flex justify-between text-slate-300">
-                <span>Location / Mode</span>
-                <span className="font-bold text-white">100%</span>
+                <span>Hiring Velocity</span>
+                <span className="font-bold text-emerald-400">&lt; 24h SLA</span>
               </div>
             </div>
 
@@ -266,7 +290,7 @@ export default function JobDetails() {
               <span>Verified Employer</span>
             </div>
             <p className="text-slate-500">
-              Applications submitted through RAS Candidate Portal bypass generic recruiter queues and enter priority review.
+              Applications submitted through RAS Candidate Portal bypass generic recruiter queues and enter priority review with contact privacy protection.
             </p>
           </div>
         </div>

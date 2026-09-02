@@ -68,7 +68,7 @@ export default function ProjectsPage() {
         .map((s) => s.trim())
         .filter(Boolean),
       link: link.trim(),
-      githubUrl: githubUrl.trim() || 'https://github.com/avinash-tiwari'
+      githubUrl: githubUrl.trim() || 'https://github.com/AvinashTiwari900'
     }
 
     let newProj: any

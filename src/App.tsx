@@ -22,6 +22,11 @@ import ProjectsPage from './pages/Projects'
 import InterviewPractice from './pages/InterviewPractice'
 import InterviewSetup from './pages/InterviewSetup'
 import InterviewSession from './pages/InterviewSession'
+import PostsPage from './pages/Posts'
+import MeetingsPage from './pages/Meetings'
+import PreJoinPage from './pages/PreJoin'
+import ConnectionsPage from './pages/Connections'
+import UserProfilePage from './pages/UserProfile'
 import { AuthProvider, useAuth } from './context/auth'
 import Layout from './components/Layout'
 
@@ -83,6 +88,38 @@ export default function App() {
           element={
             <Protected>
               <JobDetails />
+            </Protected>
+          }
+        />
+        <Route
+          path="/connections"
+          element={
+            <Protected>
+              <ConnectionsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/network/user/:id"
+          element={
+            <Protected>
+              <UserProfilePage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/posts"
+          element={
+            <Protected>
+              <PostsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/meetings"
+          element={
+            <Protected>
+              <MeetingsPage />
             </Protected>
           }
         />
@@ -152,11 +189,19 @@ export default function App() {
         />
         <Route
           path="/interview/room/:id"
-          element={
-            <Protected>
-              <InterviewRoom />
-            </Protected>
-          }
+          element={<InterviewRoom />}
+        />
+        <Route
+          path="/meeting/room/:id"
+          element={<InterviewRoom />}
+        />
+        <Route
+          path="/meet/:code"
+          element={<PreJoinPage />}
+        />
+        <Route
+          path="/meet/join/:code"
+          element={<PreJoinPage />}
         />
         <Route
           path="/interview/:id"
@@ -209,9 +254,9 @@ export default function App() {
         <Route
           path="/interview-practice/session/:id"
           element={
-            <Protected>
+            <ProtectedStandalone>
               <InterviewSession />
-            </Protected>
+            </ProtectedStandalone>
           }
         />
 

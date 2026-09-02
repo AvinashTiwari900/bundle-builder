@@ -54,6 +54,9 @@ export const notificationService = {
 
     return n
   },
+  addNotification(payload: any) {
+    return this.create(payload)
+  },
   markRead(id:string){
     const all = this.list().map((n:any)=> n.id===id? {...n,read:true}:n)
     localStorage.setItem(KEY, JSON.stringify(all))

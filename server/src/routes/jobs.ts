@@ -9,10 +9,8 @@ router.get(
   '/',
   requireAuth,
   asyncHandler(async (req, res) => {
-    const { q, location, workMode, employmentType, skills, experienceMin, salaryMin, sort } = req.query as Record<
-      string,
-      string | undefined
-    >
+    const { q, location, workMode, employmentType, skills, experienceMin, salaryMin, hiringPeriod, minRating, sort } =
+      req.query as Record<string, string | undefined>
 
     const where: any = { status: 'open' }
 
@@ -43,10 +41,17 @@ router.get(
     if (salaryMin) {
       where.salaryMax = { gte: Number(salaryMin) }
     }
+    if (hiringPeriod && hiringPeriod !== 'all') {
+      where.hiringPeriod = { contains: hiringPeriod, mode: 'insensitive' }
+    }
+    if (minRating) {
+      where.companyRating = { gte: Number(minRating) }
+    }
 
     let orderBy: any = { postedDate: 'desc' }
     if (sort === 'salary_desc') orderBy = { salaryMax: 'desc' }
     if (sort === 'salary_asc') orderBy = { salaryMin: 'asc' }
+    if (sort === 'rating_desc') orderBy = { companyRating: 'desc' }
 
     let jobs = await prisma.job.findMany({ where, orderBy })
 

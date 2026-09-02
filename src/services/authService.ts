@@ -290,14 +290,14 @@ export const authService = {
       experience: data.isStudent
         ? []
         : [
-            {
-              id: 'exp-1',
-              role: data.role,
-              company: data.company || 'Enterprise Solutions',
-              duration: '2024 - Present',
-              description: `Driving strategic projects and cross-functional product analytics.`
-            }
-          ],
+          {
+            id: 'exp-1',
+            role: data.role,
+            company: data.company || 'Enterprise Solutions',
+            duration: '2024 - Present',
+            description: `Driving strategic projects and cross-functional product analytics.`
+          }
+        ],
       socials: {
         github: 'https://github.com/' + data.name.toLowerCase().replace(/\s+/g, ''),
         linkedin: 'https://www.linkedin.com/in/' + data.name.toLowerCase().replace(/\s+/g, '-'),

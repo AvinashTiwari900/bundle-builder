@@ -9,10 +9,17 @@ import {
   ArrowRight,
   Briefcase,
   MapPin,
+  Building2,
+  DollarSign,
   Bookmark,
   CheckCircle2,
   Calendar,
-  ChevronRight
+  AlertCircle,
+  ExternalLink,
+  ChevronRight,
+  Clock,
+  Star,
+  Zap
 } from 'lucide-react'
 import { profileService } from '../services/profileService'
 import { resumeAnalysisService } from '../services/resumeAnalysisService'
@@ -63,7 +70,7 @@ export default function Dashboard() {
       setProfile(updated)
       showToast('Application submitted successfully! 🚀')
     } else {
-      showToast(res.message)
+      showToast(res.message || 'Failed to submit application')
     }
   }
 
@@ -155,20 +162,20 @@ export default function Dashboard() {
         {/* Quick query buttons */}
         <div className="flex flex-wrap gap-2 pt-1">
           {[
-            '🌐 Take me to my portfolio',
-            '💼 Show jobs suitable for my profile',
-            '📄 Show me my applications',
-            '📊 Improve my resume ATS score',
-            '🎙️ How do I prepare for an interview?',
-            '📁 How can I upload my project?',
-            '🛡️ Where can I upload my documents?'
-          ].map((prompt, i) => (
+            { label: '📰 Community Posts & Feed', path: '/posts' },
+            { label: '🎥 Meetings & Viewable Recordings', path: '/meetings' },
+            { label: '⚡ Auto-Apply Alerts (Email/WhatsApp)', path: '/auto-apply' },
+            { label: '🔒 Contact Privacy Shield', path: '/portfolio' },
+            { label: '🛡️ Documents & OTP Verification', path: '/documents' },
+            { label: '💼 Explore High-Rating Jobs', path: '/jobs?sort=rating_desc' },
+            { label: '🎙️ AI Voice Practice', path: '/voice-screening' }
+          ].map((item, i) => (
             <button
               key={i}
-              onClick={() => nav(`/ai-agent`)}
-              className="px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-xl text-xs font-medium border border-slate-200/80 transition-colors cursor-pointer"
+              onClick={() => nav(item.path)}
+              className="px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200/80 transition-colors cursor-pointer"
             >
-              {prompt}
+              {item.label}
             </button>
           ))}
         </div>
@@ -395,49 +402,88 @@ export default function Dashboard() {
             const hasApplied = applications.some((a: any) => a.jobId === job.id)
             const matchScore = 92 - (idx * 2)
 
+            const avatarGradients = [
+              'from-blue-600 to-indigo-600',
+              'from-indigo-600 to-purple-600',
+              'from-violet-600 to-fuchsia-600',
+              'from-emerald-600 to-teal-600',
+              'from-amber-500 to-orange-600',
+              'from-rose-600 to-pink-600'
+            ]
+            const avatarGrad = avatarGradients[idx % avatarGradients.length]
+
             return (
               <div
                 key={job.id}
-                className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between group relative"
+                className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-5 shadow-sm hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-500/10 hover:border-blue-400/60 dark:hover:border-blue-500/50 transition-all duration-300 flex flex-col justify-between group relative backdrop-blur-sm hover:-translate-y-1"
               >
+                {/* Glowing subtle hover accent */}
+                <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-blue-500/0 group-hover:via-blue-500/50 to-transparent transition-all" />
+
                 <div>
                   {/* Top Row: Company Badge & Match Pill */}
                   <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className={`w-11 h-11 rounded-xl text-white font-extrabold flex items-center justify-center text-base shadow-sm ${
-                          badgeColors[idx % badgeColors.length]
-                        }`}
+                        className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${avatarGrad} text-white font-extrabold flex items-center justify-center text-base shadow-md shadow-slate-900/10 shrink-0 ring-2 ring-white/20`}
                       >
                         {job.company.charAt(0)}
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <h3
                           onClick={() => nav(`/jobs/${job.id}`)}
-                          className="font-bold text-slate-900 text-sm hover:text-blue-600 transition-colors cursor-pointer line-clamp-1"
+                          className="font-bold text-slate-900 dark:text-slate-100 text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer truncate"
+                          title={job.title}
                         >
                           {job.title}
                         </h3>
-                        <p className="text-xs text-slate-500 font-medium">{job.company}</p>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate max-w-[130px]">
+                            {job.company}
+                          </span>
+                          {job.companyRating && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800/40 text-amber-700 dark:text-amber-400 text-[10px] font-extrabold flex items-center gap-0.5">
+                              <Star size={9} className="fill-amber-500 text-amber-500" />
+                              <span>{job.companyRating}</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <span className="match-pill shrink-0">
-                      <Sparkles size={11} />
-                      <span>{matchScore}% Match</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300 font-extrabold text-[11px] shrink-0 shadow-xs">
+                      <Sparkles size={11} className="text-emerald-500 dark:text-emerald-400" />
+                      <span>{matchScore}%</span>
                     </span>
                   </div>
 
+                  {/* Hiring Period & Response Rate Badges */}
+                  <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+                    {job.hiringPeriod && (
+                      <span className="px-2.5 py-1 bg-amber-500/10 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/20 dark:border-amber-500/30 rounded-lg text-[10px] font-bold flex items-center gap-1">
+                        <Clock size={11} className="text-amber-600 dark:text-amber-400" />
+                        <span>{job.hiringPeriod}</span>
+                      </span>
+                    )}
+
+                    {job.companyResponseRate && (
+                      <span className="px-2.5 py-1 bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 dark:border-emerald-500/30 rounded-lg text-[10px] font-bold flex items-center gap-1">
+                        <Zap size={11} className="text-emerald-600 dark:text-emerald-400" />
+                        <span>{job.companyResponseRate}</span>
+                      </span>
+                    )}
+                  </div>
+
                   {/* Meta details */}
-                  <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-slate-500 my-3">
+                  <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-slate-500 dark:text-slate-400 my-2">
                     <span className="flex items-center gap-1">
-                      <MapPin size={13} className="text-slate-400" />
+                      <MapPin size={13} className="text-slate-400 dark:text-slate-500" />
                       {job.location}
                     </span>
-                    <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-semibold text-[11px]">
+                    <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md font-semibold text-[11px] border border-slate-200/50 dark:border-slate-700/50">
                       {job.workMode}
                     </span>
-                    <span className="font-semibold text-slate-800">
+                    <span className="font-bold text-slate-900 dark:text-slate-200">
                       ₹{Math.round(job.salaryMin / 100000)}-{Math.round(job.salaryMax / 100000)} LPA
                     </span>
                   </div>
@@ -447,13 +493,13 @@ export default function Dashboard() {
                     {(job.skills || []).slice(0, 3).map((skill: string) => (
                       <span
                         key={skill}
-                        className="px-2.5 py-1 text-[11px] font-semibold bg-slate-50 text-slate-600 rounded-lg border border-slate-200/60"
+                        className="px-2.5 py-1 text-[11px] font-semibold bg-slate-100/70 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 rounded-lg border border-slate-200/60 dark:border-slate-700/60 hover:border-blue-400/60 dark:hover:border-blue-500/60 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                       >
                         {skill}
                       </span>
                     ))}
                     {(job.skills || []).length > 3 && (
-                      <span className="px-1.5 py-1 text-[10px] text-slate-400">
+                      <span className="px-1.5 py-1 text-[10px] font-bold text-slate-400 dark:text-slate-500">
                         +{(job.skills || []).length - 3}
                       </span>
                     )}
@@ -461,37 +507,38 @@ export default function Dashboard() {
                 </div>
 
                 {/* Actions */}
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-2 mt-2">
+                <div className="pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 mt-1">
                   <button
                     onClick={() => handleToggleSave(job.id)}
-                    className={`p-2 rounded-xl border transition-colors ${
+                    className={`p-2 rounded-xl border transition-all cursor-pointer ${
                       isSaved
-                        ? 'bg-amber-50 border-amber-300 text-amber-600'
-                        : 'bg-white border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-300'
+                        ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 shadow-xs'
+                        : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
                     }`}
                     title={isSaved ? 'Remove from saved' : 'Save job'}
                   >
-                    <Bookmark size={16} className={isSaved ? 'fill-amber-500' : ''} />
+                    <Bookmark size={15} className={isSaved ? 'fill-amber-500' : ''} />
                   </button>
 
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                  <div className="flex items-center gap-1.5">
+                    <button
                       onClick={() => nav(`/jobs/${job.id}`)}
-                      className="font-semibold text-xs text-slate-600"
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                     >
                       Details
-                    </Button>
-                    <Button
-                      variant={hasApplied ? 'secondary' : 'primary'}
-                      size="sm"
+                    </button>
+
+                    <button
                       disabled={hasApplied}
                       onClick={() => handleApply(job.id)}
-                      className="font-bold text-xs"
+                      className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm ${
+                        hasApplied
+                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-blue-500/20 hover:shadow-md hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98]'
+                      }`}
                     >
                       {hasApplied ? 'Applied ✓' : 'Quick Apply'}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </div>

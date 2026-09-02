@@ -16,7 +16,7 @@ function filterJobsLocally(all: any[], q: string, filters: any = {}) {
   const term = (q || '').trim().toLowerCase()
   let res = all.filter((j: any) => {
     if (!term) return true
-    return [j.title, j.company, j.location || '', j.description || '', ...(j.skills || [])]
+    return [j.title, j.company, j.location || '', j.description || '', j.hiringPeriod || '', ...(j.skills || [])]
       .join(' ')
       .toLowerCase()
       .includes(term)
@@ -32,6 +32,12 @@ function filterJobsLocally(all: any[], q: string, filters: any = {}) {
   }
   if (filters.workMode && filters.workMode !== 'all') {
     res = res.filter((j: any) => j.workMode.toLowerCase() === filters.workMode.toLowerCase())
+  }
+  if (filters.hiringPeriod && filters.hiringPeriod !== 'all') {
+    res = res.filter((j: any) => j.hiringPeriod?.toLowerCase()?.includes(filters.hiringPeriod.toLowerCase()))
+  }
+  if (filters.minRating) {
+    res = res.filter((j: any) => (j.companyRating || 0) >= Number(filters.minRating))
   }
   if (filters.employmentType && filters.employmentType !== 'all') {
     res = res.filter((j: any) => j.employmentType.toLowerCase() === filters.employmentType.toLowerCase())
@@ -49,6 +55,8 @@ function filterJobsLocally(all: any[], q: string, filters: any = {}) {
 
   if (filters.sort === 'latest') {
     res = res.sort((a: any, b: any) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime())
+  } else if (filters.sort === 'rating_desc') {
+    res = res.sort((a: any, b: any) => (b.companyRating || 0) - (a.companyRating || 0))
   } else if (filters.sort === 'salary_desc') {
     res = res.sort((a: any, b: any) => (b.salaryMax || 0) - (a.salaryMax || 0))
   } else if (filters.sort === 'salary_asc') {
@@ -62,7 +70,12 @@ function cachedOrFallbackJobs(): any[] {
   if (raw) {
     try {
       const parsed = JSON.parse(raw)
-      if (parsed.length) return parsed
+      // Re-sync if cached data predates fields the UI now expects
+      if (!parsed.length || !parsed[0].companyRating || !parsed[0].hiringPeriod) {
+        localStorage.setItem('ras_jobs', JSON.stringify(fallbackJobs))
+        return fallbackJobs
+      }
+      return parsed
     } catch {
       /* fall through to fallback */
     }
@@ -146,7 +159,7 @@ export const jobService = {
 
       notificationService.create({
         title: 'Application Submitted! 🚀',
-        message: `Your application for ${application.jobTitle} at ${application.company} was submitted successfully.`,
+        message: `Your application for ${application.jobTitle} at ${application.company} was submitted successfully. Track status on your pipeline.`,
         type: 'application'
       })
 
@@ -197,6 +210,8 @@ export const jobService = {
       if (filters.location && filters.location !== 'all') params.set('location', filters.location)
       if (filters.skills?.length) params.set('skills', filters.skills.join(','))
       if (filters.workMode && filters.workMode !== 'all') params.set('workMode', filters.workMode)
+      if (filters.hiringPeriod && filters.hiringPeriod !== 'all') params.set('hiringPeriod', filters.hiringPeriod)
+      if (filters.minRating) params.set('minRating', String(filters.minRating))
       if (filters.employmentType && filters.employmentType !== 'all') params.set('employmentType', filters.employmentType)
       if (filters.experienceMin) params.set('experienceMin', String(filters.experienceMin))
       if (filters.salaryMin) params.set('salaryMin', String(filters.salaryMin))

@@ -74,27 +74,35 @@ model CandidateProfile {
 // Not populated by the API yet this phase - table exists so Phase 2 and the
 // future recruiter app land on an already-correct shape.
 model Job {
-  id               String        @id @default(uuid())
-  title            String
-  company          String
-  location         String?
-  workMode         String?
-  employmentType   String?
-  experience       String?
-  salaryMin        Int?
-  salaryMax        Int?
-  skills           String[]      @default([])
-  description      String?
-  responsibilities String[]      @default([])
-  requirements     String[]      @default([])
-  postedDate       DateTime      @default(now())
-  industry         String?
-  ownerId          String
-  owner            User          @relation("RecruiterJobs", fields: [ownerId], references: [id], onDelete: Cascade)
-  status           JobStatus     @default(draft)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  applications     Application[]
+  id                     String        @id @default(uuid())
+  title                  String
+  company                String
+  companyId              String?
+  companyLogo            String?
+  companyRating          Float?
+  companyResponseRate    String?
+  companyResponseTime    String?
+  companyResponseCategory String?
+  hiringPeriod           String?
+  location               String?
+  workMode               String?
+  employmentType         String?
+  experience             String?
+  salaryMin              Int?
+  salaryMax              Int?
+  skills                 String[]      @default([])
+  description            String?
+  responsibilities       String[]      @default([])
+  requirements           String[]      @default([])
+  benefits                String[]      @default([])
+  postedDate             DateTime      @default(now())
+  industry               String?
+  ownerId                String
+  owner                  User          @relation("RecruiterJobs", fields: [ownerId], references: [id], onDelete: Cascade)
+  status                 JobStatus     @default(draft)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  applications           Application[]
 }
 
 model Application {

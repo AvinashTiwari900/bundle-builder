@@ -4,6 +4,7 @@ import {
   Sparkles,
   ArrowRight,
   ArrowLeft,
+  ChevronRight,
   CheckCircle2,
   Plus,
   X,
@@ -11,20 +12,24 @@ import {
   User,
   Briefcase,
   GraduationCap,
+  Award,
   Code2,
   Linkedin,
   Github,
   Globe,
+  Share2,
   Trash2,
   SkipForward,
+  ShieldCheck,
+  Check,
   Save
 } from 'lucide-react'
 import { profileService } from '../services/profileService'
 import { portfolioService } from '../services/portfolioService'
 import { authService } from '../services/authService'
 import { firestoreService } from '../services/firestoreService'
-import { cloudinaryService } from '../services/cloudinaryService'
 import { portfolioApiService } from '../services/portfolioApiService'
+import { cloudinaryService } from '../services/cloudinaryService'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 
@@ -126,7 +131,7 @@ export default function PortfolioSetupPage() {
     setHeadline(p.headline || (p.isStudent ? `Student at ${p.college}` : p.role || 'Business Analyst'))
     setBio(
       p.bio ||
-        `Motivated professional with focus on data-driven product strategy and technical problem solving.`
+      `Motivated professional with focus on data-driven product strategy and technical problem solving.`
     )
     setLocation(p.location || 'Bengaluru, India')
     setExperienceYears(p.experienceYears || (p.isStudent ? 0 : 2))
@@ -136,10 +141,10 @@ export default function PortfolioSetupPage() {
     setCollegeName(p.college || 'Indian Institute of Technology (IIT) Bombay')
     setLinkedin(
       p.socials?.linkedin ||
-        `https://www.linkedin.com/in/${(p.name || 'candidate').toLowerCase().replace(/\s+/g, '-')}`
+      `https://www.linkedin.com/in/${(p.name || 'candidate').toLowerCase().replace(/\s+/g, '-')}`
     )
     setGithub(
-      p.socials?.github || `https://github.com/${(p.name || 'candidate').toLowerCase().replace(/\s+/g, '')}`
+      p.socials?.github || 'https://github.com/AvinashTiwari900'
     )
     setPortfolioUrl(p.socials?.portfolioUrl || '')
 
@@ -239,7 +244,7 @@ export default function PortfolioSetupPage() {
     if (!file) return
     try {
       setLoading(true)
-      const uploaded = await cloudinaryService.upload(file, 'ras_profile_photos')
+      const uploaded = await cloudinaryService.upload(file)
       setProfilePhoto(uploaded.secure_url)
     } catch {
       const reader = new FileReader()
@@ -315,24 +320,10 @@ export default function PortfolioSetupPage() {
         }
       }
       portfolioService.save(updatedPortfolio)
+      portfolioApiService.save(updatedPortfolio)
 
       // 3. Sync to the backend (non-blocking)
       firestoreService.saveCandidateProfile(updatedProfile)
-      portfolioApiService.save(updatedPortfolio)
-      portfolioApiService.saveCoreProfile({
-        name: updatedProfile.name,
-        headline,
-        location,
-        experienceYears: Number(experienceYears),
-        profilePhoto,
-        bio,
-        skills,
-        education: updatedProfile.education,
-        experience: experiences,
-        certifications,
-        achievements,
-        socials: updatedPortfolio.socials
-      })
 
       // 4. Mark first-time onboarding completed
       authService.markFirstTimeComplete()
@@ -389,13 +380,12 @@ export default function PortfolioSetupPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-                  isActive
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${isActive
                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20'
                     : isCompleted
-                    ? 'text-blue-700 bg-blue-50/70 hover:bg-blue-100'
-                    : 'text-slate-600 hover:bg-slate-50'
-                }`}
+                      ? 'text-blue-700 bg-blue-50/70 hover:bg-blue-100'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
               >
                 {tab.icon}
                 <span>{tab.label}</span>
@@ -450,11 +440,10 @@ export default function PortfolioSetupPage() {
                         src={avatar}
                         alt="Preset"
                         onClick={() => setProfilePhoto(avatar)}
-                        className={`w-9 h-9 rounded-xl object-cover cursor-pointer border-2 transition-all ${
-                          profilePhoto === avatar
+                        className={`w-9 h-9 rounded-xl object-cover cursor-pointer border-2 transition-all ${profilePhoto === avatar
                             ? 'border-blue-600 scale-110 shadow-sm'
                             : 'border-slate-200 opacity-70 hover:opacity-100'
-                        }`}
+                          }`}
                       />
                     ))}
                   </div>
@@ -493,9 +482,17 @@ export default function PortfolioSetupPage() {
                 </label>
                 <Input
                   type="number"
+                  min={0}
+                  max={50}
+                  step={0.5}
                   value={experienceYears}
-                  onChange={(e) => setExperienceYears(Number(e.target.value))}
-                  placeholder="0 for students"
+                  onKeyDown={(e) => {
+                    if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                      e.preventDefault()
+                    }
+                  }}
+                  onChange={(e) => setExperienceYears(Math.max(0, Math.min(50, parseFloat(e.target.value) || 0)))}
+                  placeholder="0 for students / freshers"
                 />
               </div>
 
@@ -916,8 +913,7 @@ export default function PortfolioSetupPage() {
               <button
                 type="button"
                 onClick={handleSaveAndComplete}
-                disabled={loading}
-                className="text-[11px] font-bold text-blue-600 hover:underline px-2 py-1.5 cursor-pointer hidden md:inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-[11px] font-bold text-blue-600 hover:underline px-2 py-1.5 cursor-pointer hidden md:inline-flex items-center gap-1"
                 title="Save portfolio with current details and go to dashboard"
               >
                 <Save size={13} />
