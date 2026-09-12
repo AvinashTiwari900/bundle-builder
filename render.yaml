@@ -24,8 +24,15 @@ services:
         generateValue: true
       - key: NODE_ENV
         value: production
-      # Set this after your Netlify site is live, e.g.
-      # https://your-site-name.netlify.app (no trailing slash). Comma-separate
-      # multiple origins if you add a recruiter frontend later.
+      # NODE_ENV=production above makes npm skip devDependencies by default
+      # (typescript, @types/*, prisma CLI) - all of which the build step needs
+      # (tsc, prisma generate/migrate). Force npm to install them anyway; the
+      # app's own runtime behavior is unaffected since NODE_ENV=production is
+      # still set for the actual server process.
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
+      # Set this to your live frontend URL, e.g. https://your-site.vercel.app
+      # (no trailing slash). Comma-separate multiple origins if you add a
+      # recruiter frontend later.
       - key: FRONTEND_ORIGINS
         sync: false
