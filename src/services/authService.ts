@@ -44,6 +44,7 @@ const PENDING_OTP_KEY = 'ras_pending_otp'
 const FIRST_TIME_USER_KEY = 'ras_first_time_user'
 const PROFILE_KEY = 'ras_profile'
 const PORTFOLIO_KEY = 'ras_portfolio'
+const PASSWORD_RESET_OTP_KEY = 'ras_password_reset_otp'
 
 interface ApiUser {
   id: string
@@ -443,5 +444,79 @@ export const authService = {
     localStorage.removeItem('ras_notifications')
     sessionStorage.removeItem(FIRST_TIME_USER_KEY)
     sessionStorage.removeItem(PENDING_OTP_KEY)
+  },
+
+  // 4. Password Reset Operations
+  sendPasswordResetOtp(email: string): { success: boolean; otp: string; message: string } {
+    const cleanedEmail = email.trim().toLowerCase()
+
+    // Generate 6-digit OTP code
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    const record = {
+      email: cleanedEmail,
+      otp,
+      expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
+    }
+    sessionStorage.setItem(PASSWORD_RESET_OTP_KEY, JSON.stringify(record))
+
+    return {
+      success: true,
+      otp,
+      message: `A verification code has been dispatched to ${cleanedEmail}.`
+    }
+  },
+
+  verifyPasswordResetOtp(email: string, code: string): { success: boolean; message: string } {
+    const raw = sessionStorage.getItem(PASSWORD_RESET_OTP_KEY)
+    if (!raw) {
+      throw new Error('No active reset request found. Please request a new verification code.')
+    }
+
+    const record = JSON.parse(raw)
+    if (record.email !== email.trim().toLowerCase()) {
+      throw new Error('Email mismatch. Please request a new verification code.')
+    }
+
+    if (Date.now() > record.expiresAt) {
+      throw new Error('Verification code has expired. Please click "Resend code".')
+    }
+
+    if (record.otp !== code.trim()) {
+      throw new Error('Invalid 6-digit verification code. Please check and try again.')
+    }
+
+    return {
+      success: true,
+      message: 'Code verified successfully.'
+    }
+  },
+
+  async resetPassword(email: string, newPassword: string, code?: string): Promise<{ success: boolean; message: string }> {
+    const cleanedEmail = email.trim().toLowerCase()
+
+    if (newPassword.length < 8) {
+      throw new Error('New password must be at least 8 characters long.')
+    }
+
+    if (code) {
+      this.verifyPasswordResetOtp(cleanedEmail, code)
+    }
+
+    // Call backend reset API
+    const res = await apiFetch('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email: cleanedEmail, newPassword })
+    })
+
+    if (!res.ok) {
+      throw new Error(await readError(res, 'Failed to update password. Please try again.'))
+    }
+
+    sessionStorage.removeItem(PASSWORD_RESET_OTP_KEY)
+
+    return {
+      success: true,
+      message: 'Your password has been reset successfully. Please sign in with your new password.'
+    }
   }
 }

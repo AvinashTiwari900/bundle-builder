@@ -560,7 +560,7 @@ export default function JobsPage() {
             <div className="flex items-start justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
               <div>
                 <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                  Apply with Gettin Candidate Profile
+                  Apply with GetNextIn Candidate Profile
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-0.5">
                   {selectedJobForModal.title}

@@ -58,7 +58,7 @@ export default function LoginPage() {
                 G
               </div>
               <div>
-                <h1 className="text-xl font-extrabold tracking-tight">Gettin</h1>
+                <h1 className="text-xl font-extrabold tracking-tight">GetNextIn</h1>
                 <p className="text-xs text-blue-100 font-medium tracking-wider uppercase">Candidates</p>
               </div>
             </div>
@@ -167,6 +167,13 @@ export default function LoginPage() {
                 />
                 <span>Remember this device</span>
               </label>
+              <Link
+                to="/forgot-password"
+                id="forgotPasswordLink"
+                className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold hover:underline cursor-pointer"
+              >
+                Forgot password?
+              </Link>
             </div>
 
             {error && (

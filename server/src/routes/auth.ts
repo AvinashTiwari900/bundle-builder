@@ -144,4 +144,27 @@ router.get(
   })
 )
 
+const resetPasswordSchema = z.object({
+  email: z.string().trim().email(),
+  newPassword: z.string().min(8)
+})
+
+router.post('/reset-password', asyncHandler(async (req, res) => {
+  const parsed = resetPasswordSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Valid email and new password (min 8 characters) required' })
+  }
+  const email = parsed.data.email.toLowerCase()
+  const user = await prisma.user.findUnique({ where: { email } })
+  if (!user) {
+    return res.status(404).json({ error: 'No account found with this email' })
+  }
+  const passwordHash = await bcrypt.hash(parsed.data.newPassword, 10)
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash }
+  })
+  return res.json({ ok: true, message: 'Password updated successfully' })
+}))
+
 export default router

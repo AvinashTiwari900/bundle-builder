@@ -174,7 +174,7 @@ export default function RegisterPage() {
                 Create Candidate Account
               </h1>
               <p className="text-xs text-slate-400 font-medium">
-                Gettin Candidates — AI-Powered Job & Career Platform
+                GetNextIn Candidates — AI-Powered Job & Career Platform
               </p>
             </div>
           </div>

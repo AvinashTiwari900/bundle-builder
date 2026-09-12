@@ -80,7 +80,7 @@ export default function Sidebar({ isCollapsed = false, onToggle }: SidebarProps)
           {!isCollapsed && (
             <div className="flex-1 min-w-0 flex items-center justify-between">
               <div className="min-w-0">
-                <div className="brand-name truncate">Gettin</div>
+                <div className="brand-name truncate">GetNextIn</div>
                 <div className="brand-subtitle truncate">Candidates</div>
               </div>
               <span

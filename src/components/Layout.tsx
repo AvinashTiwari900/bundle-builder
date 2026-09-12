@@ -234,7 +234,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             setShowCopilot(true)
           }}
           className="floating-ai-btn"
-          title="Ask Gettin AI Copilot"
+          title="Ask GetNextIn AI Copilot"
           aria-label="Open AI Career Copilot Assistant"
         >
           <Sparkles size={18} className="animate-spin-slow text-amber-300" />
