@@ -134,6 +134,13 @@ export default function PostsPage() {
     if (tabParam) setActiveTab(tabParam)
   }, [searchParams])
 
+  // One-time pull of real posts from every candidate (not just this browser)
+  useEffect(() => {
+    postService.syncFromBackend().then((synced) => {
+      if (synced) loadPosts()
+    })
+  }, [])
+
   // Tab change
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId)

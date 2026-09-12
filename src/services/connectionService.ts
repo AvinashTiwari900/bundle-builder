@@ -310,10 +310,18 @@ export const connectionService = {
   // 1. Get My Connected People
   async getMyConnections(): Promise<ConnectionUser[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/connections`)
+      const res = await fetch(`${API_BASE_URL}/connections`, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         if (data.success && Array.isArray(data.connections)) {
+          // Merge real statuses into the local cache so the synchronous
+          // getConnectionStatus()/isConnected() helpers (used to gate
+          // 'connections'-visibility posts) see backend truth too, not just
+          // whatever this browser mutated locally.
+          const local = getLocalState()
+          const byId = new Map(local.map((u) => [u.userId, u]))
+          data.connections.forEach((c: ConnectionUser) => byId.set(c.userId, { ...byId.get(c.userId), ...c }))
+          saveLocalState(Array.from(byId.values()))
           return data.connections
         }
       }
@@ -326,10 +334,19 @@ export const connectionService = {
   // 2. Get Requests (Incoming & Sent)
   async getRequests(): Promise<{ incoming: any[]; sent: any[] }> {
     try {
-      const res = await fetch(`${API_BASE_URL}/connections/requests`)
+      const res = await fetch(`${API_BASE_URL}/connections/requests`, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         if (data.success) {
+          const local = getLocalState()
+          const byId = new Map(local.map((u) => [u.userId, u]))
+          ;(data.incoming || []).forEach((r: any) => {
+            if (r.requester) byId.set(r.requester.userId, { ...byId.get(r.requester.userId), ...r.requester, requestId: r.requestId, connectionStatus: 'pending_received' })
+          })
+          ;(data.sent || []).forEach((r: any) => {
+            if (r.recipient) byId.set(r.recipient.userId, { ...byId.get(r.recipient.userId), ...r.recipient, requestId: r.requestId, connectionStatus: 'pending_sent' })
+          })
+          saveLocalState(Array.from(byId.values()))
           return { incoming: data.incoming || [], sent: data.sent || [] }
         }
       }
@@ -360,6 +377,7 @@ export const connectionService = {
     try {
       const res = await fetch(`${API_BASE_URL}/connections/request`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetUserId })
       })
@@ -394,7 +412,8 @@ export const connectionService = {
   async acceptRequest(requestIdOrUserId: string): Promise<{ success: boolean; message: string }> {
     try {
       const res = await fetch(`${API_BASE_URL}/connections/${requestIdOrUserId}/accept`, {
-        method: 'PATCH'
+        method: 'PATCH',
+        credentials: 'include'
       })
       if (res.ok) {
         const data = await res.json()
@@ -425,7 +444,8 @@ export const connectionService = {
   async declineRequest(requestIdOrUserId: string): Promise<{ success: boolean; message: string }> {
     try {
       const res = await fetch(`${API_BASE_URL}/connections/${requestIdOrUserId}/decline`, {
-        method: 'PATCH'
+        method: 'PATCH',
+        credentials: 'include'
       })
       if (res.ok) {
         const data = await res.json()
@@ -456,7 +476,8 @@ export const connectionService = {
   async cancelRequest(requestIdOrUserId: string): Promise<{ success: boolean; message: string }> {
     try {
       const res = await fetch(`${API_BASE_URL}/connections/${requestIdOrUserId}/cancel`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       })
       if (res.ok) {
         const data = await res.json()
@@ -487,7 +508,8 @@ export const connectionService = {
   async removeConnection(userId: string): Promise<{ success: boolean; message: string }> {
     try {
       const res = await fetch(`${API_BASE_URL}/connections/${userId}/remove`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       })
       if (res.ok) {
         const data = await res.json()
@@ -518,7 +540,7 @@ export const connectionService = {
       if (skill) params.set('skill', skill)
       if (location) params.set('location', location)
 
-      const res = await fetch(`${API_BASE_URL}/connections/discover?${params.toString()}`)
+      const res = await fetch(`${API_BASE_URL}/connections/discover?${params.toString()}`, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         if (data.success && Array.isArray(data.people)) {
@@ -549,7 +571,7 @@ export const connectionService = {
   // 9. Get Detailed User Profile
   async getUserProfile(userId: string): Promise<ConnectionUser | null> {
     try {
-      const res = await fetch(`${API_BASE_URL}/connections/user/${userId}`)
+      const res = await fetch(`${API_BASE_URL}/connections/user/${userId}`, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         if (data.success && data.profile) {

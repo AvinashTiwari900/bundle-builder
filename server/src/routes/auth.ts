@@ -5,6 +5,7 @@ import { prisma } from '../lib/prisma'
 import { signAuthToken, AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE_MS } from '../lib/jwt'
 import { requireAuth, AuthedRequest } from '../middleware/auth'
 import { asyncHandler } from '../lib/asyncHandler'
+import { profileInclude, toProfileResponse } from './candidates'
 
 const router = Router()
 
@@ -129,7 +130,7 @@ router.get(
   asyncHandler(async (req: AuthedRequest, res) => {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      include: { candidateProfile: true }
+      include: { candidateProfile: { include: profileInclude } }
     })
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
@@ -138,7 +139,7 @@ router.get(
       id: user.id,
       email: user.email,
       role: user.role,
-      profile: user.candidateProfile
+      profile: user.candidateProfile ? toProfileResponse(user.candidateProfile) : null
     })
   })
 )
