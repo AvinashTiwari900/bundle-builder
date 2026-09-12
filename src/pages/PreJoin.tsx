@@ -49,33 +49,34 @@ export default function PreJoinPage() {
   useEffect(() => {
     // Find meeting by code or id
     if (code) {
-      const found = meetingService.getMeetingById(code)
-      if (found) {
-        setMeeting(found)
-        if (found.waitingRoomEnabled) {
-          setIsWaitingRoomNotice(true)
+      meetingService.getMeetingById(code).then((found) => {
+        if (found) {
+          setMeeting(found)
+          if (found.waitingRoomEnabled) {
+            setIsWaitingRoomNotice(true)
+          }
+        } else {
+          // Fallback for direct code links
+          setMeeting({
+            id: 'meet-' + code,
+            code: code.toUpperCase(),
+            title: queryParams.get('title') || 'Team Collaboration & Project Sync',
+            meetingType: 'Live Video Conference',
+            hostName: queryParams.get('host') || 'Marcus Chen',
+            status: 'In Progress',
+            date: new Date().toISOString(),
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            durationMinutes: 45,
+            roomUrl: `/interview/room/meet-${code}?code=${code}`,
+            shareUrl: `${window.location.origin}/meet/${code}`,
+            isRecorded: false,
+            hasScreenShare: false,
+            participants: [],
+            summaryNotes: '',
+            transcript: []
+          })
         }
-      } else {
-        // Fallback for direct code links
-        setMeeting({
-          id: 'meet-' + code,
-          code: code.toUpperCase(),
-          title: queryParams.get('title') || 'Team Collaboration & Project Sync',
-          meetingType: 'Live Video Conference',
-          hostName: queryParams.get('host') || 'Marcus Chen',
-          status: 'In Progress',
-          date: new Date().toISOString(),
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          durationMinutes: 45,
-          roomUrl: `/interview/room/meet-${code}?code=${code}`,
-          shareUrl: `${window.location.origin}/meet/${code}`,
-          isRecorded: false,
-          hasScreenShare: false,
-          participants: [],
-          summaryNotes: '',
-          transcript: []
-        })
-      }
+      })
     }
   }, [code, loc.search])
 

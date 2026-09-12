@@ -1,0 +1,410 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  candidate
+  recruiter
+  admin
+}
+
+enum JobStatus {
+  draft
+  open
+  closed
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(candidate)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  candidateProfile CandidateProfile?
+  portfolio        Portfolio?
+  resumes          Resume[]
+  documents        Document[]
+  projects         Project[]
+  notifications    Notification[]
+
+  // As a candidate
+  applications Application[] @relation("CandidateApplications")
+  // As a recruiter
+  jobsPosted   Job[]         @relation("RecruiterJobs")
+  recruiterApplications Application[] @relation("RecruiterApplications")
+
+  posts               Post[]
+  postComments        PostComment[]
+  connectionsSent     Connection[]  @relation("ConnectionRequester")
+  connectionsReceived Connection[]  @relation("ConnectionRecipient")
+  meetingsHosted      Meeting[]
+}
+
+// Core candidate profile fields. socials/settings stay JSONB (small, bounded,
+// config-like shapes that are never filtered/joined on) - education and
+// experience were split into real child tables below since those are exactly
+// the kind of structured, per-entry data you actually want to query and join
+// on (e.g. "candidates who studied at X" or "candidates who worked at Y").
+model CandidateProfile {
+  userId          String   @id
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  phone           String?
+  headline        String?
+  location        String?
+  college         String?
+  company         String?
+  role            String?
+  isStudent       Boolean  @default(false)
+  experienceYears Int      @default(0)
+  targetSalary    String?
+  profilePhoto    String?
+  bio             String?
+  skills          String[] @default([])
+  socials         Json     @default("{}")
+  savedJobs       String[] @default([])
+  settings        Json     @default("{}")
+  certifications  String[] @default([])
+  achievements    String[] @default([])
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  education  Education[]
+  experience Experience[]
+}
+
+// One row per education entry - lets us query/filter/join on institution,
+// degree, etc. directly instead of scanning a JSON blob.
+model Education {
+  id           String           @id @default(uuid())
+  candidateId  String
+  candidate    CandidateProfile @relation(fields: [candidateId], references: [userId], onDelete: Cascade)
+  institution  String
+  degree       String?
+  fieldOfStudy String?
+  startYear    Int?
+  endYear      Int?
+  grade        String?
+  order        Int              @default(0)
+
+  @@index([candidateId])
+}
+
+// One row per work experience entry - same rationale as Education above.
+model Experience {
+  id          String           @id @default(uuid())
+  candidateId String
+  candidate   CandidateProfile @relation(fields: [candidateId], references: [userId], onDelete: Cascade)
+  company     String
+  position    String?
+  location    String?
+  workType    String?
+  startDate   String?
+  endDate     String?
+  isCurrent   Boolean          @default(false)
+  description String?
+  skillsUsed  String[]         @default([])
+  order       Int              @default(0)
+
+  @@index([candidateId])
+}
+
+// Not populated by the API yet this phase - table exists so Phase 2 and the
+// future recruiter app land on an already-correct shape.
+model Job {
+  id                     String        @id @default(uuid())
+  title                  String
+  company                String
+  companyId              String?
+  companyLogo            String?
+  companyRating          Float?
+  companyResponseRate    String?
+  companyResponseTime    String?
+  companyResponseCategory String?
+  hiringPeriod           String?
+  location               String?
+  workMode               String?
+  employmentType         String?
+  experience             String?
+  salaryMin              Int?
+  salaryMax              Int?
+  skills                 String[]      @default([])
+  description            String?
+  responsibilities       String[]      @default([])
+  requirements           String[]      @default([])
+  benefits                String[]      @default([])
+  postedDate             DateTime      @default(now()) @db.Timestamptz(3)
+  industry               String?
+  ownerId                String
+  owner                  User          @relation("RecruiterJobs", fields: [ownerId], references: [id], onDelete: Cascade)
+  status                 JobStatus     @default(draft)
+  createdAt              DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime      @updatedAt @db.Timestamptz(3)
+  applications           Application[]
+}
+
+model Application {
+  id            String            @id @default(uuid())
+  candidateId   String
+  candidate     User              @relation("CandidateApplications", fields: [candidateId], references: [id], onDelete: Cascade)
+  jobId         String
+  job           Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  recruiterId   String
+  recruiter     User              @relation("RecruiterApplications", fields: [recruiterId], references: [id], onDelete: Cascade)
+  // Plain string, not a DB enum: the frontend Kanban board uses a looser,
+  // aliased status vocabulary (e.g. "Applied" vs "Application Submitted") -
+  // validated against the allowed set in the API layer instead (see
+  // src/routes/applications.ts), matching how the rest of this API validates input.
+  status        String            @default("Applied")
+  matchScore    Int?
+  notes         String?
+  interviewDate DateTime?         @db.Timestamptz(3)
+  appliedDate   DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime          @updatedAt @db.Timestamptz(3)
+
+  @@unique([candidateId, jobId])
+}
+
+model Resume {
+  id                 String   @id @default(uuid())
+  candidateId        String
+  candidate          User     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  name               String
+  size               Int?
+  uploadedAt         DateTime @default(now()) @db.Timestamptz(3)
+  isPrimary          Boolean  @default(false)
+  atsScore           Int?
+  cloudinaryUrl      String?
+  cloudinaryPublicId String?
+}
+
+model Document {
+  id                 String   @id @default(uuid())
+  candidateId        String
+  candidate          User     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  name               String
+  type               String
+  uploadedAt         DateTime @default(now()) @db.Timestamptz(3)
+  status             String   @default("Uploaded")
+  aiConfidence       Int?
+  extractedName      String?
+  extractedIdNumber  String?
+  cloudinaryUrl      String?
+  cloudinaryPublicId String?
+}
+
+model Project {
+  id              String   @id @default(uuid())
+  candidateId     String
+  candidate       User     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  name            String
+  role            String?
+  duration        String?
+  description     String?
+  responsibilities String?
+  outcomes        String?
+  technologies    String[] @default([])
+  link            String?
+  githubUrl       String?
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  candidateId String
+  candidate   User     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  read        Boolean  @default(false)
+  type        String?
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model Portfolio {
+  userId          String   @id
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String?
+  headline        String?
+  location        String?
+  experienceYears Int?
+  avatar          String?
+  intro           String?
+  about           String?
+  skills          String[] @default([])
+  featuredProjects Json    @default("[]")
+  socials         Json     @default("{}")
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model Post {
+  id             String        @id @default(uuid())
+  authorId       String
+  author         User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  postType       String
+  title          String
+  description    String
+  hashtags       String[]      @default([])
+  visibility     String        @default("public") // public | connections | private
+  likedByUserIds String[]      @default([])
+  savedByUserIds String[]      @default([])
+  viewsCount     Int           @default(0)
+  comments       PostComment[]
+  links          PostLink[]
+  media          PostMedia[]
+  createdAt      DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @db.Timestamptz(3)
+}
+
+model PostLink {
+  id     String @id @default(uuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  label  String
+  url    String
+  order  Int    @default(0)
+
+  @@index([postId])
+}
+
+model PostMedia {
+  id     String  @id @default(uuid())
+  postId String
+  post   Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type   String
+  url    String
+  name   String?
+  size   Int?
+  order  Int     @default(0)
+
+  @@index([postId])
+}
+
+model PostComment {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+}
+
+// Status is always derived per-viewer at the API layer (self/requester/
+// recipient/stranger), never stored as the frontend's 'none'|'connected'
+// labels directly - see server/src/routes/connections.ts.
+model Connection {
+  id          String   @id @default(uuid())
+  requesterId String
+  requester   User     @relation("ConnectionRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User     @relation("ConnectionRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  status      String   @default("pending") // pending | accepted | declined
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([requesterId, recipientId])
+}
+
+// Modeled on the frontend's rich MeetingRecording shape (recap-focused),
+// not backend/'s leaner live-session record. Chat/transcript/notes/action
+// items are now real child tables (see below) rather than JSON arrays -
+// those grow continuously during a live meeting via Socket.IO, and appending
+// to a JSON column means rewriting the *entire* array on every single
+// message/utterance; child-table inserts are O(1) regardless of history size.
+// `participants` stays JSON: it's a point-in-time snapshot of who was on the
+// call when a recording was saved, not a live/queryable relation - the actual
+// live roster is intentionally ephemeral in-memory state in meeting.socket.ts.
+model Meeting {
+  id                   String   @id @default(uuid())
+  code                 String   @unique
+  title                String
+  meetingType          String?
+  organization         String?
+  hostId               String
+  host                 User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  hostName             String?
+  hostAvatar           String?
+  status               String   @default("Scheduled") // Scheduled | Completed | In Progress
+  date                 String?
+  time                 String?
+  durationMinutes      Int      @default(0)
+  roomUrl              String?
+  shareUrl             String?
+  recordingUrl         String?
+  videoThumbnail       String?
+  isRecorded           Boolean  @default(false)
+  hasScreenShare       Boolean  @default(false)
+  screenShareThumbnail String?
+  participants         Json     @default("[]")
+  summaryNotes         String?
+  aiSummary            String?
+  keyDiscussionPoints  String[] @default([])
+  decisions            String[] @default([])
+  followUps            String[] @default([])
+  passcode             String?
+  waitingRoomEnabled   Boolean  @default(false)
+  createdAt            DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime @updatedAt @db.Timestamptz(3)
+
+  notes             MeetingNote[]
+  actionItems       MeetingActionItem[]
+  transcriptEntries MeetingTranscriptEntry[]
+  chatMessages      MeetingChatMessage[]
+}
+
+model MeetingNote {
+  id        String   @id @default(uuid())
+  meetingId String
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  timestamp String
+  author    String
+  text      String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([meetingId])
+}
+
+model MeetingActionItem {
+  id        String  @id @default(uuid())
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  assignee  String
+  task      String
+  done      Boolean @default(false)
+  order     Int     @default(0)
+
+  @@index([meetingId])
+}
+
+model MeetingTranscriptEntry {
+  id          String   @id @default(uuid())
+  meetingId   String
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  speaker     String
+  speakerRole String?
+  text        String
+  timestamp   String?
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([meetingId])
+}
+
+model MeetingChatMessage {
+  id         String   @id @default(uuid())
+  meetingId  String
+  meeting    Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  senderId   String?
+  senderName String?
+  text       String
+  timestamp  String?
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([meetingId])
+}

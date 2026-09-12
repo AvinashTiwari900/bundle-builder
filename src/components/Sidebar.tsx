@@ -56,8 +56,8 @@ export default function Sidebar({ isCollapsed = false, onToggle }: SidebarProps)
     { to: '/settings', label: 'Settings', icon: Settings }
   ]
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     nav('/login')
   }
 

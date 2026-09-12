@@ -61,7 +61,7 @@ The **Recruitment Automation Software (RAS)** transforms recruitment into an int
 - **Supported Records**: Aadhaar Card, PAN Card, Degree Certificates, Previous Relieving Letters, Recent Salary Slips (Last 3 Months), Previous Offer Letters, and Photographs.
 - **6-Digit OTP Identity Authorization**: Mandatory OTP authorization (`123456`) before document verification begins.
 - **Discrepancy Resolution Panel**: Flagged discrepancy notes with candidate re-submission & clarification channel.
-- **Cloud Storage**: Synced to Cloudinary CDN with Firebase Firestore metadata indexing.
+- **Cloud Storage**: Synced to Cloudinary CDN with metadata indexed in PostgreSQL.
 
 ### 8. 🎙️ AI Voice Screening Call Simulator (`/voice-screening`)
 - Interactive phone call simulation with real-time audio waveform visualization.
@@ -76,9 +76,9 @@ The **Recruitment Automation Software (RAS)** transforms recruitment into an int
 ## 🛠️ Technology Stack
 
 - **Frontend**: React 18, TypeScript, Vite 5, Tailwind CSS, Lucide React
-- **Speech Engine**: Web SpeechSynthesis (TTS) & Web SpeechRecognition (STT)
+- **Speech Engine**: Web SpeechSynthesis (TTS) & Web SpeechRecognition (STT), Sarvam AI for adaptive voice practice
 - **Cloud Storage**: Cloudinary CDN (Image, PDF, Document & Resume Uploads)
-- **Database & Auth**: Firebase Firestore & Firebase Auth
+- **Backend & Database**: Node.js / Express + PostgreSQL (via Prisma) — see `server/` — for auth, candidate profile, jobs, applications, resumes, documents, projects, notifications, and portfolio
 - **Routing & State**: React Router v6, Context API, LocalStorage Hybrid Fallback
 
 ---
@@ -96,39 +96,40 @@ cd Recuritment-Automation-PlatForm
 npm install
 ```
 
-### 3. Configure Environment Variables
-Create a `.env` file from `.env.example`:
-```env
-# Firebase
-VITE_FIREBASE_API_KEY=your_api_key_here
-VITE_FIREBASE_AUTH_DOMAIN=recruitment-cebef.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=recruitment-cebef
-VITE_FIREBASE_STORAGE_BUCKET=recruitment-cebef.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=398833030288
-VITE_FIREBASE_APP_ID=your_app_id_here
-
-# Cloudinary
-VITE_CLOUDINARY_CLOUD_NAME=je6whpaq
-VITE_CLOUDINARY_API_KEY=819734381438919
-VITE_CLOUDINARY_API_SECRET=your_api_secret_here
+### 3. Set up the backend
+See `server/README.md` for full setup (PostgreSQL + Prisma migrations). Quick version:
+```bash
+cd server
+cp .env.example .env   # fill in DATABASE_URL and JWT_SECRET
+npm install
+npm run prisma:migrate
+npm run prisma:seed    # seeds 50 sample jobs
 ```
 
-### 4. Run Development Server
+### 4. Configure the frontend
+Create a `.env` file from `.env.example`:
+```env
+VITE_API_URL=http://localhost:4000/api
+
+# Cloudinary (unsigned upload preset - see .env.example for setup steps)
+VITE_CLOUDINARY_CLOUD_NAME=je6whpaq
+VITE_CLOUDINARY_UPLOAD_PRESET=your_unsigned_preset_name_here
+```
+
+### 5. Run Development Servers
 ```bash
-npm run dev
+npm install
+npm run dev:all   # runs both the frontend (Vite) and the backend API together
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-### 5. Build for Production
+### 6. Build for Production
 ```bash
 npm run build
 ```
 
 ---
 
-## ⚡ Quick Demo Credentials
-- **Email**: `avinashtiwari@gmail.com`
-- **Password**: `Candidate@123`
-- **Demo OTP Code**: `123456`
-- Or click the **⚡ Quick Demo Login (Avinash Tiwari)** button on the login screen.
+## 🔐 Account Access
+Registration creates a real account (Postgres-backed, bcrypt-hashed password). There's no demo login shortcut — create an account via `/register`, or use whichever credentials you've already registered in your local database.

@@ -105,6 +105,9 @@ export default function MeetingsPage() {
 
   useEffect(() => {
     refreshMeetingList()
+    meetingService.syncFromBackend().then((synced) => {
+      if (synced) refreshMeetingList()
+    })
   }, [])
 
   const refreshMeetingList = () => {
@@ -216,8 +219,8 @@ export default function MeetingsPage() {
   }
 
   // 1. Instant Meeting Flow
-  const handleLaunchInstantMeeting = () => {
-    const newM = meetingService.createInstantMeeting('Product & Sprint Review Meeting', 'Avinash Tiwari')
+  const handleLaunchInstantMeeting = async () => {
+    const newM = await meetingService.createInstantMeeting('Product & Sprint Review Meeting', 'Avinash Tiwari')
     setInstantMeetingData(newM)
     setShowInstantReadyModal(true)
     refreshMeetingList()

@@ -193,6 +193,9 @@ export default function MyApplicationsPage() {
 
   useEffect(() => {
     loadData()
+    applicationService.syncFromBackend().then((synced) => {
+      if (synced) loadData()
+    })
   }, [])
 
   const showToast = (msg: string) => {

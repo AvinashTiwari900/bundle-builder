@@ -393,6 +393,7 @@ export const postService = {
     try {
       fetch(`${API_BASE_URL}/posts`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(post)
       }).catch(() => {})
@@ -423,6 +424,7 @@ export const postService = {
     try {
       fetch(`${API_BASE_URL}/posts/${postId}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedData)
       }).catch(() => {})
@@ -444,7 +446,8 @@ export const postService = {
     // Async backend delete
     try {
       fetch(`${API_BASE_URL}/posts/${postId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       }).catch(() => {})
     } catch {}
 
@@ -484,7 +487,7 @@ export const postService = {
     this.savePosts(posts)
 
     try {
-      fetch(`${API_BASE_URL}/posts/${postId}/like`, { method: 'POST' }).catch(() => {})
+      fetch(`${API_BASE_URL}/posts/${postId}/like`, { method: 'POST', credentials: 'include' }).catch(() => {})
     } catch {}
 
     return { isLiked: !hasLiked, likesCount: post.likes }
@@ -512,7 +515,7 @@ export const postService = {
     this.savePosts(posts)
 
     try {
-      fetch(`${API_BASE_URL}/posts/${postId}/bookmark`, { method: 'POST' }).catch(() => {})
+      fetch(`${API_BASE_URL}/posts/${postId}/bookmark`, { method: 'POST', credentials: 'include' }).catch(() => {})
     } catch {}
 
     return !isSaved
@@ -555,6 +558,7 @@ export const postService = {
     try {
       fetch(`${API_BASE_URL}/posts/${postId}/comment`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content })
       }).catch(() => {})
@@ -579,7 +583,8 @@ export const postService = {
 
     try {
       fetch(`${API_BASE_URL}/posts/${postId}/comments/${commentId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       }).catch(() => {})
     } catch {}
 
@@ -599,5 +604,25 @@ export const postService = {
    */
   getSavedPostsCount(currentUserId: string = 'candidate-1'): number {
     return this.getSavedPosts(currentUserId).length
+  },
+
+  /**
+   * Pulls real posts (from every candidate, not just this browser) from the
+   * backend and replaces the local cache. Every mutating method above still
+   * writes to the backend fire-and-forget with its own locally-generated id,
+   * so after this runs the local cache reflects backend truth (ids and all)
+   * rather than accumulating duplicates.
+   */
+  async syncFromBackend(): Promise<Post[] | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/posts`, { credentials: 'include' })
+      if (!res.ok) return null
+      const posts = await res.json()
+      if (!Array.isArray(posts)) return null
+      this.savePosts(posts)
+      return posts
+    } catch {
+      return null
+    }
   }
 }

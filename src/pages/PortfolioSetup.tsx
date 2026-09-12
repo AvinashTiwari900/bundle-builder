@@ -28,6 +28,7 @@ import { profileService } from '../services/profileService'
 import { portfolioService } from '../services/portfolioService'
 import { authService } from '../services/authService'
 import { firestoreService } from '../services/firestoreService'
+import { portfolioApiService } from '../services/portfolioApiService'
 import { cloudinaryService } from '../services/cloudinaryService'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -319,8 +320,9 @@ export default function PortfolioSetupPage() {
         }
       }
       portfolioService.save(updatedPortfolio)
+      portfolioApiService.save(updatedPortfolio)
 
-      // 3. Sync to Firestore (non-blocking)
+      // 3. Sync to the backend (non-blocking)
       firestoreService.saveCandidateProfile(updatedProfile)
 
       // 4. Mark first-time onboarding completed

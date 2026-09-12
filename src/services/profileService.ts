@@ -1,5 +1,6 @@
 import { seedData } from '../mock/seed'
-import { API_BASE_URL } from '../config/api.config'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
 
 export interface EducationEntry {
   id: string
@@ -37,10 +38,10 @@ export interface ProjectEntry {
 
 export const profileService = {
   get() {
-    const raw = localStorage.getItem('rap_profile')
+    const raw = localStorage.getItem('ras_profile')
     if (!raw) {
       seedData()
-      const after = localStorage.getItem('rap_profile')
+      const after = localStorage.getItem('ras_profile')
       return after ? JSON.parse(after) : null
     }
     try {
@@ -144,7 +145,7 @@ export const profileService = {
       return parsed
     } catch {
       seedData(true)
-      return JSON.parse(localStorage.getItem('rap_profile')!)
+      return JSON.parse(localStorage.getItem('ras_profile')!)
     }
   },
 
@@ -167,16 +168,41 @@ export const profileService = {
         portfolioUrl: profile.portfolioUrl
       }
     }
-    localStorage.setItem('rap_profile', JSON.stringify(profile))
-    
-    // Asynchronously synchronize with backend API
+    localStorage.setItem('ras_profile', JSON.stringify(profile))
+
+    // Best-effort sync of the core profile fields to the backend (source of
+    // truth for auth-critical data - see server/src/routes/candidates.ts).
+    // Sub-entities (resumes/documents/projects/etc.) sync via their own
+    // dedicated API services, not through this generic profile blob.
     try {
-      fetch(`${API_BASE_URL}/auth/profile`, {
+      fetch(`${API_URL}/candidates/me`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profile)
+        body: JSON.stringify({
+          name: profile.name,
+          phone: profile.phone,
+          headline: profile.headline,
+          location: profile.location,
+          college: profile.college,
+          company: profile.company,
+          role: profile.role,
+          isStudent: profile.isStudent,
+          experienceYears: profile.experienceYears,
+          targetSalary: profile.targetSalary,
+          profilePhoto: profile.profilePhoto,
+          bio: profile.bio,
+          skills: profile.skills,
+          education: profile.education,
+          experience: profile.experience,
+          socials: profile.socials,
+          savedJobs: profile.savedJobs,
+          settings: profile.settings,
+          certifications: profile.certifications,
+          achievements: profile.achievements
+        })
       }).catch(() => {})
-    } catch (e) {}
+    } catch {}
 
     return profile
   },

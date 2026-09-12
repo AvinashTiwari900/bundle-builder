@@ -1,6 +1,6 @@
 export const portfolioService = {
   get() {
-    const raw = localStorage.getItem('rap_portfolio')
+    const raw = localStorage.getItem('ras_portfolio')
     if (!raw) {
       return {
         intro: 'Passionate Business Analyst bridging data engineering and strategic decision-making.',
@@ -43,7 +43,7 @@ export const portfolioService = {
   },
 
   save(portfolio: any) {
-    localStorage.setItem('rap_portfolio', JSON.stringify(portfolio))
+    localStorage.setItem('ras_portfolio', JSON.stringify(portfolio))
     return portfolio
   },
 

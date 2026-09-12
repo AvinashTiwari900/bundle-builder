@@ -10,24 +10,37 @@ export type User = {
 
 type AuthContextType = {
   user: User | null
+  loading: boolean
   login: (email: string, password: string, remember?: boolean) => Promise<User>
   register: (data: CandidateRegistrationInput) => Promise<User>
-  logout: () => void
+  logout: () => Promise<void>
   refresh: () => void
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => authService.getSession())
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const u = authService.getSession()
-    if (u) setUser(u)
+    let cancelled = false
+    authService.restoreSession().then((u) => {
+      if (cancelled) return
+      setUser(u)
+      setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const refresh = () => {
-    setUser(authService.getSession())
+    setLoading(true)
+    authService.restoreSession().then((u) => {
+      setUser(u)
+      setLoading(false)
+    })
   }
 
   const login = async (email: string, password: string, remember = true) => {
@@ -42,13 +55,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return u
   }
 
-  const logout = () => {
-    authService.logout()
+  const logout = async () => {
+    await authService.logout()
     setUser(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   )

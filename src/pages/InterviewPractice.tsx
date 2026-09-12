@@ -7,10 +7,8 @@ import {
   Brain,
   Sparkles,
   Play,
-  Clock,
   Award,
   ArrowRight,
-  CheckCircle2,
   HelpCircle
 } from 'lucide-react'
 import Button from '../components/ui/Button'

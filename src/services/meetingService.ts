@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '../config/api.config'
+
 export interface MeetingTranscriptEntry {
   timestamp: string
   speaker: string
@@ -325,18 +327,80 @@ export const meetingService = {
     localStorage.setItem('rap_interview_meetings', JSON.stringify(meetings))
   },
 
-  getMeetingById(idOrCode: string): MeetingRecording | undefined {
+  upsertLocal(record: MeetingRecording) {
+    const meetings = this.getMeetings()
+    const updated = [record, ...meetings.filter((m) => m.id !== record.id && m.code !== record.code)]
+    this.saveMeetings(updated)
+  },
+
+  async getMeetingById(idOrCode: string): Promise<MeetingRecording | undefined> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/meetings/${encodeURIComponent(idOrCode)}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data && data.meeting) {
+          const record = data.meeting as MeetingRecording
+          this.upsertLocal(record)
+          return record
+        }
+      }
+    } catch {
+      // offline or backend unreachable - fall back to local cache below
+    }
+
     const all = this.getMeetings()
     const clean = idOrCode.toLowerCase().trim()
     return all.find((m) => m.id.toLowerCase() === clean || m.code.toLowerCase() === clean)
   },
 
-  createInstantMeeting(title?: string, hostName?: string): MeetingRecording {
-    const code = generateSecureMeetingCode()
-    const id = 'meet-' + code.toLowerCase()
+  async createInstantMeeting(title?: string, hostName?: string): Promise<MeetingRecording> {
     const meetingTitle = title || 'Instant Team Meeting'
     const host = hostName || 'Avinash Tiwari'
 
+    try {
+      const res = await fetch(`${API_BASE_URL}/meetings/instant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ title: meetingTitle, hostName: host })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const m = data.meeting
+        const record: MeetingRecording = {
+          id: m.id,
+          code: m.code,
+          title: m.title,
+          meetingType: m.meetingType || 'Instant Meeting',
+          hostName: m.hostName || host,
+          status: m.status || 'In Progress',
+          date: m.date || new Date().toISOString(),
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          durationMinutes: m.durationMinutes || 30,
+          roomUrl: `/interview/room/${m.id}?code=${m.code}&title=${encodeURIComponent(meetingTitle)}&host=${encodeURIComponent(host)}`,
+          shareUrl: `${window.location.origin}/meet/${m.code}`,
+          isRecorded: false,
+          hasScreenShare: false,
+          participants: [
+            {
+              name: host,
+              role: 'Host',
+              avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+              isHost: true
+            }
+          ],
+          summaryNotes: 'Instant meeting initiated with shareable link.',
+          transcript: []
+        }
+        this.upsertLocal(record)
+        return record
+      }
+    } catch {
+      // offline or backend unreachable - fall back to a local-only meeting below
+    }
+
+    const code = generateSecureMeetingCode()
+    const id = 'meet-' + code.toLowerCase()
     const newMeeting: MeetingRecording = {
       id,
       code,
@@ -362,11 +426,27 @@ export const meetingService = {
       summaryNotes: 'Instant meeting initiated with shareable link.',
       transcript: []
     }
-
-    const meetings = this.getMeetings()
-    const updated = [newMeeting, ...meetings.filter((m) => m.id !== id)]
-    this.saveMeetings(updated)
+    this.upsertLocal(newMeeting)
     return newMeeting
+  },
+
+  async syncFromBackend(): Promise<MeetingRecording[] | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/meetings`, { credentials: 'include' })
+      if (!res.ok) return null
+      const data = await res.json()
+      const meetings = data.meetings as MeetingRecording[]
+      if (!Array.isArray(meetings)) return null
+
+      const local = this.getMeetings()
+      const byId = new Map(local.map((m) => [m.id, m]))
+      meetings.forEach((m) => byId.set(m.id, { ...byId.get(m.id), ...m }))
+      const merged = Array.from(byId.values())
+      this.saveMeetings(merged)
+      return meetings
+    } catch {
+      return null
+    }
   },
 
   saveCompletedSession(sessionData: {
@@ -455,6 +535,29 @@ export const meetingService = {
     const filtered = meetings.filter((m) => m.id !== newId && m.code !== code)
     const updated = [newMeeting, ...filtered]
     this.saveMeetings(updated)
+
+    fetch(`${API_BASE_URL}/meetings/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        id: newMeeting.id,
+        code: newMeeting.code,
+        title: newMeeting.title,
+        meetingType: newMeeting.meetingType,
+        hostName: newMeeting.hostName,
+        organization: newMeeting.organization,
+        durationMinutes: newMeeting.durationMinutes,
+        transcript: newMeeting.transcript,
+        hasScreenShare: newMeeting.hasScreenShare,
+        recordingUrl: newMeeting.recordingUrl,
+        videoThumbnail: newMeeting.videoThumbnail,
+        summaryNotes: newMeeting.summaryNotes,
+        notes: newMeeting.notes,
+        participants: newMeeting.participants
+      })
+    }).catch(() => {})
+
     return newMeeting
   },
 
@@ -472,6 +575,13 @@ export const meetingService = {
     if (target) {
       target.notes = [...(target.notes || []), newNote]
       this.saveMeetings(meetings)
+
+      fetch(`${API_BASE_URL}/meetings/${target.id}/note`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ text: noteText, author })
+      }).catch(() => {})
     }
     return newNote
   },
@@ -484,6 +594,12 @@ export const meetingService = {
       if (item) {
         item.done = !item.done
         this.saveMeetings(meetings)
+
+        fetch(`${API_BASE_URL}/meetings/${meetingId}/action-item/${actionId}/toggle`, {
+          method: 'PATCH',
+          credentials: 'include'
+        }).catch(() => {})
+
         return true
       }
     }
@@ -494,6 +610,9 @@ export const meetingService = {
     const meetings = this.getMeetings()
     const updated = meetings.filter((m) => m.id !== id && m.code !== id)
     this.saveMeetings(updated)
+
+    fetch(`${API_BASE_URL}/meetings/${id}`, { method: 'DELETE', credentials: 'include' }).catch(() => {})
+
     return true
   }
 }

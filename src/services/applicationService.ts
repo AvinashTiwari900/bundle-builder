@@ -1,6 +1,8 @@
 import { profileService } from './profileService'
 import { notificationService } from './notificationService'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+
 // ============================================================================
 // Types & Centralized Application Data Model
 // ============================================================================
@@ -1179,6 +1181,13 @@ export const applicationService = {
     apps[index] = updatedApp
     this.saveAll(apps)
 
+    fetch(`${API_URL}/applications/${id}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    }).catch(() => {})
+
     notificationService.create({
       title: '🎯 Application Status Update',
       message: `${app.company} updated status for "${app.jobTitle}" to ${newStatus}.`,
@@ -1231,6 +1240,13 @@ export const applicationService = {
 
     apps[index] = updatedApp
     this.saveAll(apps)
+
+    fetch(`${API_URL}/applications/${id}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'Withdrawn', notes: `${reason}${note ? ` — ${note}` : ''}` })
+    }).catch(() => {})
 
     notificationService.create({
       title: 'Application Withdrawn',
@@ -1325,5 +1341,88 @@ export const applicationService = {
     apps.unshift(fullApp)
     this.saveAll(apps)
     return fullApp
+  },
+
+  /**
+   * Pulls the candidate's real applications from the backend (source of
+   * truth for status/matchScore, created via jobService.applyToJob) and
+   * merges them into the local rich-UI store. Existing local records keep
+   * their extra UI-only fields (timeline, communications, documents, sla,
+   * next actions...); records only known to the backend get sensible
+   * defaults for those, same as createApplication().
+   */
+  async syncFromBackend(): Promise<CandidateApplication[] | null> {
+    try {
+      const res = await fetch(`${API_URL}/applications/me`, { credentials: 'include' })
+      if (!res.ok) return null
+      const backendApps = await res.json()
+      if (!Array.isArray(backendApps)) return null
+
+      const existing = this.getAll()
+      const existingById = new Map(existing.map((a) => [a.id, a]))
+      const now = new Date().toISOString()
+
+      const merged: CandidateApplication[] = backendApps.map((b: any) => {
+        const prior = existingById.get(b.id)
+        if (prior) {
+          return {
+            ...prior,
+            status: b.status || prior.status,
+            matchScore: typeof b.matchScore === 'number' ? b.matchScore : prior.matchScore,
+            notes: b.notes ?? prior.notes,
+            lastUpdated: now
+          }
+        }
+        return {
+          id: b.id,
+          jobId: b.jobId,
+          company: b.company || 'Company',
+          companyRating: b.companyRating,
+          jobTitle: b.jobTitle || 'Role',
+          location: b.location || 'Remote',
+          workMode: b.workMode || 'Hybrid',
+          salary: b.salary || '',
+          employmentType: 'Full-time',
+          matchScore: b.matchScore ?? 80,
+          matchBreakdown: {
+            overall: b.matchScore ?? 80,
+            skills: b.matchScore ?? 80,
+            experience: b.matchScore ?? 80,
+            location: 100,
+            education: 100,
+            strengths: [],
+            gaps: []
+          },
+          applicationSource: 'manual',
+          status: (b.status as ApplicationStage) || 'Application Submitted',
+          appliedAt: b.appliedDate || now,
+          lastUpdated: now,
+          notes: b.notes,
+          requiredSkills: [],
+          timeline: [
+            {
+              id: 'tl-' + b.id,
+              title: 'Application Submitted',
+              timestamp: b.appliedDate || now,
+              status: 'Application Submitted',
+              type: 'stage_change'
+            }
+          ],
+          communications: [],
+          documents: [],
+          sla: { enabled: true, hoursLimit: 24, deadline: new Date(Date.now() + 24 * 3600 * 1000).toISOString() }
+        }
+      })
+
+      // Keep any purely-local records the backend doesn't know about yet (rare, offline-created)
+      const backendIds = new Set(merged.map((a) => a.id))
+      const localOnly = existing.filter((a) => !backendIds.has(a.id))
+
+      const result = [...merged, ...localOnly]
+      this.saveAll(result)
+      return result
+    } catch {
+      return null
+    }
   }
 }

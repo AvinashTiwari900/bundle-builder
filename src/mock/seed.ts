@@ -1,11 +1,11 @@
 import { jobs } from './jobs'
 
 export function seedData(force = false) {
-  if (force || !localStorage.getItem('rap_jobs')) {
-    localStorage.setItem('rap_jobs', JSON.stringify(jobs))
+  if (force || !localStorage.getItem('ras_jobs')) {
+    localStorage.setItem('ras_jobs', JSON.stringify(jobs))
   }
 
-  if (force || !localStorage.getItem('rap_profile')) {
+  if (force || !localStorage.getItem('ras_profile')) {
     const profile = {
       id: 'candidate-1',
       name: 'Avinash Tiwari',
@@ -332,11 +332,11 @@ export function seedData(force = false) {
         }
       ]
     }
-    localStorage.setItem('rap_profile', JSON.stringify(profile))
-    localStorage.setItem('rap_notifications', JSON.stringify(profile.notifications))
+    localStorage.setItem('ras_profile', JSON.stringify(profile))
+    localStorage.setItem('ras_notifications', JSON.stringify(profile.notifications))
   }
 
-  if (force || !localStorage.getItem('rap_portfolio')) {
+  if (force || !localStorage.getItem('ras_portfolio')) {
     const portfolio = {
       name: 'Avinash Tiwari',
       headline: 'Lead Business Analyst & Product Strategist',
@@ -366,6 +366,6 @@ export function seedData(force = false) {
         email: 'avinashtiwari@gmail.com'
       }
     }
-    localStorage.setItem('rap_portfolio', JSON.stringify(portfolio))
+    localStorage.setItem('ras_portfolio', JSON.stringify(portfolio))
   }
 }

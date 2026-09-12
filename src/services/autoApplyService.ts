@@ -2,6 +2,8 @@ import { jobService } from './jobService'
 import { profileService } from './profileService'
 import { notificationService } from './notificationService'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+
 export interface AutoApplyDispatch {
   id: string
   jobId: string
@@ -86,6 +88,15 @@ export const autoApplyService = {
 
           applications.unshift(app)
           newMatches.push(app)
+
+          // Real backend record (best-effort - the local app object above
+          // already reflects the attempt regardless of network state)
+          fetch(`${API_URL}/applications`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jobId: j.id })
+          }).catch(() => {})
 
           // 1. Create In-App Notification
           notificationService.create({

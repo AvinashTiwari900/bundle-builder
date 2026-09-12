@@ -100,7 +100,7 @@ export default function RegisterPage() {
     }
 
     // 3. Email Uniqueness Check
-    if (authService.isEmailTaken(email.trim())) {
+    if (await authService.isEmailTaken(email.trim())) {
       return setError('An account with this email address already exists. Please log in or use another email.')
     }
 
