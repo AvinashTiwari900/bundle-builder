@@ -64,33 +64,41 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className="main-panel">
         {/* Topbar */}
         <header className="topbar" role="banner">
-          {/* Left search wrap with sidebar toggle */}
-          <div className="flex items-center gap-3 flex-1 max-w-xl">
+          {/* Left search wrap with sidebar toggle & platform title */}
+          <div className="flex items-center gap-3 flex-1 max-w-2xl">
             <button
               type="button"
               onClick={toggleSidebar}
-              className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors shadow-xs cursor-pointer shrink-0 flex items-center justify-center"
+              className="p-2 rounded-xl border border-teal-200/80 dark:border-teal-900/60 bg-white dark:bg-[#072026] hover:bg-teal-50 dark:hover:bg-[#092a32] text-teal-800 dark:text-teal-200 transition-colors shadow-xs cursor-pointer shrink-0 flex items-center justify-center"
               title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
               aria-label="Toggle Sidebar"
             >
               {isSidebarCollapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}
             </button>
 
+            {/* Platform Title Tag */}
+            <div className="hidden lg:flex items-center gap-1.5 shrink-0">
+              <span className="text-[11px] font-extrabold uppercase px-2.5 py-1 rounded-lg bg-teal-500/15 text-teal-800 dark:text-teal-200 border border-teal-500/25 tracking-wide">
+                Candidate Portal
+              </span>
+            </div>
+
             {/* Global Search Bar */}
-            <div className="search-wrap flex-1">
-              <Search size={17} className="text-slate-400 shrink-0" />
+            <div className="search-wrap flex-1 !border-teal-100 dark:!border-teal-900/60 !bg-white dark:!bg-[#072026] focus-within:!border-teal-500 focus-within:!ring-2 focus-within:!ring-teal-500/20">
+              <Search size={16} className="text-teal-600/60 dark:text-teal-400/60 shrink-0" />
               <input
                 id="global-search"
                 aria-label="Search jobs, skills, companies"
-                placeholder="Ask Copilot or search jobs... (e.g. 'Take me to my portfolio')"
+                placeholder="Ask AI Copilot or search jobs, skills, companies..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearch}
+                className="text-xs sm:text-sm text-teal-950 dark:text-teal-50 placeholder:text-teal-700/40 dark:placeholder:text-teal-400/40"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="text-slate-400 hover:text-slate-600"
+                  className="text-teal-400 hover:text-teal-700 dark:hover:text-teal-200"
                 >
                   <X size={14} />
                 </button>
@@ -106,9 +114,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 setCopilotInitialQuery(undefined)
                 setShowCopilot(true)
               }}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-blue-700 hover:bg-blue-100 text-xs font-bold transition-all cursor-pointer"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-teal-500/10 to-emerald-500/10 dark:from-teal-500/20 dark:to-emerald-500/20 border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-500/20 text-xs font-bold transition-all cursor-pointer shadow-xs"
             >
-              <Sparkles size={14} className="text-amber-500" />
+              <Sparkles size={14} className="text-teal-600 dark:text-teal-400" />
               <span>Ask Copilot</span>
             </button>
 
@@ -204,20 +212,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {/* Profile Avatar Pill */}
             <button
               onClick={() => nav('/profile')}
-              className="user-pill dark:!bg-black/90 dark:!border-slate-800 dark:hover:!bg-slate-900"
+              className="user-pill !border-teal-100 dark:!border-teal-900/60 dark:!bg-[#072026] hover:!border-teal-300 dark:hover:!border-teal-600"
               aria-label="Open profile"
             >
-              <img src={avatar} alt="avatar" />
+              <img src={avatar} alt="avatar" className="ring-1 ring-teal-500/30" />
               <div className="text-left hidden sm:block">
-                <span className="block text-xs font-bold text-slate-800 dark:text-white leading-tight">
+                <span className="block text-xs font-bold text-teal-950 dark:text-white leading-tight">
                   {name.split(' ')[0]}
                 </span>
-                <span className="block text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                <span className="block text-[10px] text-teal-600 dark:text-teal-400 font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500 inline-block animate-pulse"></span>
                   Active
                 </span>
               </div>
-              <ChevronDown size={14} className="text-slate-400 dark:text-slate-400" />
+              <ChevronDown size={14} className="text-teal-400 dark:text-teal-500" />
             </button>
           </div>
         </header>
@@ -233,12 +241,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             setCopilotInitialQuery(undefined)
             setShowCopilot(true)
           }}
-          className="floating-ai-btn"
+          className="floating-ai-btn !bg-gradient-to-r !from-[#062329] !to-[#0d7882] !text-white !border-teal-400/30 shadow-xl shadow-teal-950/25 hover:scale-105 transition-all"
           title="Ask GetNextIn AI Copilot"
           aria-label="Open AI Career Copilot Assistant"
         >
-          <Sparkles size={18} className="animate-spin-slow text-amber-300" />
-          <span>Ask AI Copilot</span>
+          <Sparkles size={17} className="animate-spin-slow text-teal-300" />
+          <span className="font-bold">Ask AI Copilot</span>
         </button>
 
         {/* Slide-out AI Copilot Drawer */}

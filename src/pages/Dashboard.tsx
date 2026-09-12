@@ -2,30 +2,30 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Sparkles,
-  TrendingUp,
   Award,
   Layers,
   Video,
   ArrowRight,
   Briefcase,
   MapPin,
-  Building2,
-  DollarSign,
   Bookmark,
   CheckCircle2,
   Calendar,
-  AlertCircle,
-  ExternalLink,
   ChevronRight,
   Clock,
   Star,
-  Zap
+  Zap,
+  Check,
+  CircleDot,
+  FileText,
+  ShieldCheck,
+  FolderGit2
 } from 'lucide-react'
 import { profileService } from '../services/profileService'
 import { resumeAnalysisService } from '../services/resumeAnalysisService'
 import { portfolioService } from '../services/portfolioService'
 import { jobService } from '../services/jobService'
-import Card from '../components/ui/Card'
+import { autoApplyService } from '../services/autoApplyService'
 import Button from '../components/ui/Button'
 
 export default function Dashboard() {
@@ -48,7 +48,7 @@ export default function Dashboard() {
   }
 
   const profileCompletion = () => {
-    if (!profile) return 80
+    if (!profile) return 82
     let score = 20
     if (profile.name) score += 10
     if (profile.headline) score += 10
@@ -56,12 +56,19 @@ export default function Dashboard() {
     score += Math.min(25, (profile.skills || []).length * 4)
     score += (profile.resumes && profile.resumes.length > 0) ? 15 : 0
     score += Math.min(10, (profile.projects || []).length * 5)
-    return Math.min(100, score)
+    return Math.min(100, Math.max(50, score))
   }
 
-  const resumeAnalysis = resumeAnalysisService.analyze(profile)
-  const portfolioScore = portfolioService.strength(portfolioService.get())
-  const applications = profile?.applications || []
+  const applications: any[] = profile?.applications || []
+  const autoAppliedDispatches = autoApplyService.getDispatches()
+
+  // Calculate live KPI metrics
+  const activeApplicationsCount = applications.length
+  const interviewsScheduledCount = applications.filter(
+    (a: any) => a.status === 'Interview Scheduled' || a.status === 'AI Screening'
+  ).length
+  const autoAppliedMonthCount = autoAppliedDispatches.length
+  const strengthScore = profileCompletion()
 
   const handleApply = async (jobId: string) => {
     const res = await jobService.applyToJob(jobId)
@@ -82,98 +89,427 @@ export default function Dashboard() {
     showToast(isNowSaved ? 'Job saved to bookmarks' : 'Job removed from bookmarks')
   }
 
-  // Company avatar badge colors
-  const badgeColors = ['bg-blue-600', 'bg-indigo-600', 'bg-purple-600', 'bg-emerald-600', 'bg-rose-600', 'bg-amber-600']
+  // Profile completion checklist items
+  const completionChecklist = [
+    {
+      title: 'Basic Info & Professional Headline',
+      completed: Boolean(profile?.name && profile?.headline),
+      link: '/profile'
+    },
+    {
+      title: 'Upload Verified ATS Resume',
+      completed: Boolean(profile?.resumes && profile.resumes.length > 0),
+      link: '/resume'
+    },
+    {
+      title: 'Add Portfolio & Project Showcases',
+      completed: Boolean(profile?.projects && profile.projects.length > 0),
+      link: '/projects'
+    },
+    {
+      title: 'Complete Digilocker KYC Verification',
+      completed: Boolean(profile?.kycVerified),
+      link: '/documents'
+    },
+    {
+      title: 'Practice AI Mock Interview',
+      completed: false,
+      link: '/interview-practice'
+    }
+  ]
+
+  const candidateName = profile?.name ? profile.name.split(' ')[0] : 'Avinash'
+  const candidateHeadline = profile?.headline || 'Senior Business Analyst & AI Operations Specialist'
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm font-semibold border border-slate-700 animate-in slide-in-from-bottom-3 duration-200">
-          <CheckCircle2 size={18} className="text-emerald-400" />
+        <div className="fixed bottom-6 right-6 z-50 bg-[#062329] text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm font-semibold border border-teal-500/30 animate-in slide-in-from-bottom-3 duration-200">
+          <CheckCircle2 size={18} className="text-teal-400" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Hero Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white p-7 sm:p-9 shadow-xl shadow-blue-500/15">
-        {/* Background Graphic elements */}
-        <div className="absolute right-0 top-0 w-96 h-full bg-white/10 skew-x-12 translate-x-32 pointer-events-none"></div>
-        <div className="absolute -bottom-10 -right-10 w-48 h-48 rounded-full bg-purple-400/20 blur-2xl pointer-events-none"></div>
+      {/* 1. Large Rounded Dark-Teal-to-Turquoise Welcome Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#062329] via-[#093943] to-[#0d7882] text-white p-8 sm:p-10 shadow-xl shadow-teal-950/20 border border-teal-800/40">
+        {/* Subtle decorative glow elements */}
+        <div className="absolute right-0 top-0 w-96 h-full bg-white/5 skew-x-12 translate-x-24 pointer-events-none" />
+        <div className="absolute -bottom-12 -right-12 w-64 h-64 rounded-full bg-teal-400/15 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-400/10 blur-2xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold tracking-wide text-blue-100">
-              <Sparkles size={14} className="text-amber-300" />
-              <span>AI Job Match Engine Active</span>
+          <div className="space-y-3 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-bold tracking-wide text-teal-200 border border-white/10">
+              <Sparkles size={14} className="text-teal-300" />
+              <span>AI Job Match & Career Studio</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Good day, {profile?.name?.split(' ')[0] || 'Avinash'} 👋
+
+            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+              Welcome back, {candidateName} 👋
             </h1>
-            <p className="text-sm sm:text-base text-blue-100 font-medium">
-              You have <span className="font-bold underline">{applications.length} active applications</span> and <span className="font-bold underline">1 scheduled interview</span>. 12 new high-match positions were discovered today.
+
+            <p className="text-sm sm:text-base text-teal-100/90 font-medium leading-relaxed">
+              {candidateHeadline}
             </p>
+
+            <div className="flex items-center gap-3 text-xs text-teal-200/80 pt-1 font-medium">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                {activeApplicationsCount} active applications
+              </span>
+              <span>•</span>
+              <span>{interviewsScheduledCount} scheduled interview{interviewsScheduledCount === 1 ? '' : 's'}</span>
+              <span>•</span>
+              <span>{jobs.length} jobs open</span>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              variant="outline"
-              size="md"
-              className="bg-white/10 hover:bg-white/20 border-white/30 text-white shadow-none font-bold"
+          {/* Two prominent action buttons */}
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
               onClick={() => nav('/jobs')}
+              className="px-5 py-3 rounded-2xl bg-white hover:bg-teal-50 text-[#062329] font-extrabold text-sm shadow-lg shadow-black/15 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 cursor-pointer"
             >
-              <Briefcase size={16} />
-              <span>Explore 50+ Jobs</span>
-            </Button>
-            <Button
-              variant="primary"
-              size="md"
-              className="bg-white text-blue-700 hover:bg-blue-50 shadow-lg shadow-black/10 font-bold border-none"
+              <Briefcase size={17} className="text-teal-700" />
+              <span>Find matching jobs</span>
+            </button>
+
+            <button
               onClick={() => nav('/interview-practice')}
+              className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/25 text-white font-extrabold text-sm backdrop-blur-md transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 cursor-pointer"
             >
-              <Video size={16} />
-              <span>Interview Studio</span>
-            </Button>
+              <Video size={17} className="text-teal-300" />
+              <span>Practise an interview</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Interactive AI Copilot Bar on Dashboard */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3 animate-in fade-in duration-200">
+      {/* 2. Four Evenly Spaced Dashboard KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* KPI 1: Active applications */}
+        <div
+          onClick={() => nav('/applications')}
+          className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600 transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-teal-800/70 dark:text-teal-300/70 uppercase tracking-wider">
+              Active applications
+            </span>
+            <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-100 dark:border-teal-900/40 text-teal-700 dark:text-teal-300 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Layers size={18} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-3xl font-black text-[#07262c] dark:text-teal-50">
+              {activeApplicationsCount}
+            </div>
+            <div className="text-xs text-teal-700 dark:text-teal-400 mt-1 font-semibold flex items-center gap-1">
+              <span>{activeApplicationsCount > 0 ? `${activeApplicationsCount} in hiring pipeline` : 'No active applications'}</span>
+              <ChevronRight size={13} className="text-teal-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 2: Interviews scheduled */}
+        <div
+          onClick={() => nav('/interview-practice')}
+          className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600 transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-teal-800/70 dark:text-teal-300/70 uppercase tracking-wider">
+              Interviews scheduled
+            </span>
+            <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-100 dark:border-teal-900/40 text-teal-700 dark:text-teal-300 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Calendar size={18} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-3xl font-black text-[#07262c] dark:text-teal-50">
+              {interviewsScheduledCount}
+            </div>
+            <div className="text-xs text-teal-700 dark:text-teal-400 mt-1 font-semibold flex items-center gap-1">
+              <span>{interviewsScheduledCount > 0 ? 'Upcoming sessions ready' : 'No upcoming sessions'}</span>
+              <ChevronRight size={13} className="text-teal-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 3: Auto-applied this month */}
+        <div
+          onClick={() => nav('/auto-apply')}
+          className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600 transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-teal-800/70 dark:text-teal-300/70 uppercase tracking-wider">
+              Auto-applied this month
+            </span>
+            <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-100 dark:border-teal-900/40 text-teal-700 dark:text-teal-300 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Zap size={18} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-3xl font-black text-[#07262c] dark:text-teal-50">
+              {autoAppliedMonthCount}
+            </div>
+            <div className="text-xs text-teal-700 dark:text-teal-400 mt-1 font-semibold flex items-center gap-1">
+              <span>WhatsApp & Email protocol active</span>
+              <ChevronRight size={13} className="text-teal-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 4: Profile strength */}
+        <div
+          onClick={() => nav('/profile')}
+          className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600 transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-teal-800/70 dark:text-teal-300/70 uppercase tracking-wider">
+              Profile strength
+            </span>
+            <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-100 dark:border-teal-900/40 text-teal-700 dark:text-teal-300 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Award size={18} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-3xl font-black text-[#07262c] dark:text-teal-50">{strengthScore}%</span>
+              <span className="text-xs font-bold text-teal-600 dark:text-teal-400">High match</span>
+            </div>
+            <div className="w-full bg-teal-100/60 dark:bg-teal-900/40 h-2 rounded-full mt-2 overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-teal-500 to-emerald-400 h-full rounded-full transition-all duration-500"
+                style={{ width: `${strengthScore}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Dashboard Content: Wider Recent Applications + Narrower Profile Strength */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Wider Left Column (2 Cols): Recent Applications Panel */}
+        <div className="lg:col-span-2 bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-3xl p-6 sm:p-7 shadow-sm space-y-5">
+          <div className="flex items-center justify-between pb-4 border-b border-teal-100/70 dark:border-teal-900/40">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200/60 dark:border-teal-800/40 text-teal-700 dark:text-teal-300 flex items-center justify-center">
+                <Layers size={18} />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-[#07262c] dark:text-white tracking-tight">
+                  Recent Applications
+                </h2>
+                <p className="text-xs text-teal-700/70 dark:text-teal-300/70">
+                  Track your application stages and recruiter SLA response time
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => nav('/applications')}
+              className="text-xs font-bold text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-white flex items-center gap-1.5 hover:underline cursor-pointer"
+            >
+              <span>View all ({applications.length})</span>
+              <ArrowRight size={14} />
+            </button>
+          </div>
+
+          {/* Applications list or meaningful empty state */}
+          {applications.length === 0 ? (
+            <div className="text-center py-10 px-4 rounded-2xl bg-teal-50/40 dark:bg-teal-950/30 border border-dashed border-teal-200/80 dark:border-teal-800/40">
+              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-[#062329] text-teal-600 dark:text-teal-400 flex items-center justify-center mx-auto mb-3 shadow-xs">
+                <Briefcase size={22} />
+              </div>
+              <h3 className="font-bold text-sm text-[#07262c] dark:text-teal-100">
+                No applications submitted yet
+              </h3>
+              <p className="text-xs text-teal-700/70 dark:text-teal-300/70 mt-1 max-w-sm mx-auto">
+                Explore curated opportunities matched by your skillset and apply with 1-click.
+              </p>
+              <button
+                onClick={() => nav('/jobs')}
+                className="mt-4 px-4 py-2 rounded-xl bg-[#062329] hover:bg-[#09353e] text-white text-xs font-bold transition-colors cursor-pointer"
+              >
+                Browse Matching Jobs →
+              </button>
+            </div>
+          ) : (
+            <div className="divide-y divide-teal-100/60 dark:divide-teal-900/40">
+              {applications.slice(0, 4).map((app: any, idx: number) => {
+                const statusColor =
+                  app.status === 'Interview Scheduled'
+                    ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800'
+                    : app.status === 'Shortlisted'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'
+                    : app.status === 'AI Screening'
+                    ? 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800'
+                    : 'bg-teal-50/70 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:border-teal-800'
+
+                return (
+                  <div
+                    key={app.id || idx}
+                    onClick={() => nav('/applications')}
+                    className="py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-4 hover:bg-teal-50/30 dark:hover:bg-teal-950/20 px-3 rounded-xl transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#062329] to-[#0d7882] text-white font-bold flex items-center justify-center text-sm shrink-0 shadow-xs">
+                        {(app.company || 'C').charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-extrabold text-sm text-[#07262c] dark:text-white truncate">
+                          {app.jobTitle || app.title || 'Software Opportunity'}
+                        </div>
+                        <div className="text-xs text-teal-700/70 dark:text-teal-300/70 flex items-center gap-2 mt-0.5">
+                          <span className="font-semibold">{app.company || 'Tech Partner'}</span>
+                          <span>•</span>
+                          <span>Applied {app.appliedDate || 'Recently'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${statusColor}`}>
+                        {app.status || 'Under Review'}
+                      </span>
+                      <ChevronRight size={15} className="text-teal-400 dark:text-teal-500 hidden sm:block" />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* SLA Guarantee Strip */}
+          <div className="p-3 rounded-xl bg-teal-50/70 dark:bg-teal-950/40 border border-teal-200/70 dark:border-teal-800/40 flex items-center justify-between gap-3 text-xs text-teal-900 dark:text-teal-100">
+            <div className="flex items-center gap-2">
+              <Clock size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+              <span className="font-medium">
+                <strong>24-Hour Recruiter SLA Guarantee</strong> protects every verified application submitted.
+              </span>
+            </div>
+            <button
+              onClick={() => nav('/applications')}
+              className="text-teal-700 dark:text-teal-300 font-bold hover:underline shrink-0"
+            >
+              Track SLA →
+            </button>
+          </div>
+        </div>
+
+        {/* Narrower Right Column (1 Col): Profile Strength Panel */}
+        <div className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-3xl p-6 sm:p-7 shadow-sm space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-teal-100/70 dark:border-teal-900/40">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200/60 dark:border-teal-800/40 text-teal-700 dark:text-teal-300 flex items-center justify-center">
+                <Award size={18} />
+              </div>
+              <h2 className="text-lg font-black text-[#07262c] dark:text-white tracking-tight">
+                Profile Strength
+              </h2>
+            </div>
+            <span className="text-xs font-black px-2.5 py-1 rounded-full bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200">
+              {strengthScore}%
+            </span>
+          </div>
+
+          {/* Progress gauge bar */}
+          <div>
+            <div className="flex justify-between text-xs font-semibold text-teal-800/70 dark:text-teal-300/70 mb-1.5">
+              <span>Completion Level</span>
+              <span className="font-bold text-teal-900 dark:text-teal-100">{strengthScore < 100 ? 'Needs Attention' : 'All Set'}</span>
+            </div>
+            <div className="w-full bg-teal-100/60 dark:bg-teal-900/40 h-2.5 rounded-full overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-teal-500 to-emerald-400 h-full rounded-full transition-all duration-500"
+                style={{ width: `${strengthScore}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Actionable Profile-Completion Guidance */}
+          <div className="space-y-2.5 pt-1">
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-teal-800/60 dark:text-teal-300/60">
+              Actionable Guidance
+            </div>
+
+            {completionChecklist.map((item, idx) => (
+              <div
+                key={idx}
+                onClick={() => nav(item.link)}
+                className={`p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 transition-all cursor-pointer ${
+                  item.completed
+                    ? 'bg-teal-50/40 dark:bg-teal-950/30 border-teal-200/60 dark:border-teal-800/40 text-teal-800 dark:text-teal-200'
+                    : 'bg-white dark:bg-[#062329] border-teal-100 dark:border-teal-900/40 text-teal-950 dark:text-teal-100 hover:border-teal-300'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
+                      item.completed
+                        ? 'bg-teal-600 text-white'
+                        : 'border border-teal-300 dark:border-teal-700 text-transparent'
+                    }`}
+                  >
+                    {item.completed && <Check size={13} className="stroke-[3]" />}
+                  </div>
+                  <span className={`truncate font-medium ${item.completed ? 'line-through text-teal-700/60 dark:text-teal-400/60' : 'font-bold'}`}>
+                    {item.title}
+                  </span>
+                </div>
+                <ChevronRight size={14} className="text-teal-400 shrink-0" />
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => nav('/portfolio')}
+            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#062329] to-[#0d7882] hover:opacity-95 text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Edit Profile & Portfolio</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* 4. Interactive AI Copilot Bar */}
+      <div className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-3xl p-5 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xs font-bold">
-              <Sparkles size={15} className="text-amber-300" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#062329] to-[#0d7882] text-white flex items-center justify-center text-xs font-bold">
+              <Sparkles size={15} className="text-teal-300" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900">Ask AI Copilot</h3>
-              <p className="text-[11px] text-slate-500">Ask career guidance, platform workflows, or say 'Take me to my portfolio'</p>
+              <h3 className="font-extrabold text-sm text-[#07262c] dark:text-white">Ask GetNextIn AI Copilot</h3>
+              <p className="text-[11px] text-teal-700/70 dark:text-teal-300/70">
+                Workflow guidance, interview tips, or say 'Show high-match jobs'
+              </p>
             </div>
           </div>
           <button
             onClick={() => nav('/ai-agent')}
-            className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+            className="text-xs font-bold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer"
           >
             <span>Open Full AI Hub</span>
             <ChevronRight size={14} />
           </button>
         </div>
 
-        {/* Quick query buttons */}
         <div className="flex flex-wrap gap-2 pt-1">
           {[
             { label: '📰 Community Posts & Feed', path: '/posts' },
-            { label: '🎥 Meetings & Viewable Recordings', path: '/meetings' },
-            { label: '⚡ Auto-Apply Alerts (Email/WhatsApp)', path: '/auto-apply' },
+            { label: '🎥 Meetings & Recordings', path: '/meetings' },
+            { label: '⚡ Auto-Apply Alerts (WhatsApp/Email)', path: '/auto-apply' },
             { label: '🔒 Contact Privacy Shield', path: '/portfolio' },
-            { label: '🛡️ Documents & OTP Verification', path: '/documents' },
+            { label: '🛡️ Documents & KYC Verification', path: '/documents' },
             { label: '💼 Explore High-Rating Jobs', path: '/jobs?sort=rating_desc' },
             { label: '🎙️ AI Voice Practice', path: '/voice-screening' }
           ].map((item, i) => (
             <button
               key={i}
               onClick={() => nav(item.path)}
-              className="px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200/80 transition-colors cursor-pointer"
+              className="px-3 py-1.5 bg-teal-50/50 dark:bg-teal-950/40 hover:bg-teal-100/60 dark:hover:bg-teal-900/60 text-teal-900 dark:text-teal-200 rounded-xl text-xs font-semibold border border-teal-200/60 dark:border-teal-800/40 transition-colors cursor-pointer"
             >
               {item.label}
             </button>
@@ -181,264 +517,54 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Upcoming Interview Alert Box */}
-      <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-amber-500/20 shrink-0">
-            <Calendar size={22} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-extrabold uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800 tracking-wider">
-                Upcoming Round
-              </span>
-              <span className="text-xs text-slate-500 font-semibold">Thursday, 3:00 PM (45 mins)</span>
-            </div>
-            <h3 className="text-base font-extrabold text-slate-900 mt-1">
-              Senior Business Analyst — Technical Interview with Northstar Analytics
-            </h3>
-          </div>
-        </div>
-
-        <Button
-          variant="primary"
-          size="sm"
-          className="bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20 font-bold shrink-0"
-          onClick={() => nav('/interview-practice/setup?type=Technical')}
-        >
-          <span>Practice Technical Round</span>
-          <ChevronRight size={15} />
-        </Button>
-      </div>
-
-      {/* 4 Core Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Profile Strength */}
-        <Card hoverable className="relative overflow-hidden cursor-pointer" onClick={() => nav('/profile')}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Profile Completeness
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-              <Award size={18} />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-extrabold text-slate-900">{profileCompletion()}%</div>
-            <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full rounded-full transition-all duration-500"
-                style={{ width: `${profileCompletion()}%` }}
-              ></div>
-            </div>
-            <div className="text-xs text-slate-500 mt-2 font-medium">All core sections populated</div>
-          </div>
-        </Card>
-
-        {/* Resume Score */}
-        <Card hoverable className="relative overflow-hidden cursor-pointer" onClick={() => nav('/resume')}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Resume ATS Score
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-              <TrendingUp size={18} />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-slate-900">{resumeAnalysis.score}</span>
-              <span className="text-sm font-semibold text-slate-400">/ 100</span>
-              <span className="ml-auto text-[11px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">
-                Top 5%
-              </span>
-            </div>
-            <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-500"
-                style={{ width: `${resumeAnalysis.score}%` }}
-              ></div>
-            </div>
-            <div className="text-xs text-emerald-700 font-semibold mt-2">Keywords optimized for BA</div>
-          </div>
-        </Card>
-
-        {/* Active Applications */}
-        <Card hoverable className="relative overflow-hidden cursor-pointer" onClick={() => nav('/applications')}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Active Applications
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-              <Layers size={18} />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-slate-900">{applications.length}</span>
-              <span className="text-xs text-purple-700 font-bold bg-purple-100 px-2 py-0.5 rounded-full">
-                2 in Stage 2+
-              </span>
-            </div>
-            <div className="text-xs text-slate-500 mt-2 line-clamp-1">
-              {applications.filter((a: any) => a.status === 'Interview Scheduled').length} Scheduled ·{' '}
-              {applications.filter((a: any) => a.status === 'AI Screening').length} Screening
-            </div>
-            <div className="text-xs text-blue-600 font-semibold mt-2 flex items-center gap-1">
-              <span>View Kanban board</span>
-              <ChevronRight size={12} />
-            </div>
-          </div>
-        </Card>
-
-        {/* Portfolio Strength */}
-        <Card hoverable className="relative overflow-hidden cursor-pointer" onClick={() => nav('/portfolio')}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Portfolio Strength
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-              <Sparkles size={18} />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-extrabold text-slate-900">{portfolioScore}%</div>
-            <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 h-full rounded-full transition-all duration-500"
-                style={{ width: `${portfolioScore}%` }}
-              ></div>
-            </div>
-            <div className="text-xs text-indigo-700 font-semibold mt-2">2 projects featured</div>
-          </div>
-        </Card>
-      </div>
-
-      {/* AI Career Insights & Recommendations */}
-      <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white flex items-center justify-center">
-              <Sparkles size={16} />
-            </div>
-            <div>
-              <h2 className="text-base font-extrabold text-slate-900">AI Career Copilot Recommendations</h2>
-              <p className="text-xs text-slate-500">Tailored action points to increase recruiter response rate</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => nav('/ai-agent')} className="text-indigo-600 font-bold">
-            <span>Ask AI Copilot</span>
-            <ArrowRight size={14} />
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 hover:bg-blue-50/50 transition-colors">
-            <div className="flex items-center gap-2 text-blue-700 text-xs font-extrabold mb-1">
-              <Award size={14} />
-              <span>Skill Gap Optimization</span>
-            </div>
-            <p className="text-xs text-slate-700 leading-relaxed font-medium">
-              82% of top-paying Business Analyst roles demand <span className="font-bold text-slate-900">Power BI & Python</span>.
-            </p>
-            <button
-              onClick={() => nav('/profile')}
-              className="mt-3 text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
-            >
-              <span>Add to profile skills →</span>
-            </button>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 hover:bg-emerald-50/50 transition-colors">
-            <div className="flex items-center gap-2 text-emerald-700 text-xs font-extrabold mb-1">
-              <TrendingUp size={14} />
-              <span>Resume ATS Check</span>
-            </div>
-            <p className="text-xs text-slate-700 leading-relaxed font-medium">
-              Your resume scored <span className="font-bold text-slate-900">94/100</span>. Adding quantifiable business impact metrics will reach 98%.
-            </p>
-            <button
-              onClick={() => nav('/resume')}
-              className="mt-3 text-xs font-bold text-emerald-600 hover:underline flex items-center gap-1"
-            >
-              <span>Review ATS Breakdown →</span>
-            </button>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 hover:bg-purple-50/50 transition-colors">
-            <div className="flex items-center gap-2 text-purple-700 text-xs font-extrabold mb-1">
-              <Video size={14} />
-              <span>Interview Readiness</span>
-            </div>
-            <p className="text-xs text-slate-700 leading-relaxed font-medium">
-              Complete a 5-minute <span className="font-bold text-slate-900">Technical SQL & BA Case Study</span> practice session.
-            </p>
-            <button
-              onClick={() => nav('/interview-practice')}
-              className="mt-3 text-xs font-bold text-purple-600 hover:underline flex items-center gap-1"
-            >
-              <span>Start Practice Session →</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Recommended Jobs Section */}
+      {/* 5. Recommended Jobs Section */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Recommended Jobs for You</h2>
-            <p className="text-xs text-slate-500">Ranked by AI compatibility with your skillset and experience</p>
+            <h2 className="text-xl font-extrabold text-[#07262c] dark:text-white tracking-tight">
+              Recommended Jobs for You
+            </h2>
+            <p className="text-xs text-teal-700/70 dark:text-teal-300/70">
+              Ranked by AI compatibility with your skillset and verified credentials
+            </p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => nav('/jobs')} className="text-blue-600 font-bold">
+          <button
+            onClick={() => nav('/jobs')}
+            className="text-xs font-bold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer"
+          >
             <span>View All ({jobs.length})</span>
             <ArrowRight size={14} />
-          </Button>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {jobs.slice(0, 6).map((job, idx) => {
             const isSaved = savedJobs.includes(job.id)
             const hasApplied = applications.some((a: any) => a.jobId === job.id)
-            const matchScore = 92 - (idx * 2)
-
-            const avatarGradients = [
-              'from-blue-600 to-indigo-600',
-              'from-indigo-600 to-purple-600',
-              'from-violet-600 to-fuchsia-600',
-              'from-emerald-600 to-teal-600',
-              'from-amber-500 to-orange-600',
-              'from-rose-600 to-pink-600'
-            ]
-            const avatarGrad = avatarGradients[idx % avatarGradients.length]
+            const matchScore = 94 - idx * 2
 
             return (
               <div
                 key={job.id}
-                className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-5 shadow-sm hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-500/10 hover:border-blue-400/60 dark:hover:border-blue-500/50 transition-all duration-300 flex flex-col justify-between group relative backdrop-blur-sm hover:-translate-y-1"
+                className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600 transition-all duration-200 flex flex-col justify-between group"
               >
-                {/* Glowing subtle hover accent */}
-                <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-blue-500/0 group-hover:via-blue-500/50 to-transparent transition-all" />
-
                 <div>
                   {/* Top Row: Company Badge & Match Pill */}
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${avatarGrad} text-white font-extrabold flex items-center justify-center text-base shadow-md shadow-slate-900/10 shrink-0 ring-2 ring-white/20`}
-                      >
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#062329] to-[#0d7882] text-white font-extrabold flex items-center justify-center text-sm shadow-xs shrink-0 ring-1 ring-white/10">
                         {job.company.charAt(0)}
                       </div>
                       <div className="min-w-0">
                         <h3
                           onClick={() => nav(`/jobs/${job.id}`)}
-                          className="font-bold text-slate-900 dark:text-slate-100 text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer truncate"
+                          className="font-bold text-[#07262c] dark:text-white text-sm hover:text-teal-600 dark:hover:text-teal-400 transition-colors cursor-pointer truncate"
                           title={job.title}
                         >
                           {job.title}
                         </h3>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                          <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold truncate max-w-[130px]">
+                          <span className="text-xs text-teal-700/80 dark:text-teal-300/80 font-semibold truncate max-w-[130px]">
                             {job.company}
                           </span>
                           {job.companyRating && (
@@ -451,8 +577,8 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300 font-extrabold text-[11px] shrink-0 shadow-xs">
-                      <Sparkles size={11} className="text-emerald-500 dark:text-emerald-400" />
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200/80 dark:border-teal-800/50 text-teal-800 dark:text-teal-200 font-extrabold text-[11px] shrink-0 shadow-xs">
+                      <Sparkles size={11} className="text-teal-600 dark:text-teal-400" />
                       <span>{matchScore}%</span>
                     </span>
                   </div>
@@ -460,30 +586,30 @@ export default function Dashboard() {
                   {/* Hiring Period & Response Rate Badges */}
                   <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
                     {job.hiringPeriod && (
-                      <span className="px-2.5 py-1 bg-amber-500/10 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/20 dark:border-amber-500/30 rounded-lg text-[10px] font-bold flex items-center gap-1">
+                      <span className="px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 rounded-lg text-[10px] font-bold flex items-center gap-1">
                         <Clock size={11} className="text-amber-600 dark:text-amber-400" />
                         <span>{job.hiringPeriod}</span>
                       </span>
                     )}
 
                     {job.companyResponseRate && (
-                      <span className="px-2.5 py-1 bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 dark:border-emerald-500/30 rounded-lg text-[10px] font-bold flex items-center gap-1">
-                        <Zap size={11} className="text-emerald-600 dark:text-emerald-400" />
+                      <span className="px-2.5 py-0.5 bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-800/40 rounded-lg text-[10px] font-bold flex items-center gap-1">
+                        <Zap size={11} className="text-teal-600 dark:text-teal-400" />
                         <span>{job.companyResponseRate}</span>
                       </span>
                     )}
                   </div>
 
                   {/* Meta details */}
-                  <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-slate-500 dark:text-slate-400 my-2">
+                  <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-teal-800/70 dark:text-teal-300/70 my-2">
                     <span className="flex items-center gap-1">
-                      <MapPin size={13} className="text-slate-400 dark:text-slate-500" />
+                      <MapPin size={13} className="text-teal-500" />
                       {job.location}
                     </span>
-                    <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md font-semibold text-[11px] border border-slate-200/50 dark:border-slate-700/50">
+                    <span className="px-2 py-0.5 bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-200 rounded-md font-semibold text-[11px] border border-teal-200/50 dark:border-teal-800/50">
                       {job.workMode}
                     </span>
-                    <span className="font-bold text-slate-900 dark:text-slate-200">
+                    <span className="font-bold text-[#07262c] dark:text-white">
                       ₹{Math.round(job.salaryMin / 100000)}-{Math.round(job.salaryMax / 100000)} LPA
                     </span>
                   </div>
@@ -493,13 +619,13 @@ export default function Dashboard() {
                     {(job.skills || []).slice(0, 3).map((skill: string) => (
                       <span
                         key={skill}
-                        className="px-2.5 py-1 text-[11px] font-semibold bg-slate-100/70 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 rounded-lg border border-slate-200/60 dark:border-slate-700/60 hover:border-blue-400/60 dark:hover:border-blue-500/60 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                        className="px-2.5 py-1 text-[11px] font-semibold bg-teal-50/40 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 rounded-lg border border-teal-100 dark:border-teal-900/50"
                       >
                         {skill}
                       </span>
                     ))}
                     {(job.skills || []).length > 3 && (
-                      <span className="px-1.5 py-1 text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                      <span className="px-1.5 py-1 text-[10px] font-bold text-teal-600/70 dark:text-teal-400/70">
                         +{(job.skills || []).length - 3}
                       </span>
                     )}
@@ -507,13 +633,13 @@ export default function Dashboard() {
                 </div>
 
                 {/* Actions */}
-                <div className="pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 mt-1">
+                <div className="pt-3.5 border-t border-teal-100/70 dark:border-teal-900/50 flex items-center justify-between gap-2 mt-1">
                   <button
                     onClick={() => handleToggleSave(job.id)}
                     className={`p-2 rounded-xl border transition-all cursor-pointer ${
                       isSaved
                         ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 shadow-xs'
-                        : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
+                        : 'bg-white dark:bg-[#062329] border-teal-200 dark:border-teal-800 text-teal-400 hover:text-teal-700 dark:hover:text-teal-200'
                     }`}
                     title={isSaved ? 'Remove from saved' : 'Save job'}
                   >
@@ -523,7 +649,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => nav(`/jobs/${job.id}`)}
-                      className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold text-teal-800 dark:text-teal-200 hover:bg-teal-50 dark:hover:bg-teal-900/40 transition-colors cursor-pointer"
                     >
                       Details
                     </button>
@@ -531,10 +657,10 @@ export default function Dashboard() {
                     <button
                       disabled={hasApplied}
                       onClick={() => handleApply(job.id)}
-                      className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm ${
+                      className={`px-4 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-xs ${
                         hasApplied
-                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-blue-500/20 hover:shadow-md hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98]'
+                          ? 'bg-teal-100/60 dark:bg-teal-900/40 text-teal-500 dark:text-teal-400 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-[#062329] to-[#0d7882] hover:opacity-95 text-white hover:scale-[1.02] active:scale-[0.98]'
                       }`}
                     >
                       {hasApplied ? 'Applied ✓' : 'Quick Apply'}
