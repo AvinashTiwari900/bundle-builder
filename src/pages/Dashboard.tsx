@@ -125,23 +125,23 @@ export default function Dashboard() {
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#062329] text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm font-semibold border border-teal-500/30 animate-in slide-in-from-bottom-3 duration-200">
-          <CheckCircle2 size={18} className="text-teal-400" />
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm font-semibold border border-slate-700 animate-in slide-in-from-bottom-3 duration-200">
+          <CheckCircle2 size={18} className="text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* 1. Large Rounded Dark-Teal-to-Turquoise Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#062329] via-[#093943] to-[#0d7882] text-white p-8 sm:p-10 shadow-xl shadow-teal-950/20 border border-teal-800/40">
+      {/* 1. Large Rounded Welcome Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-8 sm:p-10 shadow-xl shadow-indigo-950/20 border border-indigo-900/40">
         {/* Subtle decorative glow elements */}
         <div className="absolute right-0 top-0 w-96 h-full bg-white/5 skew-x-12 translate-x-24 pointer-events-none" />
-        <div className="absolute -bottom-12 -right-12 w-64 h-64 rounded-full bg-teal-400/15 blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-400/10 blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-12 -right-12 w-64 h-64 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-purple-500/10 blur-2xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-bold tracking-wide text-teal-200 border border-white/10">
-              <Sparkles size={14} className="text-teal-300" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-bold tracking-wide text-blue-200 border border-white/10">
+              <Sparkles size={14} className="text-amber-300" />
               <span>AI Job Match & Career Studio</span>
             </div>
 
@@ -149,13 +149,13 @@ export default function Dashboard() {
               Welcome back, {candidateName} 👋
             </h1>
 
-            <p className="text-sm sm:text-base text-teal-100/90 font-medium leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-300 font-medium leading-relaxed">
               {candidateHeadline}
             </p>
 
-            <div className="flex items-center gap-3 text-xs text-teal-200/80 pt-1 font-medium">
+            <div className="flex items-center gap-3 text-xs text-slate-300/80 pt-1 font-medium">
               <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 {activeApplicationsCount} active applications
               </span>
               <span>•</span>
@@ -169,9 +169,9 @@ export default function Dashboard() {
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <button
               onClick={() => nav('/jobs')}
-              className="px-5 py-3 rounded-2xl bg-white hover:bg-teal-50 text-[#062329] font-extrabold text-sm shadow-lg shadow-black/15 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 cursor-pointer"
+              className="px-5 py-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-sm shadow-lg shadow-black/15 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 cursor-pointer"
             >
-              <Briefcase size={17} className="text-teal-700" />
+              <Briefcase size={17} className="text-blue-600" />
               <span>Find matching jobs</span>
             </button>
 
@@ -179,8 +179,8 @@ export default function Dashboard() {
               onClick={() => nav('/interview-practice')}
               className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/25 text-white font-extrabold text-sm backdrop-blur-md transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 cursor-pointer"
             >
-              <Video size={17} className="text-teal-300" />
-              <span>Practise an interview</span>
+              <Video size={17} className="text-indigo-300" />
+              <span>Practice an interview</span>
             </button>
           </div>
         </div>
@@ -191,23 +191,23 @@ export default function Dashboard() {
         {/* KPI 1: Active applications */}
         <div
           onClick={() => nav('/applications')}
-          className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600 transition-all cursor-pointer group"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-teal-800/70 dark:text-teal-300/70 uppercase tracking-wider">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Active applications
             </span>
-            <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-100 dark:border-teal-900/40 text-teal-700 dark:text-teal-300 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
               <Layers size={18} />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-3xl font-black text-[#07262c] dark:text-teal-50">
+            <div className="text-3xl font-black text-slate-900 dark:text-white">
               {activeApplicationsCount}
             </div>
-            <div className="text-xs text-teal-700 dark:text-teal-400 mt-1 font-semibold flex items-center gap-1">
+            <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 font-semibold flex items-center gap-1">
               <span>{activeApplicationsCount > 0 ? `${activeApplicationsCount} in hiring pipeline` : 'No active applications'}</span>
-              <ChevronRight size={13} className="text-teal-400" />
+              <ChevronRight size={13} className="text-blue-400" />
             </div>
           </div>
         </div>
@@ -215,23 +215,23 @@ export default function Dashboard() {
         {/* KPI 2: Interviews scheduled */}
         <div
           onClick={() => nav('/interview-practice')}
-          className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600 transition-all cursor-pointer group"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-teal-800/70 dark:text-teal-300/70 uppercase tracking-wider">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Interviews scheduled
             </span>
-            <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-100 dark:border-teal-900/40 text-teal-700 dark:text-teal-300 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
               <Calendar size={18} />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-3xl font-black text-[#07262c] dark:text-teal-50">
+            <div className="text-3xl font-black text-slate-900 dark:text-white">
               {interviewsScheduledCount}
             </div>
-            <div className="text-xs text-teal-700 dark:text-teal-400 mt-1 font-semibold flex items-center gap-1">
+            <div className="text-xs text-indigo-600 dark:text-indigo-400 mt-1 font-semibold flex items-center gap-1">
               <span>{interviewsScheduledCount > 0 ? 'Upcoming sessions ready' : 'No upcoming sessions'}</span>
-              <ChevronRight size={13} className="text-teal-400" />
+              <ChevronRight size={13} className="text-indigo-400" />
             </div>
           </div>
         </div>
@@ -239,23 +239,23 @@ export default function Dashboard() {
         {/* KPI 3: Auto-applied this month */}
         <div
           onClick={() => nav('/auto-apply')}
-          className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600 transition-all cursor-pointer group"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-teal-800/70 dark:text-teal-300/70 uppercase tracking-wider">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Auto-applied this month
             </span>
-            <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-100 dark:border-teal-900/40 text-teal-700 dark:text-teal-300 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
               <Zap size={18} />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-3xl font-black text-[#07262c] dark:text-teal-50">
+            <div className="text-3xl font-black text-slate-900 dark:text-white">
               {autoAppliedMonthCount}
             </div>
-            <div className="text-xs text-teal-700 dark:text-teal-400 mt-1 font-semibold flex items-center gap-1">
+            <div className="text-xs text-purple-600 dark:text-purple-400 mt-1 font-semibold flex items-center gap-1">
               <span>WhatsApp & Email protocol active</span>
-              <ChevronRight size={13} className="text-teal-400" />
+              <ChevronRight size={13} className="text-purple-400" />
             </div>
           </div>
         </div>
@@ -263,24 +263,24 @@ export default function Dashboard() {
         {/* KPI 4: Profile strength */}
         <div
           onClick={() => nav('/profile')}
-          className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600 transition-all cursor-pointer group"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-teal-800/70 dark:text-teal-300/70 uppercase tracking-wider">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Profile strength
             </span>
-            <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-100 dark:border-teal-900/40 text-teal-700 dark:text-teal-300 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
               <Award size={18} />
             </div>
           </div>
           <div className="mt-3">
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-black text-[#07262c] dark:text-teal-50">{strengthScore}%</span>
-              <span className="text-xs font-bold text-teal-600 dark:text-teal-400">High match</span>
+              <span className="text-3xl font-black text-slate-900 dark:text-white">{strengthScore}%</span>
+              <span className="text-xs font-bold text-blue-600 dark:text-blue-400">High match</span>
             </div>
-            <div className="w-full bg-teal-100/60 dark:bg-teal-900/40 h-2 rounded-full mt-2 overflow-hidden">
+            <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-teal-500 to-emerald-400 h-full rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full rounded-full transition-all duration-500"
                 style={{ width: `${strengthScore}%` }}
               />
             </div>
@@ -291,17 +291,17 @@ export default function Dashboard() {
       {/* 3. Dashboard Content: Wider Recent Applications + Narrower Profile Strength */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Wider Left Column (2 Cols): Recent Applications Panel */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-3xl p-6 sm:p-7 shadow-sm space-y-5">
-          <div className="flex items-center justify-between pb-4 border-b border-teal-100/70 dark:border-teal-900/40">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm space-y-5">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200/60 dark:border-teal-800/40 text-teal-700 dark:text-teal-300 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                 <Layers size={18} />
               </div>
               <div>
-                <h2 className="text-lg font-black text-[#07262c] dark:text-white tracking-tight">
+                <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
                   Recent Applications
                 </h2>
-                <p className="text-xs text-teal-700/70 dark:text-teal-300/70">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Track your application stages and recruiter SLA response time
                 </p>
               </div>
@@ -309,7 +309,7 @@ export default function Dashboard() {
 
             <button
               onClick={() => nav('/applications')}
-              className="text-xs font-bold text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-white flex items-center gap-1.5 hover:underline cursor-pointer"
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1.5 hover:underline cursor-pointer"
             >
               <span>View all ({applications.length})</span>
               <ArrowRight size={14} />
@@ -318,25 +318,25 @@ export default function Dashboard() {
 
           {/* Applications list or meaningful empty state */}
           {applications.length === 0 ? (
-            <div className="text-center py-10 px-4 rounded-2xl bg-teal-50/40 dark:bg-teal-950/30 border border-dashed border-teal-200/80 dark:border-teal-800/40">
-              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-[#062329] text-teal-600 dark:text-teal-400 flex items-center justify-center mx-auto mb-3 shadow-xs">
+            <div className="text-center py-10 px-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-dashed border-slate-200 dark:border-slate-700">
+              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-3 shadow-xs">
                 <Briefcase size={22} />
               </div>
-              <h3 className="font-bold text-sm text-[#07262c] dark:text-teal-100">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                 No applications submitted yet
               </h3>
-              <p className="text-xs text-teal-700/70 dark:text-teal-300/70 mt-1 max-w-sm mx-auto">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
                 Explore curated opportunities matched by your skillset and apply with 1-click.
               </p>
               <button
                 onClick={() => nav('/jobs')}
-                className="mt-4 px-4 py-2 rounded-xl bg-[#062329] hover:bg-[#09353e] text-white text-xs font-bold transition-colors cursor-pointer"
+                className="mt-4 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-md shadow-blue-500/20"
               >
                 Browse Matching Jobs →
               </button>
             </div>
           ) : (
-            <div className="divide-y divide-teal-100/60 dark:divide-teal-900/40">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {applications.slice(0, 4).map((app: any, idx: number) => {
                 const statusColor =
                   app.status === 'Interview Scheduled'
@@ -344,24 +344,24 @@ export default function Dashboard() {
                     : app.status === 'Shortlisted'
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'
                     : app.status === 'AI Screening'
-                    ? 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800'
-                    : 'bg-teal-50/70 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:border-teal-800'
+                    ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800'
+                    : 'bg-slate-50 text-slate-800 border-slate-200 dark:bg-slate-800/60 dark:text-slate-200 dark:border-slate-700'
 
                 return (
                   <div
                     key={app.id || idx}
                     onClick={() => nav('/applications')}
-                    className="py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-4 hover:bg-teal-50/30 dark:hover:bg-teal-950/20 px-3 rounded-xl transition-colors cursor-pointer"
+                    className="py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-4 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 px-3 rounded-xl transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#062329] to-[#0d7882] text-white font-bold flex items-center justify-center text-sm shrink-0 shadow-xs">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-sm shrink-0 shadow-xs">
                         {(app.company || 'C').charAt(0)}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-extrabold text-sm text-[#07262c] dark:text-white truncate">
+                        <div className="font-extrabold text-sm text-slate-900 dark:text-white truncate">
                           {app.jobTitle || app.title || 'Software Opportunity'}
                         </div>
-                        <div className="text-xs text-teal-700/70 dark:text-teal-300/70 flex items-center gap-2 mt-0.5">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
                           <span className="font-semibold">{app.company || 'Tech Partner'}</span>
                           <span>•</span>
                           <span>Applied {app.appliedDate || 'Recently'}</span>
@@ -373,7 +373,7 @@ export default function Dashboard() {
                       <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${statusColor}`}>
                         {app.status || 'Under Review'}
                       </span>
-                      <ChevronRight size={15} className="text-teal-400 dark:text-teal-500 hidden sm:block" />
+                      <ChevronRight size={15} className="text-slate-400 hidden sm:block" />
                     </div>
                   </div>
                 )
@@ -382,16 +382,16 @@ export default function Dashboard() {
           )}
 
           {/* SLA Guarantee Strip */}
-          <div className="p-3 rounded-xl bg-teal-50/70 dark:bg-teal-950/40 border border-teal-200/70 dark:border-teal-800/40 flex items-center justify-between gap-3 text-xs text-teal-900 dark:text-teal-100">
+          <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-800/40 flex items-center justify-between gap-3 text-xs text-blue-900 dark:text-blue-100">
             <div className="flex items-center gap-2">
-              <Clock size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+              <Clock size={15} className="text-blue-600 dark:text-blue-400 shrink-0" />
               <span className="font-medium">
                 <strong>24-Hour Recruiter SLA Guarantee</strong> protects every verified application submitted.
               </span>
             </div>
             <button
               onClick={() => nav('/applications')}
-              className="text-teal-700 dark:text-teal-300 font-bold hover:underline shrink-0"
+              className="text-blue-700 dark:text-blue-300 font-bold hover:underline shrink-0"
             >
               Track SLA →
             </button>
@@ -399,30 +399,30 @@ export default function Dashboard() {
         </div>
 
         {/* Narrower Right Column (1 Col): Profile Strength Panel */}
-        <div className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-3xl p-6 sm:p-7 shadow-sm space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-teal-100/70 dark:border-teal-900/40">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200/60 dark:border-teal-800/40 text-teal-700 dark:text-teal-300 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                 <Award size={18} />
               </div>
-              <h2 className="text-lg font-black text-[#07262c] dark:text-white tracking-tight">
+              <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
                 Profile Strength
               </h2>
             </div>
-            <span className="text-xs font-black px-2.5 py-1 rounded-full bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200">
+            <span className="text-xs font-black px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
               {strengthScore}%
             </span>
           </div>
 
           {/* Progress gauge bar */}
           <div>
-            <div className="flex justify-between text-xs font-semibold text-teal-800/70 dark:text-teal-300/70 mb-1.5">
+            <div className="flex justify-between text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
               <span>Completion Level</span>
-              <span className="font-bold text-teal-900 dark:text-teal-100">{strengthScore < 100 ? 'Needs Attention' : 'All Set'}</span>
+              <span className="font-bold text-slate-900 dark:text-white">{strengthScore < 100 ? 'Needs Attention' : 'All Set'}</span>
             </div>
-            <div className="w-full bg-teal-100/60 dark:bg-teal-900/40 h-2.5 rounded-full overflow-hidden">
+            <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
               <div
-                className="bg-gradient-to-r from-teal-500 to-emerald-400 h-full rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full rounded-full transition-all duration-500"
                 style={{ width: `${strengthScore}%` }}
               />
             </div>
@@ -430,7 +430,7 @@ export default function Dashboard() {
 
           {/* Actionable Profile-Completion Guidance */}
           <div className="space-y-2.5 pt-1">
-            <div className="text-[11px] font-extrabold uppercase tracking-wider text-teal-800/60 dark:text-teal-300/60">
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Actionable Guidance
             </div>
 
@@ -440,32 +440,32 @@ export default function Dashboard() {
                 onClick={() => nav(item.link)}
                 className={`p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 transition-all cursor-pointer ${
                   item.completed
-                    ? 'bg-teal-50/40 dark:bg-teal-950/30 border-teal-200/60 dark:border-teal-800/40 text-teal-800 dark:text-teal-200'
-                    : 'bg-white dark:bg-[#062329] border-teal-100 dark:border-teal-900/40 text-teal-950 dark:text-teal-100 hover:border-teal-300'
+                    ? 'bg-slate-50/70 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:border-blue-300'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div
                     className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
                       item.completed
-                        ? 'bg-teal-600 text-white'
-                        : 'border border-teal-300 dark:border-teal-700 text-transparent'
+                        ? 'bg-blue-600 text-white'
+                        : 'border border-slate-300 dark:border-slate-600 text-transparent'
                     }`}
                   >
                     {item.completed && <Check size={13} className="stroke-[3]" />}
                   </div>
-                  <span className={`truncate font-medium ${item.completed ? 'line-through text-teal-700/60 dark:text-teal-400/60' : 'font-bold'}`}>
+                  <span className={`truncate font-medium ${item.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'font-bold'}`}>
                     {item.title}
                   </span>
                 </div>
-                <ChevronRight size={14} className="text-teal-400 shrink-0" />
+                <ChevronRight size={14} className="text-slate-400 shrink-0" />
               </div>
             ))}
           </div>
 
           <button
             onClick={() => nav('/portfolio')}
-            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#062329] to-[#0d7882] hover:opacity-95 text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>Edit Profile & Portfolio</span>
             <ArrowRight size={14} />
@@ -474,22 +474,22 @@ export default function Dashboard() {
       </div>
 
       {/* 4. Interactive AI Copilot Bar */}
-      <div className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-3xl p-5 shadow-sm space-y-3">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#062329] to-[#0d7882] text-white flex items-center justify-center text-xs font-bold">
-              <Sparkles size={15} className="text-teal-300" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xs font-bold">
+              <Sparkles size={15} className="text-amber-300" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-[#07262c] dark:text-white">Ask GetNextIn AI Copilot</h3>
-              <p className="text-[11px] text-teal-700/70 dark:text-teal-300/70">
+              <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">Ask GetNextIn AI Copilot</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Workflow guidance, interview tips, or say 'Show high-match jobs'
               </p>
             </div>
           </div>
           <button
             onClick={() => nav('/ai-agent')}
-            className="text-xs font-bold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer"
+            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
           >
             <span>Open Full AI Hub</span>
             <ChevronRight size={14} />
@@ -509,7 +509,7 @@ export default function Dashboard() {
             <button
               key={i}
               onClick={() => nav(item.path)}
-              className="px-3 py-1.5 bg-teal-50/50 dark:bg-teal-950/40 hover:bg-teal-100/60 dark:hover:bg-teal-900/60 text-teal-900 dark:text-teal-200 rounded-xl text-xs font-semibold border border-teal-200/60 dark:border-teal-800/40 transition-colors cursor-pointer"
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
             >
               {item.label}
             </button>
@@ -521,16 +521,16 @@ export default function Dashboard() {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-extrabold text-[#07262c] dark:text-white tracking-tight">
+            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Recommended Jobs for You
             </h2>
-            <p className="text-xs text-teal-700/70 dark:text-teal-300/70">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Ranked by AI compatibility with your skillset and verified credentials
             </p>
           </div>
           <button
             onClick={() => nav('/jobs')}
-            className="text-xs font-bold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer"
+            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
           >
             <span>View All ({jobs.length})</span>
             <ArrowRight size={14} />
@@ -546,25 +546,25 @@ export default function Dashboard() {
             return (
               <div
                 key={job.id}
-                className="bg-white dark:bg-[#072026] border border-teal-100 dark:border-teal-900/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-teal-300 dark:hover:border-teal-600 transition-all duration-200 flex flex-col justify-between group"
+                className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 flex flex-col justify-between group"
               >
                 <div>
                   {/* Top Row: Company Badge & Match Pill */}
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#062329] to-[#0d7882] text-white font-extrabold flex items-center justify-center text-sm shadow-xs shrink-0 ring-1 ring-white/10">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-extrabold flex items-center justify-center text-sm shadow-xs shrink-0 ring-1 ring-white/10">
                         {job.company.charAt(0)}
                       </div>
                       <div className="min-w-0">
                         <h3
                           onClick={() => nav(`/jobs/${job.id}`)}
-                          className="font-bold text-[#07262c] dark:text-white text-sm hover:text-teal-600 dark:hover:text-teal-400 transition-colors cursor-pointer truncate"
+                          className="font-bold text-slate-900 dark:text-white text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer truncate"
                           title={job.title}
                         >
                           {job.title}
                         </h3>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                          <span className="text-xs text-teal-700/80 dark:text-teal-300/80 font-semibold truncate max-w-[130px]">
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold truncate max-w-[130px]">
                             {job.company}
                           </span>
                           {job.companyRating && (
@@ -577,8 +577,8 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200/80 dark:border-teal-800/50 text-teal-800 dark:text-teal-200 font-extrabold text-[11px] shrink-0 shadow-xs">
-                      <Sparkles size={11} className="text-teal-600 dark:text-teal-400" />
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300 font-extrabold text-[11px] shrink-0 shadow-xs">
+                      <Sparkles size={11} className="text-emerald-500 dark:text-emerald-400" />
                       <span>{matchScore}%</span>
                     </span>
                   </div>
@@ -586,30 +586,30 @@ export default function Dashboard() {
                   {/* Hiring Period & Response Rate Badges */}
                   <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
                     {job.hiringPeriod && (
-                      <span className="px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 rounded-lg text-[10px] font-bold flex items-center gap-1">
+                      <span className="px-2.5 py-1 bg-amber-500/10 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/20 dark:border-amber-500/30 rounded-lg text-[10px] font-bold flex items-center gap-1">
                         <Clock size={11} className="text-amber-600 dark:text-amber-400" />
                         <span>{job.hiringPeriod}</span>
                       </span>
                     )}
 
                     {job.companyResponseRate && (
-                      <span className="px-2.5 py-0.5 bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-800/40 rounded-lg text-[10px] font-bold flex items-center gap-1">
-                        <Zap size={11} className="text-teal-600 dark:text-teal-400" />
+                      <span className="px-2.5 py-1 bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 dark:border-emerald-500/30 rounded-lg text-[10px] font-bold flex items-center gap-1">
+                        <Zap size={11} className="text-emerald-600 dark:text-emerald-400" />
                         <span>{job.companyResponseRate}</span>
                       </span>
                     )}
                   </div>
 
                   {/* Meta details */}
-                  <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-teal-800/70 dark:text-teal-300/70 my-2">
+                  <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-slate-500 dark:text-slate-400 my-2">
                     <span className="flex items-center gap-1">
-                      <MapPin size={13} className="text-teal-500" />
+                      <MapPin size={13} className="text-slate-400 dark:text-slate-500" />
                       {job.location}
                     </span>
-                    <span className="px-2 py-0.5 bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-200 rounded-md font-semibold text-[11px] border border-teal-200/50 dark:border-teal-800/50">
+                    <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md font-semibold text-[11px] border border-slate-200/50 dark:border-slate-700/50">
                       {job.workMode}
                     </span>
-                    <span className="font-bold text-[#07262c] dark:text-white">
+                    <span className="font-bold text-slate-900 dark:text-slate-200">
                       ₹{Math.round(job.salaryMin / 100000)}-{Math.round(job.salaryMax / 100000)} LPA
                     </span>
                   </div>
@@ -619,13 +619,13 @@ export default function Dashboard() {
                     {(job.skills || []).slice(0, 3).map((skill: string) => (
                       <span
                         key={skill}
-                        className="px-2.5 py-1 text-[11px] font-semibold bg-teal-50/40 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 rounded-lg border border-teal-100 dark:border-teal-900/50"
+                        className="px-2.5 py-1 text-[11px] font-semibold bg-slate-100/70 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 rounded-lg border border-slate-200/60 dark:border-slate-700/60 hover:border-blue-400/60 dark:hover:border-blue-500/60 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                       >
                         {skill}
                       </span>
                     ))}
                     {(job.skills || []).length > 3 && (
-                      <span className="px-1.5 py-1 text-[10px] font-bold text-teal-600/70 dark:text-teal-400/70">
+                      <span className="px-1.5 py-1 text-[10px] font-bold text-slate-400 dark:text-slate-500">
                         +{(job.skills || []).length - 3}
                       </span>
                     )}
@@ -633,13 +633,13 @@ export default function Dashboard() {
                 </div>
 
                 {/* Actions */}
-                <div className="pt-3.5 border-t border-teal-100/70 dark:border-teal-900/50 flex items-center justify-between gap-2 mt-1">
+                <div className="pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 mt-1">
                   <button
                     onClick={() => handleToggleSave(job.id)}
                     className={`p-2 rounded-xl border transition-all cursor-pointer ${
                       isSaved
                         ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 shadow-xs'
-                        : 'bg-white dark:bg-[#062329] border-teal-200 dark:border-teal-800 text-teal-400 hover:text-teal-700 dark:hover:text-teal-200'
+                        : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
                     }`}
                     title={isSaved ? 'Remove from saved' : 'Save job'}
                   >
@@ -649,7 +649,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => nav(`/jobs/${job.id}`)}
-                      className="px-3 py-1.5 rounded-xl text-xs font-bold text-teal-800 dark:text-teal-200 hover:bg-teal-50 dark:hover:bg-teal-900/40 transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                     >
                       Details
                     </button>
@@ -657,10 +657,10 @@ export default function Dashboard() {
                     <button
                       disabled={hasApplied}
                       onClick={() => handleApply(job.id)}
-                      className={`px-4 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-xs ${
+                      className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm ${
                         hasApplied
-                          ? 'bg-teal-100/60 dark:bg-teal-900/40 text-teal-500 dark:text-teal-400 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-[#062329] to-[#0d7882] hover:opacity-95 text-white hover:scale-[1.02] active:scale-[0.98]'
+                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-blue-500/20 hover:shadow-md hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98]'
                       }`}
                     >
                       {hasApplied ? 'Applied ✓' : 'Quick Apply'}

@@ -30,17 +30,17 @@ export default function Button({
 
   const variants: Record<ButtonVariant, string> = {
     primary:
-      'bg-gradient-to-r from-[#062329] to-[#0d7882] text-white shadow-md shadow-teal-950/20 hover:opacity-95 hover:shadow-lg focus:ring-teal-400 active:scale-[0.98]',
+      'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg hover:shadow-blue-500/30 focus:ring-blue-400 active:scale-[0.98]',
     secondary:
-      'bg-teal-50 dark:bg-teal-950/50 text-teal-900 dark:text-teal-200 border border-teal-200/60 dark:border-teal-800/40 hover:bg-teal-100/70 focus:ring-teal-300 active:scale-[0.98]',
+      'bg-slate-100 text-slate-800 hover:bg-slate-200 focus:ring-slate-300 active:scale-[0.98]',
     outline:
-      'bg-white dark:bg-[#072026] border border-teal-200/80 dark:border-teal-800 text-teal-900 dark:text-teal-100 hover:bg-teal-50 dark:hover:bg-teal-950/50 hover:border-teal-300 focus:ring-teal-300 active:scale-[0.98]',
+      'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 focus:ring-blue-300 active:scale-[0.98]',
     ghost:
-      'bg-transparent text-teal-800 dark:text-teal-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:text-teal-950 focus:ring-teal-200',
+      'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:ring-slate-200',
     danger:
       'bg-rose-500 text-white shadow-md shadow-rose-500/20 hover:bg-rose-600 focus:ring-rose-300 active:scale-[0.98]',
     success:
-      'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 focus:ring-emerald-300 active:scale-[0.98]'
+      'bg-emerald-500 text-white shadow-md shadow-emerald-500/20 hover:bg-emerald-600 focus:ring-emerald-300 active:scale-[0.98]'
   }
 
   return (

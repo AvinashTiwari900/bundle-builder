@@ -1,5 +1,5 @@
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'je6whpaq'
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || ''
+const CLOUD_NAME = import.meta.env?.VITE_CLOUDINARY_CLOUD_NAME || 'je6whpaq'
+const UPLOAD_PRESET = import.meta.env?.VITE_CLOUDINARY_UPLOAD_PRESET || ''
 
 export interface CloudinaryUploadResult {
   url: string

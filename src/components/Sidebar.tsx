@@ -123,7 +123,7 @@ export default function Sidebar({ isCollapsed = false, onToggle }: SidebarProps)
                 <div className="brand-subtitle truncate">Candidates</div>
               </div>
               <span
-                className="p-1 rounded-lg text-teal-400/60 group-hover:text-teal-200 group-hover:bg-white/10 transition-colors"
+                className="p-1 rounded-lg text-slate-400 group-hover:text-slate-700 group-hover:bg-slate-100 transition-colors"
                 title="Collapse sidebar"
               >
                 <ChevronLeft size={16} />
@@ -138,7 +138,7 @@ export default function Sidebar({ isCollapsed = false, onToggle }: SidebarProps)
             onClick={onToggle}
             aria-label="Expand sidebar"
             title="Expand sidebar"
-            className="p-1 rounded-lg text-teal-400/60 hover:text-teal-200 hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <ChevronRight size={14} />
           </button>
@@ -168,8 +168,8 @@ export default function Sidebar({ isCollapsed = false, onToggle }: SidebarProps)
                       <Icon size={17} className="stroke-[1.75]" />
                       {isCollapsed && ((item.badge !== undefined && item.badge > 0) || item.aiBadge) && (
                         <span
-                          className={`absolute -top-1 -right-1.5 w-2 h-2 rounded-full ring-2 ring-[#062329] ${
-                            item.aiBadge ? 'bg-teal-400' : 'bg-amber-400'
+                          className={`absolute -top-1 -right-1.5 w-2 h-2 rounded-full ring-2 ring-white ${
+                            item.aiBadge ? 'bg-purple-500' : 'bg-blue-600'
                           }`}
                         />
                       )}
@@ -179,12 +179,12 @@ export default function Sidebar({ isCollapsed = false, onToggle }: SidebarProps)
                       <>
                         <span className="flex-1 truncate">{item.label}</span>
                         {item.badge !== undefined && item.badge > 0 && (
-                          <span className="px-2 py-0.5 text-[10px] font-extrabold bg-teal-500/20 text-teal-300 rounded-full shrink-0 border border-teal-500/30">
+                          <span className="px-2 py-0.5 text-[11px] font-bold bg-blue-100 text-blue-700 rounded-full shrink-0">
                             {item.badge}
                           </span>
                         )}
                         {item.aiBadge && (
-                          <span className="px-1.5 py-0.5 text-[9px] font-extrabold uppercase bg-gradient-to-r from-teal-500 to-emerald-400 text-[#062329] rounded tracking-wider shrink-0 shadow-xs">
+                          <span className="px-1.5 py-0.5 text-[10px] font-extrabold uppercase bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-md tracking-wider shrink-0">
                             AI
                           </span>
                         )}
@@ -205,16 +205,16 @@ export default function Sidebar({ isCollapsed = false, onToggle }: SidebarProps)
           onClick={() => nav('/profile')}
           title={isCollapsed ? `${name} - Profile & Settings` : 'Open your profile & settings'}
         >
-          <img src={avatar} alt={name} className="shadow-xs shrink-0 ring-1 ring-white/10" />
+          <img src={avatar} alt={name} className="shadow-xs shrink-0" />
           {!isCollapsed && (
             <>
               <div className="flex-1 min-w-0">
-                <strong className="block truncate text-xs font-bold text-white group-hover:text-teal-300 transition-colors">
+                <strong className="block truncate text-xs font-bold text-slate-800 dark:text-white group-hover:text-blue-600 transition-colors">
                   {name}
                 </strong>
-                <div className="text-[11px] text-teal-200/50 truncate font-medium">{headline}</div>
+                <div className="text-xs text-slate-500 truncate font-medium">{headline}</div>
               </div>
-              <ChevronRight size={14} className="text-teal-300/40 group-hover:text-teal-200 group-hover:translate-x-0.5 transition-all shrink-0" />
+              <ChevronRight size={14} className="text-slate-400 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all shrink-0" />
             </>
           )}
         </div>
@@ -222,7 +222,7 @@ export default function Sidebar({ isCollapsed = false, onToggle }: SidebarProps)
         <button
           onClick={handleLogout}
           title={isCollapsed ? 'Sign Out' : undefined}
-          className={`flex items-center justify-center gap-2 w-full py-1.5 text-xs font-semibold text-rose-400 hover:text-rose-200 hover:bg-rose-500/10 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-rose-500/20 ${
+          className={`flex items-center justify-center gap-2 w-full py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-rose-200 mt-1 ${
             isCollapsed ? 'px-0' : 'px-3'
           }`}
         >

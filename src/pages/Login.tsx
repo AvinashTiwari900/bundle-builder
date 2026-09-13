@@ -42,6 +42,21 @@ export default function LoginPage() {
     }
   }
 
+  const handleQuickDemo = async () => {
+    setEmail('avinashtiwari@gmail.com')
+    setPassword('Candidate@123')
+    setError('')
+    setLoading(true)
+    try {
+      await login('avinashtiwari@gmail.com', 'Candidate@123', true)
+      nav('/dashboard')
+    } catch (err: any) {
+      setError(err.message || 'Quick login failed.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden font-sans">
       {/* Decorative Glows */}
@@ -115,6 +130,24 @@ export default function LoginPage() {
           <div className="mb-6">
             <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Welcome Back</h3>
             <p className="text-sm text-slate-500 mt-1">Sign in to your candidate portal</p>
+          </div>
+
+          {/* Quick Demo Login Hero Action */}
+          <button
+            type="button"
+            onClick={handleQuickDemo}
+            disabled={loading}
+            className="w-full mb-4 py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
+          >
+            <Sparkles size={16} className="text-amber-300" />
+            <span>⚡ Quick Demo Login (Avinash Tiwari)</span>
+          </button>
+
+          <div className="relative my-2 mb-4 flex items-center justify-center">
+            <div className="border-t border-slate-200 w-full"></div>
+            <span className="bg-white px-3 text-[11px] text-slate-400 font-bold uppercase tracking-wider shrink-0">
+              Or sign in with email
+            </span>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4" aria-label="Login form">

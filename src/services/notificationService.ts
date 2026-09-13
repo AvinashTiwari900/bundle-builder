@@ -1,5 +1,5 @@
 const KEY = 'ras_notifications'
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:4000/api'
 
 async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   return fetch(`${API_URL}${path}`, {
