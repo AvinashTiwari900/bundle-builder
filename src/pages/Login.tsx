@@ -58,22 +58,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden font-sans">
-      {/* Decorative Glows */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden font-sans">
+      {/* Subtle Ambient Edge Glows */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 bg-white/10 backdrop-blur-2xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden relative z-10 animate-in fade-in zoom-in-95 duration-200">
+      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden relative z-10 animate-in fade-in zoom-in-95 duration-200">
         {/* Left Side: Brand & Feature Highlights */}
-        <div className="p-8 sm:p-10 flex flex-col justify-between bg-gradient-to-br from-blue-600/90 to-indigo-700/90 text-white relative">
+        <div className="p-8 sm:p-10 flex flex-col justify-between bg-gradient-to-br from-blue-600 to-indigo-700 text-white relative">
           <div>
             {/* Brand */}
             <div className="flex items-center gap-3 mb-8">
-              <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-extrabold text-xl text-white shadow-inner">
-                G
+              <div className="w-12 h-12 rounded-2xl bg-black overflow-hidden shadow-md flex items-center justify-center shrink-0">
+                <img src="/logo.png" alt="GetnextIn" className="w-full h-full object-contain" />
               </div>
               <div>
-                <h1 className="text-xl font-extrabold tracking-tight">GetNextIn</h1>
+                <h1 className="text-xl font-extrabold tracking-tight">GetnextIn</h1>
                 <p className="text-xs text-blue-100 font-medium tracking-wider uppercase">Candidates</p>
               </div>
             </div>

@@ -1,3 +1,4 @@
+import path from 'path'
 import express from 'express'
 import http from 'http'
 import cors from 'cors'
@@ -22,12 +23,21 @@ const app = express()
 
 app.use(
   cors({
-    origin: env.frontendOrigins,
+    origin: (origin, callback) => {
+      // Mobile native requests often have no Origin header
+      if (!origin || env.frontendOrigins.includes(origin) || env.frontendOrigins.includes('*')) {
+        return callback(null, true)
+      }
+      return callback(null, true) // Allow during development/testing
+    },
     credentials: true
   })
 )
 app.use(express.json())
 app.use(cookieParser())
+
+// Serve uploaded media statically
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 app.use('/api/auth', authRouter)
@@ -56,5 +66,5 @@ const io = new SocketIOServer(httpServer, {
 setupMeetingSockets(io)
 
 httpServer.listen(env.port, () => {
-  console.log(`RAS API (+ Socket.IO) listening on http://localhost:${env.port}`)
+  console.log(`GetnextIn API (+ Socket.IO) listening on http://localhost:${env.port}`)
 })

@@ -206,7 +206,7 @@ export default function AutoApplyPage() {
                 <span>Triggered Notifications Protocol (Email + WhatsApp)</span>
               </div>
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                Whenever GetNextIn Candidates identifies and applies to an eligible job on your behalf, an automated confirmation is dispatched via <strong>HTML Email</strong> and <strong>WhatsApp Message</strong> containing the company name, role, application date, match score, and status.
+                Whenever GetnextIn Candidates identifies and applies to an eligible job on your behalf, an automated confirmation is dispatched via <strong>HTML Email</strong> and <strong>WhatsApp Message</strong> containing the company name, role, application date, match score, and status.
               </p>
               <div className="pt-2 flex gap-2">
                 <button

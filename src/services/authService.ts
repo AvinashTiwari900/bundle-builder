@@ -343,7 +343,7 @@ export const authService = {
       notifications: [
         {
           id: 'n-welcome',
-          title: 'Welcome to GetNextIn! 🎉',
+          title: 'Welcome to GetnextIn! 🎉',
           message: `Account created successfully for ${data.name}. Complete your public portfolio to attract top tech recruiters.`,
           read: false,
           type: 'success',

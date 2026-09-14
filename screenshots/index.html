@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GetnextIn Mobile App - Screenshot Gallery</title>
+  <style>
+    :root {
+      --primary: #2563EB;
+      --bg: #0F172A;
+      --card: #1E293B;
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 32px 20px; line-height: 1.5; }
+    header { max-width: 1200px; margin: 0 auto 32px auto; text-align: center; }
+    h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    p.subtitle { font-size: 15px; color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(37,99,235,0.25); }
+    .img-wrap {
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .card img {
+      width: 100%;
+      max-height: 520px;
+      object-fit: contain;
+      border-radius: 10px;
+    }
+    .content { padding: 18px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--primary);
+      background: rgba(37,99,235,0.15);
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      align-self: flex-start;
+    }
+    .title { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 6px; }
+    .desc { font-size: 13px; color: var(--muted); }
+    .btn-link {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .btn-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GetnextIn Mobile App - Complete Screen Showcase</h1>
+    <p class="subtitle">Live screenshots captured directly on Android Emulator (API 36 - Medium Phone)</p>
+  </header>
+
+  <div class="grid">
+    <!-- Screen 1: Login -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_after_restart.png" target="_blank"><img src="screen_after_restart.png" alt="Login Screen"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Auth</span>
+          <div class="title">1. Welcome Back & Sign In</div>
+          <div class="desc">GetnextIn Candidates Portal branding, pre-configured One-Tap demo account shortcut, and credential inputs.</div>
+        </div>
+        <a class="btn-link" href="screen_after_restart.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 2: Home Feed -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_home_logged_in.png" target="_blank"><img src="screen_home_logged_in.png" alt="Home Feed"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Tab 0 • Home</span>
+          <div class="title">2. Platform Community Feed</div>
+          <div class="desc">Platform-wide updates from all candidates with post composer, category filter chips, images, and "+ Connect" actions.</div>
+        </div>
+        <a class="btn-link" href="screen_home_logged_in.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 3: Category Filter -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="mobile_app_screenshot_filter.png" target="_blank"><img src="mobile_app_screenshot_filter.png" alt="Category Filter"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Filter</span>
+          <div class="title">3. Category Filtering Active</div>
+          <div class="desc">Active filter chip filtering the feed by Case Study, Project Showcase, or Technical Knowledge Sharing.</div>
+        </div>
+        <a class="btn-link" href="mobile_app_screenshot_filter.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 4: Comments Drawer -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="mobile_app_screenshot_comments.png" target="_blank"><img src="mobile_app_screenshot_comments.png" alt="Comments Sheet"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Interactions</span>
+          <div class="title">4. Real-Time Comments Drawer</div>
+          <div class="desc">Responsive modal sheet for commenting, with keyboard insets support and instant updates.</div>
+        </div>
+        <a class="btn-link" href="mobile_app_screenshot_comments.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 5: Lightbox -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="mobile_app_screenshot_lightbox.png" target="_blank"><img src="mobile_app_screenshot_lightbox.png" alt="Lightbox"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Media</span>
+          <div class="title">5. Full-Screen Image Lightbox</div>
+          <div class="desc">Interactive viewer with pinch-to-zoom for architecture diagrams, system designs, and project mockups.</div>
+        </div>
+        <a class="btn-link" href="mobile_app_screenshot_lightbox.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 6: Connections -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_connections.png" target="_blank"><img src="screen_connections.png" alt="Connections"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Tab 1 • Network</span>
+          <div class="title">6. Candidate Network</div>
+          <div class="desc">Connected candidates, pending connection invitations, and discovery recommendations with in-app chat triggers.</div>
+        </div>
+        <a class="btn-link" href="screen_connections.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 7: Personal Posts Empty State -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_posts_tab_verified.png" target="_blank"><img src="screen_posts_tab_verified.png" alt="Posts Tab Empty State"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Tab 2 • Personal Posts</span>
+          <div class="title">7. Personal Posts (Empty State)</div>
+          <div class="desc">Shows composer (Photo, Video, Create Post) and exact message: "You haven’t posted anything yet. Share your first update."</div>
+        </div>
+        <a class="btn-link" href="screen_posts_tab_verified.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 8: Create Post Form -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_case_study_selected.png" target="_blank"><img src="screen_case_study_selected.png" alt="Create Post"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Post Creator</span>
+          <div class="title">8. Post Creator with Types</div>
+          <div class="desc">Selecting Case Study, Project Showcase, or Knowledge Sharing dynamically exposes the Title field and bottom attachment bar.</div>
+        </div>
+        <a class="btn-link" href="screen_case_study_selected.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 9: Published Post in Personal Feed -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_post_published_verified.png" target="_blank"><img src="screen_post_published_verified.png" alt="Published Post"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Tab 2 • Personal Posts</span>
+          <div class="title">9. Candidate's Published Post</div>
+          <div class="desc">Subheader shows "My Published Posts (1)", author labeled "Candidate (You)", with Connect/Pending button hidden.</div>
+        </div>
+        <a class="btn-link" href="screen_post_published_verified.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 10: 3-Dot Management Menu -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_post_menu_tested.png" target="_blank"><img src="screen_post_menu_tested.png" alt="Post Menu"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Management</span>
+          <div class="title">10. Edit & Delete Post Options</div>
+          <div class="desc">3-dot overflow menu strictly shows "Edit Post" and "Delete Post" for the candidate's own posts.</div>
+        </div>
+        <a class="btn-link" href="screen_post_menu_tested.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 11: Delete Confirmation Dialog -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_delete_dialog.png" target="_blank"><img src="screen_delete_dialog.png" alt="Delete Confirmation"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Dialog</span>
+          <div class="title">11. Delete Post Confirmation</div>
+          <div class="desc">Confirmation alert modal warning: "This action cannot be undone. Are you sure you want to delete this post?"</div>
+        </div>
+        <a class="btn-link" href="screen_delete_dialog.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 12: Dynamic Return to Empty State -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_after_post_deleted.png" target="_blank"><img src="screen_after_post_deleted.png" alt="Empty State After Delete"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Tab 2 • Personal Posts</span>
+          <div class="title">12. Dynamic Reset to Empty State</div>
+          <div class="desc">Feed instantaneously updates back to the empty state upon deletion without needing to restart the app.</div>
+        </div>
+        <a class="btn-link" href="screen_after_post_deleted.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 13: Jobs Tab -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_jobs_tab.png" target="_blank"><img src="screen_jobs_tab.png" alt="Jobs Tab"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Tab 3 • Jobs</span>
+          <div class="title">13. AI Job Recommendations</div>
+          <div class="desc">Job postings with AI match scores (94%, 88%, 82%), salary packages, compensation badges, and role chips.</div>
+        </div>
+        <a class="btn-link" href="screen_jobs_tab.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 14: Profile With Published Post -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_profile_with_post.png" target="_blank"><img src="screen_profile_with_post.png" alt="Profile With Post"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Tab 4 • Profile</span>
+          <div class="title">14. Profile with Published Post</div>
+          <div class="desc">Candidate details, masked contact info, recruiter privacy toggles, and "Published Posts & Showcase (1)" with "Manage >" link.</div>
+        </div>
+        <a class="btn-link" href="screen_profile_with_post.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 15: Profile With 0 Posts -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_profile_after_deleted.png" target="_blank"><img src="screen_profile_after_deleted.png" alt="Profile 0 Posts"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Tab 4 • Profile</span>
+          <div class="title">15. Profile (Zero Posts State)</div>
+          <div class="desc">Dynamically reflects 0 posts with matching guidance: "You haven’t posted anything yet. Share your first update."</div>
+        </div>
+        <a class="btn-link" href="screen_profile_after_deleted.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 16: Profile Drawer Menu -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_drawer.png" target="_blank"><img src="screen_drawer.png" alt="Profile Drawer"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Navigation</span>
+          <div class="title">16. Profile Drawer Menu</div>
+          <div class="desc">Side drawer with candidate details, subscription tier badge, and quick access to Dashboard, Meetings, Projects, Auto Apply, Premium, and Settings.</div>
+        </div>
+        <a class="btn-link" href="screen_drawer.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 17: Candidate Dashboard -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_dashboard.png" target="_blank"><img src="screen_dashboard.png" alt="Candidate Dashboard"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Module • Dashboard</span>
+          <div class="title">17. Candidate Cockpit & Metrics</div>
+          <div class="desc">85% profile strength progress bar, live metrics (12 active apps, 4 shortlisted, 2 interviews, 28 auto-applied), quick action shortcuts, and top recommendations.</div>
+        </div>
+        <a class="btn-link" href="screen_dashboard.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 18: Auto-Apply Engine -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_auto_apply.png" target="_blank"><img src="screen_auto_apply.png" alt="Auto-Apply Engine"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Module • Automation</span>
+          <div class="title">18. AI Auto-Apply Engine</div>
+          <div class="desc">Autonomous job dispatch toggle, match score threshold slider (80%), daily dispatch limits (10/day), and live queue audit trail.</div>
+        </div>
+        <a class="btn-link" href="screen_auto_apply.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 19: Projects & AI Diagnostics -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_projects.png" target="_blank"><img src="screen_projects.png" alt="Projects & AI Diagnostics"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Module • Portfolio</span>
+          <div class="title">19. Candidate Projects & Diagnostics</div>
+          <div class="desc">Verified engineering projects with AI Review badges, technology stack tags (Flutter, PyTorch Mobile, TypeScript, Redis), and "+ Add Project" action.</div>
+        </div>
+        <a class="btn-link" href="screen_projects.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 20: Meetings & Interview Rooms -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_meetings.png" target="_blank"><img src="screen_meetings.png" alt="Meetings & Interview Rooms"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Module • Interviews</span>
+          <div class="title">20. Meetings & Interview Rooms</div>
+          <div class="desc">Upcoming recruiter rounds with time slots, interviewer name, and instant WebRTC "Join Video Room" trigger button.</div>
+        </div>
+        <a class="btn-link" href="screen_meetings.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 21: Engineering Case Studies -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_case_studies.png" target="_blank"><img src="screen_case_studies.png" alt="Engineering Case Studies"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Module • Showcase</span>
+          <div class="title">21. Architecture Case Studies</div>
+          <div class="desc">In-depth technical problem breakdown: problem context, architecture solutions, PgBouncer/Redis latency benchmarks, and business impact.</div>
+        </div>
+        <a class="btn-link" href="screen_case_studies.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 22: Premium Membership -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_premium.png" target="_blank"><img src="screen_premium.png" alt="GetnextIn Premium"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Module • Monetization</span>
+          <div class="title">22. GetnextIn Premium Subscriptions</div>
+          <div class="desc">Candidate Pro membership tiers (Monthly ₹499 / Annual ₹3,999) with unlimited auto-apply, recruiter search priority, and verified badge perks.</div>
+        </div>
+        <a class="btn-link" href="screen_premium.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 23: Account & Settings -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_settings.png" target="_blank"><img src="screen_settings.png" alt="Account & Settings"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Module • Settings</span>
+          <div class="title">23. Account Settings & Privacy</div>
+          <div class="desc">Recruiter contact privacy masking toggle, push notifications and email job digests toggles, plus secure sign out.</div>
+        </div>
+        <a class="btn-link" href="screen_settings.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 24: Global Search -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_search.png" target="_blank"><img src="screen_search.png" alt="Global Search"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Module • Search</span>
+          <div class="title">24. Universal Discovery Search</div>
+          <div class="desc">Search with categorized filter tabs (All, People, Posts, Jobs) providing instant connections and one-tap role applications.</div>
+        </div>
+        <a class="btn-link" href="screen_search.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 25: Notifications Center -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_notifications.png" target="_blank"><img src="screen_notifications.png" alt="Notifications Center"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Module • Notifications</span>
+          <div class="title">25. Activity & Notifications Center</div>
+          <div class="desc">Real-time alerts for scheduled interviews, auto-apply dispatches, and shortlisted application status updates.</div>
+        </div>
+        <a class="btn-link" href="screen_notifications.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 26: My Applications Pipeline -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_applications.png" target="_blank"><img src="screen_applications.png" alt="My Applications"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Module • Applications</span>
+          <div class="title">26. Applications Tracker</div>
+          <div class="desc">Active stage indicators across roles (Stage 5 Interview Scheduled, Stage 3 AI Screening, Stage 4 Shortlisted, Stage 9 Selected).</div>
+        </div>
+        <a class="btn-link" href="screen_applications.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 27: 11-Stage Recruitment Pipeline -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_application_details.png" target="_blank"><img src="screen_application_details.png" alt="Application Details"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Pipeline Details</span>
+          <div class="title">27. 11-Stage Recruitment Pipeline</div>
+          <div class="desc">Granular milestone progress from Applied & AI Screening up to Interview Scheduled with "Join Recruiter Meeting" action.</div>
+        </div>
+        <a class="btn-link" href="screen_application_details.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Screen 28: Job Details -->
+    <div class="card">
+      <div class="img-wrap">
+        <a href="screen_job_details.png" target="_blank"><img src="screen_job_details.png" alt="Job Details"></a>
+      </div>
+      <div class="content">
+        <div>
+          <span class="badge">Job Details</span>
+          <div class="title">28. Job Details & AI Alignment</div>
+          <div class="desc">AI match breakdown explanation (94% alignment on Riverpod & Dart), salary ranges, required skill badges, and 1-tap apply.</div>
+        </div>
+        <a class="btn-link" href="screen_job_details.png" target="_blank">View Full Image &rarr;</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

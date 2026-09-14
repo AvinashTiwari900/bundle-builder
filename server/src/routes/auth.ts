@@ -76,7 +76,7 @@ router.post('/register', asyncHandler(async (req, res) => {
 
   const token = signAuthToken({ sub: user.id, role: user.role })
   res.cookie(AUTH_COOKIE_NAME, token, cookieOptions)
-  return res.status(201).json({ id: user.id, email: user.email, role: user.role })
+  return res.status(201).json({ id: user.id, email: user.email, role: user.role, token })
 }))
 
 const loginSchema = z.object({
@@ -107,7 +107,7 @@ router.post('/login', asyncHandler(async (req, res) => {
   // persistent 7-day one, mirroring the "Remember this device" checkbox.
   const { maxAge, ...sessionCookieOptions } = cookieOptions
   res.cookie(AUTH_COOKIE_NAME, token, parsed.data.remember === false ? sessionCookieOptions : cookieOptions)
-  return res.json({ id: user.id, email: user.email, role: user.role })
+  return res.json({ id: user.id, email: user.email, role: user.role, token })
 }))
 
 router.get('/check-email', asyncHandler(async (req, res) => {

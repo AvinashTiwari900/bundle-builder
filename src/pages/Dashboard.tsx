@@ -481,7 +481,7 @@ export default function Dashboard() {
               <Sparkles size={15} className="text-amber-300" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">Ask GetNextIn AI Copilot</h3>
+              <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">Ask GetnextIn AI Copilot</h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Workflow guidance, interview tips, or say 'Show high-match jobs'
               </p>

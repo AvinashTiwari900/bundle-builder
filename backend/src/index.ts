@@ -32,7 +32,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
-    service: 'GetNextIn Candidates Backend API',
+    service: 'GetnextIn Candidates Backend API',
     uptimeSeconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString()
   })
@@ -58,7 +58,7 @@ setupMeetingSockets(io)
 // 6. Start Server Listener
 server.listen(PORT, () => {
   console.log('====================================================')
-  console.log(`🚀 GetNextIn Candidates API Server running on port ${PORT}`)
+  console.log(`🚀 GetnextIn Candidates API Server running on port ${PORT}`)
   console.log(`📡 REST API Base: http://localhost:${PORT}/api/v1`)
   console.log(`🔌 WebRTC Socket Signaling: ws://localhost:${PORT}`)
   console.log(`💚 Health Check: http://localhost:${PORT}/health`)

@@ -111,15 +111,15 @@ export default function Sidebar({ isCollapsed = false, onToggle }: SidebarProps)
           className="flex items-center gap-3 w-full text-left bg-transparent border-0 cursor-pointer group focus:outline-none"
         >
           <div
-            className="brand-mark shrink-0 group-hover:scale-105 transition-transform"
+            className="w-10 h-10 shrink-0 group-hover:scale-105 transition-transform rounded-xl overflow-hidden shadow-sm flex items-center justify-center bg-black"
             title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            <span>G</span>
+            <img src="/logo.png" alt="GetnextIn" className="w-full h-full object-contain" />
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0 flex items-center justify-between">
               <div className="min-w-0">
-                <div className="brand-name truncate">GetNextIn</div>
+                <div className="brand-name truncate">GetnextIn</div>
                 <div className="brand-subtitle truncate">Candidates</div>
               </div>
               <span
@@ -164,29 +164,35 @@ export default function Sidebar({ isCollapsed = false, onToggle }: SidebarProps)
                     title={isCollapsed ? item.label : undefined}
                     className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                   >
-                    <div className="relative flex items-center justify-center shrink-0">
-                      <Icon size={17} className="stroke-[1.75]" />
-                      {isCollapsed && ((item.badge !== undefined && item.badge > 0) || item.aiBadge) && (
-                        <span
-                          className={`absolute -top-1 -right-1.5 w-2 h-2 rounded-full ring-2 ring-white ${
-                            item.aiBadge ? 'bg-purple-500' : 'bg-blue-600'
-                          }`}
-                        />
-                      )}
-                    </div>
-
-                    {!isCollapsed && (
+                    {({ isActive }) => (
                       <>
-                        <span className="flex-1 truncate">{item.label}</span>
-                        {item.badge !== undefined && item.badge > 0 && (
-                          <span className="px-2 py-0.5 text-[11px] font-bold bg-blue-100 text-blue-700 rounded-full shrink-0">
-                            {item.badge}
-                          </span>
-                        )}
-                        {item.aiBadge && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-extrabold uppercase bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-md tracking-wider shrink-0">
-                            AI
-                          </span>
+                        <div className="relative flex items-center justify-center shrink-0">
+                          <Icon size={17} className={isActive ? 'stroke-[2.5] text-black' : 'stroke-[1.75] text-[#686660]'} />
+                          {isCollapsed && ((item.badge !== undefined && item.badge > 0) || item.aiBadge) && (
+                            <span
+                              className={`absolute -top-1 -right-1.5 w-2 h-2 rounded-full ring-2 ring-[#FAF9F6] ${
+                                item.aiBadge ? 'bg-purple-500' : 'bg-neutral-900'
+                              }`}
+                            />
+                          )}
+                        </div>
+
+                        {!isCollapsed && (
+                          <>
+                            <span className={`flex-1 truncate ${isActive ? 'font-semibold text-black' : 'font-medium text-[#686660]'}`}>
+                              {item.label}
+                            </span>
+                            {item.badge !== undefined && item.badge > 0 && (
+                              <span className="px-2 py-0.5 text-[11px] font-bold bg-[#E5E2DC] text-[#171717] rounded-full shrink-0">
+                                {item.badge}
+                              </span>
+                            )}
+                            {item.aiBadge && (
+                              <span className="px-1.5 py-0.5 text-[10px] font-extrabold uppercase bg-neutral-900 text-white rounded-md tracking-wider shrink-0">
+                                AI
+                              </span>
+                            )}
+                          </>
                         )}
                       </>
                     )}

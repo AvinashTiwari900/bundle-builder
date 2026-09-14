@@ -1,10 +1,49 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import path from 'path'
+import fs from 'fs'
+import multer from 'multer'
 import { prisma } from '../lib/prisma'
 import { requireAuth, AuthedRequest } from '../middleware/auth'
 import { asyncHandler } from '../lib/asyncHandler'
+import { env } from '../lib/env'
 
 const router = Router()
+
+const uploadDir = path.join(__dirname, '../../uploads/posts')
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true })
+}
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, uploadDir)
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg'
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+    cb(null, `post-media-${uniqueSuffix}${ext}`)
+  }
+})
+
+const fileFilter = (_req: any, file: Express.Multer.File, cb: any) => {
+  const allowedImageMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  const allowedVideoMimes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/x-matroska']
+
+  if (allowedImageMimes.includes(file.mimetype) || allowedVideoMimes.includes(file.mimetype)) {
+    cb(null, true)
+  } else {
+    cb(new Error(`Unsupported file format (${file.mimetype}). Supported formats: JPG, PNG, WEBP, GIF, MP4, MOV, AVI, WEBM, MKV.`))
+  }
+}
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 100 * 1024 * 1024 // 100 MB max
+  }
+})
 
 async function isConnected(userA: string, userB: string): Promise<boolean> {
   if (userA === userB) return true
@@ -20,13 +59,51 @@ async function isConnected(userA: string, userB: string): Promise<boolean> {
   return !!conn
 }
 
-function toResponse(post: any, viewerId: string) {
+async function getConnectionMap(viewerId: string) {
+  const connections = await prisma.connection.findMany({
+    where: {
+      OR: [{ requesterId: viewerId }, { recipientId: viewerId }]
+    }
+  })
+  const connMap = new Map<string, { status: 'connected' | 'pending_sent' | 'pending_received'; connectionId: string }>()
+  for (const c of connections) {
+    const otherId = c.requesterId === viewerId ? c.recipientId : c.requesterId
+    if (c.status === 'accepted') {
+      connMap.set(otherId, { status: 'connected', connectionId: c.id })
+    } else if (c.status === 'pending') {
+      connMap.set(otherId, {
+        status: c.requesterId === viewerId ? 'pending_sent' : 'pending_received',
+        connectionId: c.id
+      })
+    }
+  }
+  return connMap
+}
+
+function toResponse(
+  post: any,
+  viewerId: string,
+  connMap?: Map<string, { status: 'connected' | 'pending_sent' | 'pending_received'; connectionId: string }>
+) {
+  let connectionStatus: 'self' | 'connected' | 'pending_sent' | 'pending_received' | 'none' = 'none'
+  let connectionId: string | undefined = undefined
+
+  if (post.authorId === viewerId) {
+    connectionStatus = 'self'
+  } else if (connMap && connMap.has(post.authorId)) {
+    const info = connMap.get(post.authorId)!
+    connectionStatus = info.status
+    connectionId = info.connectionId
+  }
+
   return {
     id: post.id,
     authorId: post.authorId,
     authorName: post.author?.candidateProfile?.name || post.authorName,
     authorRole: post.author?.candidateProfile?.headline || '',
     authorAvatar: post.author?.candidateProfile?.profilePhoto,
+    connectionStatus,
+    connectionId,
     postType: post.postType,
     title: post.title,
     description: post.description,
@@ -61,6 +138,50 @@ const postInclude = {
   media: { orderBy: { order: 'asc' as const } }
 }
 
+router.post(
+  '/upload',
+  requireAuth,
+  (req, res, next) => {
+    upload.single('file')(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File exceeds size limit (100MB for video, 20MB for photo)' })
+        }
+        return res.status(400).json({ error: err.message })
+      } else if (err) {
+        return res.status(400).json({ error: err.message })
+      }
+      next()
+    })
+  },
+  asyncHandler(async (req: AuthedRequest, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No media file provided' })
+    }
+
+    const isVideo = req.file.mimetype.startsWith('video/')
+    const isImage = req.file.mimetype.startsWith('image/')
+
+    if (isImage && req.file.size > 20 * 1024 * 1024) {
+      try {
+        fs.unlinkSync(req.file.path)
+      } catch (_) {}
+      return res.status(400).json({ error: 'Images must be 20MB or smaller' })
+    }
+
+    const host = req.get('host') || `localhost:${env.port}`
+    const fileUrl = `${req.protocol}://${host}/uploads/posts/${req.file.filename}`
+
+    return res.json({
+      url: fileUrl,
+      type: isVideo ? 'video' : 'image',
+      name: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    })
+  })
+)
+
 router.get(
   '/',
   requireAuth,
@@ -82,6 +203,7 @@ router.get(
     }
 
     const posts = await prisma.post.findMany({ where, include: postInclude, orderBy: { createdAt: 'desc' } })
+    const connMap = await getConnectionMap(viewerId)
 
     const visible: any[] = []
     for (const p of posts) {
@@ -90,11 +212,11 @@ router.get(
         continue
       }
       if (p.visibility === 'private') continue
-      if (p.visibility === 'connections' && !(await isConnected(viewerId, p.authorId))) continue
+      if (p.visibility === 'connections' && connMap.get(p.authorId)?.status !== 'connected') continue
       visible.push(p)
     }
 
-    return res.json(visible.map((p) => toResponse(p, viewerId)))
+    return res.json(visible.map((p) => toResponse(p, viewerId, connMap)))
   })
 )
 
@@ -115,7 +237,8 @@ router.get(
       post.viewsCount += 1
     }
 
-    return res.json(toResponse(post, viewerId))
+    const connMap = await getConnectionMap(viewerId)
+    return res.json(toResponse(post, viewerId, connMap))
   })
 )
 

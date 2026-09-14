@@ -10,7 +10,8 @@ html, body, #root {
 
 body {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
-  color: #0f172a;
+  color: #171717;
+  background-color: #FAF9F6;
 }
 
 /* Custom Scrollbars */
@@ -24,20 +25,20 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #E5E2DC;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #C4C0B8;
 }
 
 /* Glassmorphism helpers */
 .glass {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 254, 251, 0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  border: 1px solid #E5E2DC;
 }
 
 /* Mirror video stream */

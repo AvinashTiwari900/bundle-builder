@@ -186,7 +186,7 @@ export const aiCopilotService = {
     ) {
       return {
         text: `### Professional Networking & Connections Guide\n\n` +
-          `Build your peer network across tech, product, data, and fintech leaders on GetNextIn:\n\n` +
+          `Build your peer network across tech, product, data, and fintech leaders on GetnextIn:\n\n` +
           `**Networking Features:**\n` +
           `1. **Send Connection Requests** — Click **+ Connect** on any user's profile or community post author card. Status updates to *Request Sent*.\n` +
           `2. **Manage Connection Requests** — In **Connections Hub** (\`/connections\`), view **Incoming Requests** (with *Accept* and *Decline* buttons) and pending **Sent Requests** (with *Cancel Request*).\n` +
@@ -335,7 +335,7 @@ export const aiCopilotService = {
       q.includes('which jobs')
     ) {
       return {
-        text: `### How to Find & Apply for Jobs on GetNextIn Candidates\n\n` +
+        text: `### How to Find & Apply for Jobs on GetnextIn Candidates\n\n` +
           `**Steps:**\n` +
           `1. **Step 1 — Open Explore Jobs**\n` +
           `   Go to the left sidebar and click **Explore Jobs**.\n` +
@@ -740,7 +740,7 @@ export const aiCopilotService = {
           `**How it works:**\n` +
           `• **Direct Phone & Email Masking**: Your personal email and phone number are displayed in masked format (e.g. \`a*****i@gmail.com\`, \`+91 98****4321\`) to employer panels.\n` +
           `• **Prevents Unsolicited Calls**: Third-party recruiters cannot scrape your personal phone number or spam you externally.\n` +
-          `• **Seamless In-App Communication**: Employers can still invite you to meetings, review your full portfolio, and message you directly inside the GetNextIn platform.\n\n` +
+          `• **Seamless In-App Communication**: Employers can still invite you to meetings, review your full portfolio, and message you directly inside the GetnextIn platform.\n\n` +
           `**How to Toggle:**\n` +
           `Go to **Portfolio** → Click **"🛡️ Privacy Mask ON / OFF"** at the top → Click **"Save Changes"**.`,
         suggestedRoute: '/portfolio',
@@ -854,8 +854,8 @@ export const aiCopilotService = {
     // 13. DEFAULT INTELLIGENT STEP-BY-STEP PLATFORM GUIDE RESPONSE
     // =========================================================================
     return {
-      text: `### Hello ${candidateName}! 👋 I am your GetNextIn AI Career Copilot\n\n` +
-        `I am your step-by-step navigation guide and career assistant built directly into the GetNextIn Candidates platform. Ask me **what to do**, **where to go**, or **how to use any feature** on the platform:\n\n` +
+      text: `### Hello ${candidateName}! 👋 I am your GetnextIn AI Career Copilot\n\n` +
+        `I am your step-by-step navigation guide and career assistant built directly into the GetnextIn Candidates platform. Ask me **what to do**, **where to go**, or **how to use any feature** on the platform:\n\n` +
         `**Popular Guides & Workflows:**\n` +
         `• **Portfolio**: *"How do I create and publish my portfolio?"*\n` +
         `• **Resume & ATS**: *"How do I improve my ATS score?"* *(Current Score: ${ats.score}/100)*\n` +

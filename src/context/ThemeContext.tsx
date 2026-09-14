@@ -17,26 +17,19 @@ const ThemeContext = createContext<ThemeContextType>({
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem('rap_theme')
-    if (saved === 'dark' || saved === 'light') {
-      return saved
+    if (saved === 'light') {
+      return 'light'
     }
-    // Check system preference
-    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark'
-    }
+    // Default strictly to light mode as requested
     return 'light'
   })
 
   useEffect(() => {
     const root = document.documentElement
-    if (theme === 'dark') {
-      root.classList.add('dark')
-      root.setAttribute('data-theme', 'dark')
-    } else {
-      root.classList.remove('dark')
-      root.setAttribute('data-theme', 'light')
-    }
-    localStorage.setItem('rap_theme', theme)
+    // Enforce light mode styling
+    root.classList.remove('dark')
+    root.setAttribute('data-theme', 'light')
+    localStorage.setItem('rap_theme', 'light')
   }, [theme])
 
   const toggleTheme = () => {

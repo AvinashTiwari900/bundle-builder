@@ -157,39 +157,39 @@ export default function RegisterPage() {
   const pwdStrength = getPasswordStrength()
 
   return (
-    <div className="min-h-screen bg-[#0a0e1a] flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden font-sans">
-      {/* Subtle Purple & Blue Ambient Edge Glows */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/15 rounded-full blur-[140px] pointer-events-none"></div>
-      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-600/15 rounded-full blur-[140px] pointer-events-none"></div>
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden font-sans">
+      {/* Subtle Ambient Edge Glows */}
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[140px] pointer-events-none"></div>
+      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[140px] pointer-events-none"></div>
 
-      <div className="max-w-2xl w-full bg-[#0f172a]/95 backdrop-blur-2xl rounded-3xl border border-slate-800/80 shadow-2xl p-6 sm:p-10 relative z-10 animate-in fade-in zoom-in-95 duration-200">
+      <div className="max-w-2xl w-full bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-10 relative z-10 animate-in fade-in zoom-in-95 duration-200">
         {/* Header Section */}
-        <div className="flex items-center justify-between pb-5 border-b border-slate-800/80 mb-6">
+        <div className="flex items-center justify-between pb-5 border-b border-slate-200 mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold shadow-md shadow-blue-500/20 shrink-0">
-              <UserPlus size={22} />
+            <div className="w-12 h-12 rounded-2xl bg-black overflow-hidden shadow-md flex items-center justify-center shrink-0">
+              <img src="/logo.png" alt="GetnextIn" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                 Create Candidate Account
               </h1>
-              <p className="text-xs text-slate-400 font-medium">
-                GetNextIn Candidates — AI-Powered Job & Career Platform
+              <p className="text-xs text-slate-500 font-medium">
+                GetnextIn Candidates — AI-Powered Job & Career Platform
               </p>
             </div>
           </div>
 
           {/* Badge */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800/90 border border-slate-700/60 text-xs font-bold text-slate-300 shrink-0">
-            <Sparkles size={13} className="text-indigo-400" />
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-bold text-blue-700 shrink-0">
+            <Sparkles size={13} className="text-blue-600" />
             <span>Instant Access</span>
           </div>
         </div>
 
         {/* Global Error Alert */}
         {error && (
-          <div className="mb-5 p-3.5 bg-rose-950/50 border border-rose-800/80 text-rose-300 text-xs rounded-2xl font-medium flex items-start gap-2.5 animate-in fade-in duration-150">
-            <AlertCircle size={17} className="shrink-0 mt-0.5 text-rose-400" />
+          <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-2xl font-medium flex items-start gap-2.5 animate-in fade-in duration-150">
+            <AlertCircle size={17} className="shrink-0 mt-0.5 text-rose-600" />
             <div className="flex-1">{error}</div>
           </div>
         )}
@@ -198,7 +198,7 @@ export default function RegisterPage() {
         <form onSubmit={handleRegister} className="space-y-4" aria-label="Create Candidate Account Form">
           {/* 1. Full Name */}
           <div>
-            <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
               Full Name <span className="text-rose-500">*</span>
             </label>
             <input
@@ -207,9 +207,9 @@ export default function RegisterPage() {
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your name"
               required
-              className="w-full px-4 py-3 bg-slate-900/80 border border-slate-700/70 rounded-xl text-xs font-medium text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40 transition-all"
+              className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-500/40 transition-all"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-slate-500 mt-1">
               Enter your official legal name as shown on KYC certificates.
             </p>
           </div>
@@ -218,11 +218,11 @@ export default function RegisterPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {/* Email Address */}
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                 Email Address <span className="text-rose-500">*</span>
               </label>
               <div className="relative flex items-center">
-                <span className="absolute left-3.5 text-slate-500 pointer-events-none">
+                <span className="absolute left-3.5 text-slate-400 pointer-events-none">
                   <Mail size={15} />
                 </span>
                 <input
@@ -231,31 +231,31 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter candidate email ID"
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-700/70 rounded-xl text-xs font-medium text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40 transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-500/40 transition-all"
                 />
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">Used for interview invites & application status updates.</p>
+              <p className="text-[11px] text-slate-500 mt-1">Used for interview invites & application status updates.</p>
             </div>
 
             {/* Mobile Number */}
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                 Mobile Number <span className="text-rose-500">*</span>
               </label>
               <div className="flex gap-2">
                 <select
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
-                  className="w-28 px-2.5 py-3 bg-slate-900/80 border border-slate-700/70 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500 transition-all"
+                  className="w-28 px-2.5 py-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-600 transition-all"
                 >
                   {COUNTRY_CODES.map((c) => (
-                    <option key={c.code + c.country} value={c.code} className="bg-slate-900 text-white">
+                    <option key={c.code + c.country} value={c.code} className="bg-white text-slate-900">
                       {c.flag} {c.code}
                     </option>
                   ))}
                 </select>
                 <div className="relative flex items-center flex-1">
-                  <span className="absolute left-3.5 text-slate-500 pointer-events-none">
+                  <span className="absolute left-3.5 text-slate-400 pointer-events-none">
                     <Phone size={15} />
                   </span>
                   <input
@@ -264,11 +264,11 @@ export default function RegisterPage() {
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Enter candidate mobile number"
                     required
-                    className="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-700/70 rounded-xl text-xs font-medium text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40 transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-500/40 transition-all"
                   />
                 </div>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">Used for recruiter notifications & screening.</p>
+              <p className="text-[11px] text-slate-500 mt-1">Used for recruiter notifications & screening.</p>
             </div>
           </div>
 
@@ -286,17 +286,17 @@ export default function RegisterPage() {
               required={true}
               customTypeLabel="college"
               helperText="Select from top universities or type and press enter to add custom."
-              theme="dark"
+              theme="light"
             />
           </div>
 
           {/* 4. Card / Panel: Student Toggle, Role & Company */}
-          <div className="p-4 sm:p-5 bg-slate-800/40 border border-slate-700/60 rounded-2xl space-y-3.5">
+          <div className="p-4 sm:p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3.5">
             {/* Toggle Row */}
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-white">Are you currently a student?</span>
-                <p className="text-[11px] text-slate-400">
+                <span className="text-xs font-bold text-slate-900">Are you currently a student?</span>
+                <p className="text-[11px] text-slate-500">
                   Students can skip current company requirements
                 </p>
               </div>
@@ -307,11 +307,11 @@ export default function RegisterPage() {
                   onChange={(e) => handleToggleStudent(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
             </div>
 
-            <div className="border-t border-slate-700/60"></div>
+            <div className="border-t border-slate-200"></div>
 
             {/* Two-Column Row Inside Card: Current Role & Current Company */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -327,7 +327,7 @@ export default function RegisterPage() {
                   allowCustom={true}
                   required={!isStudent}
                   customTypeLabel="role"
-                  theme="dark"
+                  theme="light"
                 />
               </div>
 
@@ -346,7 +346,7 @@ export default function RegisterPage() {
                   required={!isStudent}
                   customTypeLabel="company"
                   helperText={isStudent ? 'Disabled for student candidates' : 'Required for working professionals'}
-                  theme="dark"
+                  theme="light"
                 />
               </div>
             </div>
@@ -357,20 +357,20 @@ export default function RegisterPage() {
             {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Password <span className="text-rose-500">*</span>
                 </label>
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold cursor-pointer"
+                  className="text-[11px] text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
                   <span>{showPassword ? 'Hide' : 'Show'}</span>
                 </button>
               </div>
               <div className="relative flex items-center">
-                <span className="absolute left-3.5 text-slate-500 pointer-events-none">
+                <span className="absolute left-3.5 text-slate-400 pointer-events-none">
                   <Lock size={15} />
                 </span>
                 <input
@@ -379,54 +379,54 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-700/70 rounded-xl text-xs font-medium text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40 transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-500/40 transition-all"
                 />
               </div>
 
-                {/* Password Strength Meter */}
-                {password && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden flex gap-1">
-                      <div
-                        className={`h-full flex-1 rounded-full transition-all ${
-                          pwdStrength.score >= 1 ? pwdStrength.color : 'bg-slate-700'
-                        }`}
-                      ></div>
-                      <div
-                        className={`h-full flex-1 rounded-full transition-all ${
-                          pwdStrength.score >= 2 ? pwdStrength.color : 'bg-slate-700'
-                        }`}
-                      ></div>
-                      <div
-                        className={`h-full flex-1 rounded-full transition-all ${
-                          pwdStrength.score >= 3 ? pwdStrength.color : 'bg-slate-700'
-                        }`}
-                      ></div>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">
-                      {pwdStrength.label}
-                    </span>
+              {/* Password Strength Meter */}
+              {password && (
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden flex gap-1">
+                    <div
+                      className={`h-full flex-1 rounded-full transition-all ${
+                        pwdStrength.score >= 1 ? pwdStrength.color : 'bg-slate-200'
+                      }`}
+                    ></div>
+                    <div
+                      className={`h-full flex-1 rounded-full transition-all ${
+                        pwdStrength.score >= 2 ? pwdStrength.color : 'bg-slate-200'
+                      }`}
+                    ></div>
+                    <div
+                      className={`h-full flex-1 rounded-full transition-all ${
+                        pwdStrength.score >= 3 ? pwdStrength.color : 'bg-slate-200'
+                      }`}
+                    ></div>
                   </div>
-                )}
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">
+                    {pwdStrength.label}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Confirm Password */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Confirm Password <span className="text-rose-500">*</span>
                 </label>
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold cursor-pointer"
+                  className="text-[11px] text-blue-600 hover:text-blue-700 flex items-center gap-1 font-semibold cursor-pointer"
                 >
                   {showConfirmPassword ? <EyeOff size={13} /> : <Eye size={13} />}
                   <span>{showConfirmPassword ? 'Hide' : 'Show'}</span>
                 </button>
               </div>
               <div className="relative flex items-center">
-                <span className="absolute left-3.5 text-slate-500 pointer-events-none">
+                <span className="absolute left-3.5 text-slate-400 pointer-events-none">
                   <Lock size={15} />
                 </span>
                 <input
@@ -435,16 +435,16 @@ export default function RegisterPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter password"
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-700/70 rounded-xl text-xs font-medium text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40 transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-500/40 transition-all"
                 />
               </div>
               {confirmPassword && password !== confirmPassword && (
-                <p className="text-[11px] text-rose-400 mt-1 font-medium">
+                <p className="text-[11px] text-rose-500 mt-1 font-medium">
                   Passwords do not match
                 </p>
               )}
               {confirmPassword && password === confirmPassword && (
-                <p className="text-[11px] text-emerald-400 mt-1 font-medium flex items-center gap-1">
+                <p className="text-[11px] text-emerald-600 mt-1 font-medium flex items-center gap-1">
                   <CheckCircle2 size={12} /> Passwords match
                 </p>
               )}
@@ -456,7 +456,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-extrabold text-sm rounded-xl shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -472,9 +472,9 @@ export default function RegisterPage() {
             </button>
           </div>
 
-          <p className="text-center text-xs text-slate-400 pt-2">
+          <p className="text-center text-xs text-slate-500 pt-2">
             Already have an account?{' '}
-            <Link to="/login" className="font-bold text-indigo-400 hover:underline">
+            <Link to="/login" className="font-bold text-blue-600 hover:underline">
               Sign in here
             </Link>
           </p>
