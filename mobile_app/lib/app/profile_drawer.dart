@@ -146,7 +146,33 @@ class ProfileDrawer extends ConsumerWidget {
                     },
                   ),
 
-                  // 2. Meetings
+                  // 2. My Applications
+                  _drawerItem(
+                    context: context,
+                    icon: Icons.assignment_outlined,
+                    activeIcon: Icons.assignment,
+                    title: 'My Applications',
+                    isSelected: currentPath == '/applications',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.push('/applications');
+                    },
+                  ),
+
+                  // 3. Documents & Resume (Vault)
+                  _drawerItem(
+                    context: context,
+                    icon: Icons.folder_shared_outlined,
+                    activeIcon: Icons.folder_shared,
+                    title: 'Documents & Resume',
+                    isSelected: currentPath == '/documents',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.push('/documents');
+                    },
+                  ),
+
+                  // 4. Meetings
                   _drawerItem(
                     context: context,
                     icon: Icons.video_camera_front_outlined,
@@ -159,7 +185,7 @@ class ProfileDrawer extends ConsumerWidget {
                     },
                   ),
 
-                  // 3. Projects
+                  // 5. Projects
                   _drawerItem(
                     context: context,
                     icon: Icons.folder_outlined,

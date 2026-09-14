@@ -494,12 +494,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final candidatePosts = candidatePostsMap.values.toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
+    return ColoredBox(
+      color: AppColors.backgroundLight,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Screen Header
@@ -590,28 +589,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         border: Border.all(color: AppColors.borderLight),
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.email_outlined, size: 14, color: AppColors.textSecondaryDark),
-                              const SizedBox(width: 6),
-                              Text(
-                                _maskContactDetails ? _maskEmail(user?.email ?? 'candidate@gmail.com') : (user?.email ?? 'candidate@gmail.com'),
-                                style: const TextStyle(fontSize: 12, color: AppColors.textPrimaryDark),
-                              ),
-                            ],
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.email_outlined, size: 14, color: AppColors.textSecondaryDark),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    _maskContactDetails ? _maskEmail(user?.email ?? 'candidate@gmail.com') : (user?.email ?? 'candidate@gmail.com'),
+                                    style: const TextStyle(fontSize: 12, color: AppColors.textPrimaryDark),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           Container(width: 1, height: 16, color: AppColors.borderLight),
-                          Row(
-                            children: [
-                              const Icon(Icons.phone_outlined, size: 14, color: AppColors.textSecondaryDark),
-                              const SizedBox(width: 6),
-                              Text(
-                                _maskContactDetails ? _maskPhone(user?.phone ?? '+91 9876543210') : (user?.phone ?? '+91 9876543210'),
-                                style: const TextStyle(fontSize: 12, color: AppColors.textPrimaryDark),
-                              ),
-                            ],
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.phone_outlined, size: 14, color: AppColors.textSecondaryDark),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    _maskContactDetails ? _maskPhone(user?.phone ?? '+91 9876543210') : (user?.phone ?? '+91 9876543210'),
+                                    style: const TextStyle(fontSize: 12, color: AppColors.textPrimaryDark),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -619,7 +629,105 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+
+              // ==========================================
+              // PROMINENT RESUME & QUICK UPLOAD CARD
+              // ==========================================
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFEFF6FF), Color(0xFFF8FAFC)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.picture_as_pdf, color: AppColors.primary, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Primary Candidate Resume',
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimaryDark),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'resume_avinash_tiwari_2026.pdf • Verified & ATS Ready',
+                                style: TextStyle(fontSize: 11, color: AppColors.textSecondaryDark),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD1FAE5),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Active',
+                            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF065F46)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              final resumeDoc = _documents.firstWhere(
+                                (d) => d.category.contains('Resume'),
+                                orElse: () => _documents.first,
+                              );
+                              _viewDocument(resumeDoc);
+                            },
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              side: const BorderSide(color: AppColors.primary),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            icon: const Icon(Icons.visibility_outlined, size: 16, color: AppColors.primary),
+                            label: const Text('View Resume', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _showUploadDialog(),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            icon: const Icon(Icons.upload_file, size: 16, color: Colors.white),
+                            label: const Text('Upload Resume', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
 
               // Privacy Controls Card
               Container(
@@ -698,19 +806,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Published Posts & Showcase',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimaryDark),
-                      ),
-                      Text(
-                        'Case studies, projects & technical updates (${candidatePosts.length})',
-                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryDark),
-                      ),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Published Posts & Showcase',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimaryDark),
+                        ),
+                        Text(
+                          'Case studies, projects & technical updates (${candidatePosts.length})',
+                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryDark),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   InkWell(
                     onTap: () => context.push('/create-post'),
                     borderRadius: BorderRadius.circular(8),
@@ -797,37 +908,66 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Candidate Documents',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimaryDark),
+                        ),
+                        Text(
+                          'Encrypted credentials & resumes (${_documents.length})',
+                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryDark),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'Candidate Documents',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimaryDark),
+                      InkWell(
+                        onTap: () => context.push('/documents'),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.elevatedLight,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.borderLight),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.folder_open, size: 14, color: AppColors.textPrimaryDark),
+                              SizedBox(width: 4),
+                              Text('All Docs', style: TextStyle(fontSize: 12, color: AppColors.textPrimaryDark, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
                       ),
-                      Text(
-                        'Encrypted credentials & resumes (${_documents.length})',
-                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryDark),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () => _showUploadDialog(),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.upload_file, size: 14, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text('Upload', style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
-                  ),
-                  InkWell(
-                    onTap: () => _showUploadDialog(),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.primary),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.upload_file, size: 14, color: AppColors.primary),
-                          SizedBox(width: 4),
-                          Text('Upload', style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -1049,9 +1189,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
   String _maskEmail(String email) {
     final parts = email.split('@');
