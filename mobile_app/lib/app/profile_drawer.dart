@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../core/api/api_endpoints.dart';
 import '../core/constants/app_colors.dart';
 import '../features/authentication/presentation/auth_notifier.dart';
 
@@ -16,6 +17,10 @@ class ProfileDrawer extends ConsumerWidget {
     final initial = (user?.name != null && user!.name.isNotEmpty)
         ? user.name.substring(0, 1).toUpperCase()
         : 'C';
+    final avatarUrl = user?.avatarUrl ?? user?.profilePhoto;
+    final resolvedAvatar = (avatarUrl != null && avatarUrl.isNotEmpty)
+        ? ApiEndpoints.resolveMediaUrl(avatarUrl)
+        : null;
 
     String currentPath = '';
     try {
@@ -23,7 +28,7 @@ class ProfileDrawer extends ConsumerWidget {
     } catch (_) {}
 
     return Drawer(
-      backgroundColor: AppColors.surfaceLight,
+      backgroundColor: AppColors.cardLight,
       surfaceTintColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(right: Radius.circular(0)),
@@ -36,6 +41,7 @@ class ProfileDrawer extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               decoration: const BoxDecoration(
+                color: AppColors.backgroundLight,
                 border: Border(
                   bottom: BorderSide(color: AppColors.borderLight, width: 1),
                 ),
@@ -48,37 +54,51 @@ class ProfileDrawer extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Candidate Profile Photo
-                      Container(
-                        width: 58,
-                        height: 58,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.elevatedLight,
-                          border: Border.all(color: AppColors.borderLight, width: 2),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          initial,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimaryLight,
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          context.push('/profile');
+                        },
+                        child: Container(
+                          width: 58,
+                          height: 58,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFFEFF6FF),
+                            border: Border.all(color: AppColors.borderLight, width: 1.5),
+                            image: resolvedAvatar != null
+                                ? DecorationImage(
+                                    image: NetworkImage(resolvedAvatar),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
                           ),
+                          alignment: Alignment.center,
+                          child: resolvedAvatar == null
+                              ? Text(
+                                  initial,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                                )
+                              : null,
                         ),
                       ),
 
-                      // Subscription Badge (Rendered ONLY when candidate has active purchased subscription)
+                      // Subscription Badge
                       if (isSubscribed)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                              colors: [Color(0xFF2563EB), Color(0xFF4F46E5)],
                             ),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFD97706).withOpacity(0.3),
+                                color: AppColors.primary.withValues(alpha: 0.25),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -106,29 +126,53 @@ class ProfileDrawer extends ConsumerWidget {
                   const SizedBox(height: 14),
 
                   // Candidate Full Name
-                  Text(
-                    user?.name ?? 'Candidate',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimaryDark,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-
-                  // Role / Headline
-                  Text(
-                    user?.currentRole ?? user?.professionalStatus ?? 'Software Development Engineer',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondaryDark,
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.push('/profile');
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                user?.name ?? 'Candidate',
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimaryLight,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(
+                              Icons.verified,
+                              size: 16,
+                              color: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          user?.currentRole ?? user?.professionalStatus ?? 'Software Development Engineer',
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            color: AppColors.textSecondaryLight,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
 
-            // Navigation Items in Exact Order
+            // Navigation Items
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -198,7 +242,20 @@ class ProfileDrawer extends ConsumerWidget {
                     },
                   ),
 
-                  // 4. Auto Apply
+                  // 6. Case Studies
+                  _drawerItem(
+                    context: context,
+                    icon: Icons.article_outlined,
+                    activeIcon: Icons.article,
+                    title: 'Case Studies',
+                    isSelected: currentPath == '/case-studies',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.push('/case-studies');
+                    },
+                  ),
+
+                  // 7. Auto Apply
                   _drawerItem(
                     context: context,
                     icon: Icons.bolt_outlined,
@@ -211,18 +268,18 @@ class ProfileDrawer extends ConsumerWidget {
                     },
                   ),
 
-                  // 5. Premium
+                  // 8. Premium
                   _drawerItem(
                     context: context,
                     icon: Icons.workspace_premium_outlined,
                     activeIcon: Icons.workspace_premium,
-                    title: 'Premium',
+                    title: 'GetNextIn Pro',
                     isSelected: currentPath == '/premium',
                     trailing: isSubscribed
                         ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFEF3C7),
+                              color: const Color(0xFFEFF6FF),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
@@ -230,12 +287,12 @@ class ProfileDrawer extends ConsumerWidget {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFFD97706),
+                                color: AppColors.primary,
                               ),
                             ),
                           )
                         : Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: AppColors.elevatedLight,
                               borderRadius: BorderRadius.circular(6),
@@ -255,7 +312,7 @@ class ProfileDrawer extends ConsumerWidget {
                     },
                   ),
 
-                  // 6. Settings
+                  // 9. Settings
                   _drawerItem(
                     context: context,
                     icon: Icons.settings_outlined,
@@ -284,9 +341,10 @@ class ProfileDrawer extends ConsumerWidget {
                     height: 32,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
+                      color: Colors.black,
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: Image.asset('assets/icon.png', fit: BoxFit.contain),
+                    child: Image.asset('assets/logo.png', fit: BoxFit.cover),
                   ),
                   const SizedBox(width: 10),
                   const Column(
@@ -294,16 +352,16 @@ class ProfileDrawer extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'GetnextIn Candidates',
+                        'GetNextIn',
                         style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimaryDark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimaryLight,
                         ),
                       ),
                       Text(
-                        'v1.0.0 • Verified Portal',
-                        style: TextStyle(fontSize: 10, color: AppColors.textMutedDark),
+                        'v1.0.0 • Verified Candidate Portal',
+                        style: TextStyle(fontSize: 10.5, color: AppColors.textMutedDark),
                       ),
                     ],
                   ),
@@ -336,15 +394,15 @@ class ProfileDrawer extends ConsumerWidget {
         child: ListTile(
           leading: Icon(
             isSelected ? (activeIcon ?? icon) : icon,
-            color: isSelected ? const Color(0xFF000000) : AppColors.textSecondaryLight,
-            size: 22,
+            color: isSelected ? AppColors.navActive : AppColors.textSecondaryLight,
+            size: 21,
           ),
           title: Text(
             title,
             style: TextStyle(
-              fontSize: 15,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected ? const Color(0xFF000000) : AppColors.textPrimaryDark,
+              fontSize: 14,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              color: isSelected ? AppColors.navActive : AppColors.textPrimaryLight,
             ),
           ),
           trailing: trailing,

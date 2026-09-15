@@ -61,7 +61,7 @@ class _PostsScreenState extends State<PostsScreen> {
       authorHeadline: 'Enterprise Recruitment Partner',
       timeAgo: '5h ago',
       content:
-          'We are actively hiring 5 Lead Mobile Engineers experienced in Flutter and real-time streaming architectures. Competitive equity & remote work. Check out the job board in the GetnextIn app!',
+          'We are actively hiring 5 Lead Mobile Engineers experienced in Flutter and real-time streaming architectures. Competitive equity & remote work. Check out the job board in the GetNextIn app!',
       tags: ['#Hiring', '#FlutterJobs', '#RemoteWork'],
       likesCount: 88,
       commentsCount: 23,

@@ -68,6 +68,23 @@ class _JobsScreenState extends ConsumerState<JobsScreen>
       matchExplanation:
           'Great match on UI component fidelity and video stream integrations.',
     ),
+    JobModel(
+      id: 'job-4',
+      title: 'Mobile Architect',
+      company: 'Nexus Mobility Global',
+      location: 'Pune, Maharashtra',
+      workMode: 'Hybrid',
+      salary: '₹28 - 36 LPA',
+      experience: '6-8 Years',
+      skills: ['Architecture', 'Flutter', 'Android', 'iOS', 'Clean Code'],
+      description:
+          'Design enterprise design systems, reactive store pipelines, and platform channels.',
+      eligibility: 'Extensive track record leading production mobile teams.',
+      matchScore: 91,
+      matchExplanation:
+          'Deep match with architecture leadership, Flutter design systems, and cross-platform performance.',
+      isSaved: true,
+    ),
   ];
 
   @override
@@ -86,7 +103,7 @@ class _JobsScreenState extends ConsumerState<JobsScreen>
   void _showFilterBottomSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: AppColors.cardLight,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -94,7 +111,7 @@ class _JobsScreenState extends ConsumerState<JobsScreen>
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(22),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,12 +123,12 @@ class _JobsScreenState extends ConsumerState<JobsScreen>
                         'Filter Jobs',
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimaryDark,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimaryLight,
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: AppColors.textSecondaryDark),
+                        icon: const Icon(Icons.close, color: AppColors.textSecondaryLight),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -120,9 +137,9 @@ class _JobsScreenState extends ConsumerState<JobsScreen>
                   const Text(
                     'Work Mode',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13.5,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimaryDark,
+                      color: AppColors.textPrimaryLight,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -133,11 +150,16 @@ class _JobsScreenState extends ConsumerState<JobsScreen>
                       return ChoiceChip(
                         label: Text(mode),
                         selected: isSelected,
-                        selectedColor: AppColors.primary,
-                        backgroundColor: AppColors.cardDark,
+                        selectedColor: AppColors.navActive,
+                        backgroundColor: AppColors.elevatedLight,
                         labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : AppColors.textSecondaryDark,
+                          color: isSelected ? Colors.white : AppColors.textPrimaryLight,
                           fontWeight: FontWeight.w600,
+                          fontSize: 12.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: const BorderSide(color: AppColors.borderLight),
                         ),
                         onSelected: (selected) {
                           if (selected) {
@@ -158,7 +180,7 @@ class _JobsScreenState extends ConsumerState<JobsScreen>
                         backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Apply Filters', style: TextStyle(color: Colors.white)),
+                      child: const Text('Apply Filters', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -186,52 +208,99 @@ class _JobsScreenState extends ConsumerState<JobsScreen>
     final savedFiltered = allFiltered.where((j) => j.isSaved).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
-      appBar: AppBar(
-        title: const Text('Job Openings'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.tune),
-            onPressed: _showFilterBottomSheet,
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppColors.primary,
-          labelColor: AppColors.primaryLight,
-          unselectedLabelColor: AppColors.textSecondaryDark,
-          tabs: const [
-            Tab(text: 'All Jobs'),
-            Tab(text: 'Saved Jobs'),
-          ],
-        ),
-      ),
+      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: Column(
           children: [
-            // Search Input
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: TextFormField(
-                controller: _searchController,
-                onChanged: (_) => setState(() {}),
-                style: const TextStyle(color: AppColors.textPrimaryDark, fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: 'Search roles, companies, skills...',
-                  prefixIcon: const Icon(Icons.search, color: AppColors.textMutedDark),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {});
-                          },
-                        )
-                      : null,
+            // Top Section
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+              decoration: const BoxDecoration(
+                color: AppColors.cardLight,
+                border: Border(
+                  bottom: BorderSide(color: AppColors.borderLight, width: 1),
                 ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Jobs',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimaryLight,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.tune_rounded, color: AppColors.textPrimaryLight, size: 22),
+                        onPressed: _showFilterBottomSheet,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+
+                  // Search Field
+                  Container(
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppColors.searchBackground,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        hintText: 'Search roles, companies, skills...',
+                        hintStyle: const TextStyle(fontSize: 13, color: AppColors.textMutedDark),
+                        prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.textSecondaryLight),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? GestureDetector(
+                                onTap: () {
+                                  _searchController.clear();
+                                  setState(() {});
+                                },
+                                child: const Icon(Icons.close, size: 16, color: AppColors.textSecondaryLight),
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      style: const TextStyle(fontSize: 13.5, color: AppColors.textPrimaryLight),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Pill Tabs
+                  TabBar(
+                    controller: _tabController,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    indicator: BoxDecoration(
+                      color: AppColors.navActive,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    labelColor: Colors.white,
+                    unselectedLabelColor: AppColors.textSecondaryLight,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
+                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12.5),
+                    dividerColor: Colors.transparent,
+                    tabs: [
+                      Tab(text: 'All Jobs (${allFiltered.length})'),
+                      Tab(text: 'Saved (${savedFiltered.length})'),
+                    ],
+                  ),
+                ],
               ),
             ),
 
+            // Job Lists
             Expanded(
               child: TabBarView(
                 controller: _tabController,
@@ -254,7 +323,7 @@ class _JobsScreenState extends ConsumerState<JobsScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              isSavedTab ? Icons.bookmark_border : Icons.search_off,
+              isSavedTab ? Icons.bookmark_border_rounded : Icons.search_off_rounded,
               size: 48,
               color: AppColors.textMutedDark,
             ),
@@ -263,8 +332,8 @@ class _JobsScreenState extends ConsumerState<JobsScreen>
               isSavedTab ? 'No Saved Jobs' : 'No matching jobs found',
               style: const TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimaryDark,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimaryLight,
               ),
             ),
             const SizedBox(height: 4),
@@ -272,7 +341,7 @@ class _JobsScreenState extends ConsumerState<JobsScreen>
               isSavedTab
                   ? 'Bookmark jobs to easily access and apply later'
                   : 'Try adjusting your search terms or filters',
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondaryDark),
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
             ),
           ],
         ),
@@ -280,9 +349,9 @@ class _JobsScreenState extends ConsumerState<JobsScreen>
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: jobs.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, idx) {
         final job = jobs[idx];
         return GestureDetector(
@@ -290,92 +359,173 @@ class _JobsScreenState extends ConsumerState<JobsScreen>
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surfaceDark,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.borderDark),
+              color: AppColors.cardLight,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.borderLight),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Top Row: Company Icon, Title & Company, Save Action
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.borderLight),
+                      ),
+                      alignment: Alignment.center,
                       child: Text(
-                        job.title,
+                        job.company.isNotEmpty ? job.company[0].toUpperCase() : 'C',
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimaryDark,
+                          color: AppColors.primary,
                         ),
                       ),
                     ),
-                    MatchScoreChip(score: job.matchScore),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  job.company,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondaryDark,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardDark,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        job.workMode,
-                        style: const TextStyle(fontSize: 11, color: AppColors.primaryLight),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            job.title,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimaryLight,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            job.company,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondaryLight,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMutedDark),
-                    const SizedBox(width: 4),
-                    Text(
-                      job.location,
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryDark),
-                    ),
-                    const Spacer(),
-                    Text(
-                      job.salary,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.success,
+                    IconButton(
+                      icon: Icon(
+                        job.isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                        color: job.isSaved ? AppColors.primary : AppColors.textSecondaryLight,
+                        size: 22,
                       ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(job.isSaved ? 'Job removed from saved' : 'Job saved to bookmarks')),
+                        );
+                      },
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
+
+                // Metadata Chips: Location, WorkMode, Salary, Experience
                 Wrap(
                   spacing: 6,
-                  children: job.skills.take(4).map((skill) {
+                  runSpacing: 6,
+                  children: [
+                    _metaChip(Icons.location_on_outlined, job.location),
+                    _metaChip(Icons.work_outline, job.workMode),
+                    _metaChip(Icons.payments_outlined, job.salary),
+                    _metaChip(Icons.schedule_outlined, job.experience),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Required Skills
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: job.skills.take(4).map((s) {
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
+                        color: AppColors.elevatedLight,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        skill,
-                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryDark),
+                        s,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimaryLight,
+                        ),
                       ),
                     );
                   }).toList(),
+                ),
+                const SizedBox(height: 12),
+                const Divider(height: 1, color: AppColors.borderLight),
+                const SizedBox(height: 10),
+
+                // Bottom Row: AI Match badge + Apply CTA
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    MatchScoreChip(score: job.matchScore),
+                    const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'View Details',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.primary),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _metaChip(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundLight,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: AppColors.textSecondaryLight),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
     );
   }
 }

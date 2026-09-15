@@ -93,7 +93,7 @@ class _AutoApplyScreenState extends State<AutoApplyScreen> {
                         contentPadding: EdgeInsets.zero,
                         activeColor: AppColors.primary,
                         title: const Text(
-                          'I authorize GetnextIn AI to submit applications on my behalf',
+                          'I authorize GetNextIn AI to submit applications on my behalf',
                           style: TextStyle(fontSize: 12, color: AppColors.textPrimaryDark),
                         ),
                         value: _consentGiven,

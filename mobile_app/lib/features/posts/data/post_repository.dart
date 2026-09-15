@@ -153,10 +153,10 @@ class PostRepository {
       postType: 'Career Update',
       title: 'Hiring: 5 Lead Flutter Engineers & Full Stack Developers (Remote / Bengaluru)',
       description:
-          '🚀 We are aggressively hiring 5 Lead Flutter Engineers & Full Stack Node.js Developers for fast-growing FinTech and AI infrastructure ventures.\n\nRequirements:\n• 3+ years experience with Flutter, Riverpod, clean architecture, and background workers.\n• Deep knowledge of state synchronization, secure key storage, and automated CI/CD pipelines.\n• Compensation: ₹24 - 36 LPA + competitive equity.\n\nCandidates on GetnextIn can apply with 1 tap via the Jobs tab!',
-      hashtags: ['#Hiring', '#FlutterJobs', '#TechCareers', '#RemoteJobs', '#GetnextIn'],
+          '🚀 We are aggressively hiring 5 Lead Flutter Engineers & Full Stack Node.js Developers for fast-growing FinTech and AI infrastructure ventures.\n\nRequirements:\n• 3+ years experience with Flutter, Riverpod, clean architecture, and background workers.\n• Deep knowledge of state synchronization, secure key storage, and automated CI/CD pipelines.\n• Compensation: ₹24 - 36 LPA + competitive equity.\n\nCandidates on GetNextIn can apply with 1 tap via the Jobs tab!',
+      hashtags: ['#Hiring', '#FlutterJobs', '#TechCareers', '#RemoteJobs', '#GetNextIn'],
       links: [
-        const PostLinkModel(label: 'Apply via GetnextIn Jobs Tab', url: 'https://getnextin.ai/jobs'),
+        const PostLinkModel(label: 'Apply via GetNextIn Jobs Tab', url: 'https://getnextin.ai/jobs'),
       ],
       media: [
         const PostMediaModel(

@@ -95,32 +95,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: Image.asset(
-                          'assets/icon.png',
+                          'assets/logo.png',
                           fit: BoxFit.contain,
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'GetnextIn',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimaryDark,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          Text(
-                            'Candidates Portal',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondaryDark,
-                            ),
-                          ),
-                        ],
+                      Image.asset(
+                        'assets/getnextin_wordmark.png',
+                        height: 28,
+                        fit: BoxFit.contain,
                       ),
                     ],
                   ),

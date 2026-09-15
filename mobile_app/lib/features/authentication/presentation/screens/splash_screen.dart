@@ -23,29 +23,28 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (!mounted) return;
 
     final authState = ref.read(authNotifierProvider);
-    authState.when(
-      data: (user) {
-        if (user != null) {
-          context.go('/home');
-        } else {
-          context.go('/login');
-        }
-      },
-      error: (_, __) => context.go('/login'),
-      loading: () => null,
-    );
+    if (!authState.isLoading) {
+      context.go('/home');
+    } else {
+      await Future.delayed(const Duration(milliseconds: 1500));
+      if (mounted) context.go('/home');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     ref.listen(authNotifierProvider, (previous, next) {
-      next.whenData((user) {
-        if (user != null) {
-          context.go('/home');
-        } else {
-          context.go('/login');
-        }
-      });
+      next.when(
+        data: (user) {
+          if (user != null) {
+            context.go('/home');
+          } else {
+            context.go('/home');
+          }
+        },
+        error: (_, __) => context.go('/home'),
+        loading: () {},
+      );
     });
 
     return Scaffold(
@@ -69,19 +68,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               ),
               clipBehavior: Clip.antiAlias,
               child: Image.asset(
-                'assets/icon.png',
+                'assets/logo.png',
                 fit: BoxFit.contain,
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'GetnextIn',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimaryDark,
-                letterSpacing: 0.2,
-              ),
+            Image.asset(
+              'assets/getnextin_wordmark.png',
+              height: 38,
+              fit: BoxFit.contain,
             ),
             const SizedBox(height: 8),
             const Text(

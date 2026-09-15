@@ -25,7 +25,8 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
     'All',
     'Case Study',
     'Project Showcase',
-    'Technical / Knowledge',
+    'Technical',
+    'Design',
   ];
 
   @override
@@ -93,16 +94,17 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
 
     final filteredPosts = postsToFilter.where((p) {
       if (_selectedCategory == 'All') return true;
-      if (_selectedCategory == 'Technical / Knowledge') {
+      if (_selectedCategory == 'Technical') {
         return p.postType.contains('Technical') || p.postType.contains('Knowledge');
       }
-      return p.postType.toLowerCase() == _selectedCategory.toLowerCase();
+      return p.postType.toLowerCase().contains(_selectedCategory.toLowerCase());
     }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: RefreshIndicator(
         color: AppColors.primary,
+        backgroundColor: AppColors.cardLight,
         onRefresh: () async {
           if (widget.isPersonalFeed) {
             await ref.read(postsNotifierProvider.notifier).loadMyPosts();
@@ -110,14 +112,14 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
           } else {
             final filterType = _selectedCategory == 'All'
                 ? null
-                : (_selectedCategory == 'Technical / Knowledge' ? 'Technical / Knowledge Sharing' : _selectedCategory);
+                : (_selectedCategory == 'Technical' ? 'Technical / Knowledge Sharing' : _selectedCategory);
             await ref.read(postsNotifierProvider.notifier).loadFeed(refresh: true, postType: filterType);
           }
         },
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            // 1. Share Something Composer Card (Keeps Photo, Video, Create Post options)
+            // 1. Share Something Composer Card
             SliverToBoxAdapter(
               child: _buildShareComposer(context, currentUser),
             ),
@@ -126,7 +128,7 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
             if (widget.isPersonalFeed && postsToFilter.isNotEmpty)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -134,20 +136,20 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
                         'My Published Posts (${postsToFilter.length})',
                         style: const TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimaryDark,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimaryLight,
                         ),
                       ),
                       const Text(
                         'Visible on your profile',
-                        style: TextStyle(fontSize: 11.5, color: AppColors.textSecondaryDark),
+                        style: TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight),
                       ),
                     ],
                   ),
                 ),
               ),
 
-            // 3. Filter Chips Row (All, Case Study, Project Showcase, Technical / Knowledge)
+            // 3. Filter Chips Row (Reference Design: All, Case Study, Project Showcase, Technical, Design >)
             SliverToBoxAdapter(
               child: _buildFilterChips(),
             ),
@@ -192,7 +194,7 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
     );
   }
 
-  // "Share something..." Composer Card
+  // "Share your thoughts, project, or update..." Composer Card matching Reference
   Widget _buildShareComposer(BuildContext context, dynamic user) {
     final name = user?.name as String? ?? 'Candidate';
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'C';
@@ -205,12 +207,12 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.borderLight),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.025),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -221,7 +223,7 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
           Row(
             children: [
               CircleAvatar(
-                radius: 20,
+                radius: 19,
                 backgroundColor: const Color(0xFFEFF6FF),
                 backgroundImage: resolvedAvatar != null
                     ? NetworkImage(resolvedAvatar)
@@ -230,31 +232,32 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
                     ? Text(
                         initial,
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primary,
                         ),
                       )
                     : null,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: GestureDetector(
                   onTap: () => context.push('/create-post'),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
+                      color: AppColors.searchBackground,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: AppColors.borderLight),
                     ),
                     child: const Text(
-                      'Share something...',
+                      'Share your thoughts, project, or update...',
                       style: TextStyle(
-                        fontSize: 13.5,
-                        color: AppColors.textSecondaryDark,
+                        fontSize: 13,
+                        color: AppColors.textMutedDark,
                         fontWeight: FontWeight.w400,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
@@ -265,31 +268,40 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
           const Divider(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 8),
 
-          // Action buttons: Photo, Video, Create Post
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _composerAction(
-                icon: Icons.image_outlined,
-                color: const Color(0xFF2563EB),
-                label: 'Photo',
-                onTap: () => _openCreateWithMedia(isVideo: false),
-              ),
-              Container(width: 1, height: 20, color: AppColors.borderLight),
-              _composerAction(
-                icon: Icons.videocam_outlined,
-                color: const Color(0xFF059669),
-                label: 'Video',
-                onTap: () => _openCreateWithMedia(isVideo: true),
-              ),
-              Container(width: 1, height: 20, color: AppColors.borderLight),
-              _composerAction(
-                icon: Icons.edit_note_outlined,
-                color: const Color(0xFF7C3AED),
-                label: 'Create Post',
-                onTap: () => context.push('/create-post'),
-              ),
-            ],
+          // 4 Quick action buttons: Photo, Video, Case Study, Create Post
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _composerAction(
+                  icon: Icons.image_outlined,
+                  color: const Color(0xFF2563EB),
+                  label: 'Photo',
+                  onTap: () => _openCreateWithMedia(isVideo: false),
+                ),
+                const SizedBox(width: 4),
+                _composerAction(
+                  icon: Icons.smart_display_outlined,
+                  color: const Color(0xFF059669),
+                  label: 'Video',
+                  onTap: () => _openCreateWithMedia(isVideo: true),
+                ),
+                const SizedBox(width: 4),
+                _composerAction(
+                  icon: Icons.article_outlined,
+                  color: const Color(0xFF7C3AED),
+                  label: 'Case Study',
+                  onTap: () => context.push('/create-post'),
+                ),
+                const SizedBox(width: 4),
+                _composerAction(
+                  icon: Icons.code_rounded,
+                  color: const Color(0xFFEA580C),
+                  label: 'Create Post',
+                  onTap: () => context.push('/create-post'),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -306,18 +318,18 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 18, color: color),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Text(
               label,
               style: const TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimaryDark,
+                color: AppColors.textPrimaryLight,
               ),
             ),
           ],
@@ -326,60 +338,71 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
     );
   }
 
-  // Filter Chips Row (Reference Design: Black active, white inactive)
+  // Filter Chips Row (Reference Design: Dark active pill, white inactive pill + arrow)
   Widget _buildFilterChips() {
     return Container(
-      height: 42,
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        scrollDirection: Axis.horizontal,
-        itemCount: _categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final cat = _categories[i];
-          final isSelected = _selectedCategory == cat;
-          return GestureDetector(
-            onTap: () {
-              setState(() => _selectedCategory = cat);
-              final filterType = cat == 'All'
-                  ? null
-                  : (cat == 'Technical / Knowledge' ? 'Technical / Knowledge Sharing' : cat);
-              ref.read(postsNotifierProvider.notifier).loadFeed(refresh: true, postType: filterType);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF000000) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected ? const Color(0xFF000000) : AppColors.borderLight,
-                  width: 1,
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.12),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
+      height: 40,
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              scrollDirection: Axis.horizontal,
+              itemCount: _categories.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (_, i) {
+                final cat = _categories[i];
+                final isSelected = _selectedCategory == cat;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => _selectedCategory = cat);
+                    final filterType = cat == 'All'
+                        ? null
+                        : (cat == 'Technical' ? 'Technical / Knowledge Sharing' : cat);
+                    ref.read(postsNotifierProvider.notifier).loadFeed(refresh: true, postType: filterType);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: isSelected ? const Color(0xFF111827) : AppColors.cardLight,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected ? const Color(0xFF111827) : AppColors.borderLight,
+                        width: 1,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        cat,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected ? Colors.white : AppColors.textPrimaryLight,
                         ),
-                      ]
-                    : null,
-              ),
-              child: Center(
-                child: Text(
-                  cat,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? Colors.white : AppColors.textSecondaryDark,
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
-          );
-        },
+          ),
+          Container(
+            margin: const EdgeInsets.only(right: 14),
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.cardLight,
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: const Icon(
+              Icons.chevron_right,
+              size: 16,
+              color: AppColors.textSecondaryLight,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -390,8 +413,8 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.cardLight,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
@@ -402,8 +425,8 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
               Container(
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F5F9),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -474,38 +497,38 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 72,
-                height: 72,
+                width: 68,
+                height: 68,
                 decoration: const BoxDecoration(
                   color: Color(0xFFEFF6FF),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.post_add_rounded, size: 36, color: AppColors.primary),
+                child: const Icon(Icons.post_add_rounded, size: 34, color: AppColors.primary),
               ),
               const SizedBox(height: 16),
               const Text(
-                'You haven’t posted anything yet. Share your first update.',
+                'You haven\'t posted anything yet.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimaryDark),
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.textPrimaryLight),
               ),
               const SizedBox(height: 8),
               const Text(
-                'Share your project showcases, case studies, videos, or industry insights to highlight your expertise on your profile.',
+                'Share your project showcases, case studies, or career achievements to highlight your expertise to recruiters.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondaryDark, height: 1.4),
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight, height: 1.4),
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
                 onPressed: () => context.push('/create-post'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 icon: const Icon(Icons.add, color: Colors.white, size: 18),
                 label: const Text(
                   'Share Your First Update',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
                 ),
               ),
             ],
@@ -521,26 +544,26 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 72,
-              height: 72,
+              width: 68,
+              height: 68,
               decoration: const BoxDecoration(
                 color: Color(0xFFEFF6FF),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.feed_outlined, size: 36, color: AppColors.primary),
+              child: const Icon(Icons.feed_outlined, size: 34, color: AppColors.primary),
             ),
             const SizedBox(height: 16),
             Text(
               _selectedCategory == 'All'
                   ? 'No posts in feed yet'
                   : 'No $_selectedCategory posts yet',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimaryDark),
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.textPrimaryLight),
             ),
             const SizedBox(height: 6),
             const Text(
-              'Be the first to share a project breakthrough, technical case study, or career achievement on GetnextIn.',
+              'Be the first to share a project breakthrough, technical case study, or career update on GetNextIn.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondaryDark, height: 1.4),
+              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondaryLight, height: 1.4),
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
@@ -548,12 +571,12 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               icon: const Icon(Icons.add, color: Colors.white, size: 18),
               label: const Text(
-                'Create Post',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                'Share Your First Update',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
               ),
             ),
           ],
@@ -571,24 +594,24 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 68,
-              height: 68,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFEF2F2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.wifi_off_rounded, size: 34, color: AppColors.error),
+              child: const Icon(Icons.wifi_off_rounded, size: 32, color: AppColors.error),
             ),
             const SizedBox(height: 16),
             const Text(
               'Unable to load feed',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimaryDark),
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.textPrimaryLight),
             ),
             const SizedBox(height: 6),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryDark),
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
@@ -596,7 +619,7 @@ class _PostsFeedScreenState extends ConsumerState<PostsFeedScreen> with Automati
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               icon: const Icon(Icons.refresh, color: Colors.white, size: 18),
               label: const Text('Retry', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),

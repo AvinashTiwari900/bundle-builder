@@ -11,7 +11,7 @@ class StatusBadge extends StatelessWidget {
     final (bgColor, textColor) = _getStatusColors(status.toLowerCase());
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(20),
@@ -20,9 +20,9 @@ class StatusBadge extends StatelessWidget {
         status.toUpperCase(),
         style: TextStyle(
           color: textColor,
-          fontSize: 11,
+          fontSize: 10.5,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
+          letterSpacing: 0.3,
         ),
       ),
     );
@@ -33,19 +33,19 @@ class StatusBadge extends StatelessWidget {
         normalized.contains('offer') ||
         normalized.contains('verified') ||
         normalized.contains('hired')) {
-      return (AppColors.success.withOpacity(0.15), AppColors.success);
+      return (AppColors.success.withValues(alpha: 0.15), AppColors.success);
     } else if (normalized.contains('interview') || normalized.contains('scheduled')) {
-      return (AppColors.primary.withOpacity(0.15), AppColors.primaryLight);
-    } else if (normalized.contains('shortlist') || normalized.contains('review')) {
-      return (AppColors.accent.withOpacity(0.15), const Color(0xFF818CF8));
+      return (AppColors.primary.withValues(alpha: 0.15), AppColors.primary);
+    } else if (normalized.contains('shortlist')) {
+      return (const Color(0xFFEFF6FF), AppColors.primary);
     } else if (normalized.contains('reject') || normalized.contains('failed')) {
-      return (AppColors.error.withOpacity(0.15), AppColors.error);
+      return (AppColors.error.withValues(alpha: 0.12), AppColors.error);
     } else if (normalized.contains('pending') ||
         normalized.contains('hold') ||
         normalized.contains('screening')) {
-      return (AppColors.warning.withOpacity(0.15), AppColors.warning);
+      return (AppColors.warning.withValues(alpha: 0.15), const Color(0xFFD97706));
     }
 
-    return (AppColors.borderDark, AppColors.textSecondaryDark);
+    return (AppColors.elevatedLight, AppColors.textSecondaryLight);
   }
 }

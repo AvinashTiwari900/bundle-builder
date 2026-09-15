@@ -97,7 +97,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Consumer(
                 builder: (context, ref, _) {
                   return CustomButton(
-                    text: 'Sign Out of GetnextIn',
+                    text: 'Sign Out of GetNextIn',
                     variant: ButtonVariant.danger,
                     icon: Icons.logout,
                     onPressed: () async {

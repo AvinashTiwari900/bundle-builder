@@ -142,7 +142,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Join GetnextIn to unlock AI-assisted recruitment & job matching',
+                  'Join GetNextIn to unlock AI-assisted recruitment & job matching',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondaryDark,

@@ -1,11 +1,11 @@
 {
-    "name": "GetnextIn",
-    "short_name": "GetnextIn",
+    "name": "GetNextIn",
+    "short_name": "GetNextIn",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#ffffff",
-    "description": "GetnextIn — AI-Powered Job & Career Platform.",
+    "description": "GetNextIn — AI-Powered Job & Career Platform.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

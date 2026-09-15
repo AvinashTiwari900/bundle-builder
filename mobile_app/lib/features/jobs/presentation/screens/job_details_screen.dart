@@ -259,13 +259,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
-        title: Text(_job.company),
+        title: Text(_job.company, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
         actions: [
           IconButton(
-            icon: Icon(_isSaved ? Icons.bookmark : Icons.bookmark_border),
-            color: _isSaved ? AppColors.primaryLight : AppColors.textPrimaryDark,
+            icon: Icon(_isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded),
+            color: _isSaved ? AppColors.primary : AppColors.textPrimaryLight,
             onPressed: () {
               setState(() => _isSaved = !_isSaved);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -288,73 +288,94 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title & Score
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      _job.title,
+              // Top Job Summary Card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppColors.cardLight,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.borderLight),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _job.title,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimaryLight,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        MatchScoreChip(score: _job.matchScore),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _job.company,
                       style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimaryDark,
+                        fontSize: 15,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  MatchScoreChip(score: _job.matchScore),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                _job.company,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: AppColors.primaryLight,
-                  fontWeight: FontWeight.w600,
+                    const SizedBox(height: 14),
+
+                    // Metadata Pills Row
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _infoChip(Icons.location_on_outlined, _job.location),
+                        _infoChip(Icons.work_outline, _job.workMode),
+                        _infoChip(Icons.payments_outlined, _job.salary, isHighlight: true),
+                        _infoChip(Icons.schedule_outlined, _job.experience),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Metadata Pills Row
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _infoChip(Icons.location_on_outlined, _job.location),
-                  _infoChip(Icons.work_outline, _job.workMode),
-                  _infoChip(Icons.currency_rupee, _job.salary, isHighlight: true),
-                  _infoChip(Icons.timelapse_outlined, _job.experience),
-                ],
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
 
               // AI Match Breakdown Box
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.auto_awesome, color: AppColors.primaryLight, size: 18),
+                        Icon(Icons.auto_awesome, color: AppColors.primary, size: 18),
                         SizedBox(width: 8),
                         Text(
                           'AI Match Score Explanation',
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimaryDark,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimaryLight,
                           ),
                         ),
                       ],
@@ -364,84 +385,108 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       _job.matchExplanation,
                       style: const TextStyle(
                         fontSize: 13,
-                        color: AppColors.textSecondaryDark,
-                        height: 1.4,
+                        color: AppColors.textPrimaryLight,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Required Skills Card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppColors.cardLight,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Required Skills',
+                      style: TextStyle(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimaryLight,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _job.skills.map((skill) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: AppColors.elevatedLight,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.borderLight),
+                          ),
+                          child: Text(
+                            skill,
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Job Description Card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppColors.cardLight,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Job Description',
+                      style: TextStyle(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimaryLight,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _job.description,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        color: AppColors.textSecondaryLight,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Eligibility Criteria',
+                      style: TextStyle(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimaryLight,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _job.eligibility,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        color: AppColors.textSecondaryLight,
+                        height: 1.5,
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Required Skills
-              const Text(
-                'Required Skills',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimaryDark,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _job.skills.map((skill) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceDark,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.borderDark),
-                    ),
-                    child: Text(
-                      skill,
-                      style: const TextStyle(fontSize: 12, color: AppColors.textPrimaryDark),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 24),
-
-              // Job Description
-              const Text(
-                'Job Description',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimaryDark,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                _job.description,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondaryDark,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Eligibility
-              const Text(
-                'Eligibility Criteria',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimaryDark,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                _job.eligibility,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondaryDark,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -449,8 +494,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: const BoxDecoration(
-          color: AppColors.surfaceDark,
-          border: Border(top: BorderSide(color: AppColors.borderDark)),
+          color: AppColors.cardLight,
+          border: Border(top: BorderSide(color: AppColors.borderLight)),
         ),
         child: CustomButton(
           text: _hasApplied ? 'Applied ✓' : 'Apply for this Role',
@@ -462,14 +507,15 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  Widget _infoChip(IconData icon, String text, {bool isHighlight = false}) {
+  Widget _infoChip(IconData icon, String text, {bool isHighlight = false, String? jobWorkMode}) {
+    final displayText = jobWorkMode ?? text;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surfaceDark,
+        color: AppColors.elevatedLight,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isHighlight ? AppColors.success.withOpacity(0.3) : AppColors.borderDark,
+          color: isHighlight ? const Color(0xFF6EE7B7) : AppColors.borderLight,
         ),
       ),
       child: Row(
@@ -478,15 +524,15 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           Icon(
             icon,
             size: 14,
-            color: isHighlight ? AppColors.success : AppColors.textMutedDark,
+            color: isHighlight ? AppColors.success : AppColors.textSecondaryLight,
           ),
           const SizedBox(width: 6),
           Text(
-            text,
+            displayText,
             style: TextStyle(
               fontSize: 12,
-              fontWeight: isHighlight ? FontWeight.w600 : FontWeight.normal,
-              color: isHighlight ? AppColors.success : AppColors.textPrimaryDark,
+              fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w500,
+              color: isHighlight ? AppColors.success : AppColors.textPrimaryLight,
             ),
           ),
         ],

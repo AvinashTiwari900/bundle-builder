@@ -20,7 +20,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
       'id': 'monthly',
       'title': 'Monthly Pro',
       'price': '₹499',
-      'period': '/ month',
+      'period': '/month',
       'billing': 'Billed monthly, cancel anytime',
       'isPopular': false,
     },
@@ -28,49 +28,49 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
       'id': 'annual',
       'title': 'Annual Pro',
       'price': '₹3,999',
-      'period': '/ year',
-      'billing': 'Equivalent to ₹333/month • Save 33%',
+      'period': '/year',
+      'billing': '₹333/month • Save 33% annually',
       'isPopular': true,
     },
   ];
 
   final List<Map<String, dynamic>> _features = [
     {
-      'title': 'Unlimited Autonomous Auto-Apply',
-      'desc': 'Daily quota boosted to 50 jobs with AI auto-matching',
-      'icon': Icons.bolt,
+      'title': 'Autonomous Auto-Apply Quota',
+      'desc': 'Daily quota boosted to 50 jobs with AI auto-matching & screening',
+      'icon': Icons.bolt_rounded,
     },
     {
       'title': 'Verified Pro Candidate Badge',
-      'desc': 'Gold badge displayed on your profile and community posts',
-      'icon': Icons.verified,
+      'desc': 'Blue & Gold badge displayed on your profile and community posts',
+      'icon': Icons.verified_rounded,
     },
     {
       'title': 'Top Recruiter Search Priority',
-      'desc': 'Your profile appears in top 5% of candidate search results',
-      'icon': Icons.trending_up,
+      'desc': 'Your profile appears in top 5% of candidate search results for tech leads',
+      'icon': Icons.trending_up_rounded,
     },
     {
       'title': 'Real-time Application Read Receipts',
-      'desc': 'Know precisely when hiring managers review your resume',
-      'icon': Icons.visibility,
+      'desc': 'Know precisely when hiring managers review your resume and portfolio',
+      'icon': Icons.visibility_rounded,
     },
     {
       'title': 'Direct Recruiter InMail Messaging',
-      'desc': 'Message hiring teams even before mutual connection',
-      'icon': Icons.chat_bubble_outline,
+      'desc': 'Directly message hiring teams even before mutual connection',
+      'icon': Icons.chat_bubble_outline_rounded,
     },
   ];
 
   Future<void> _handleUpgrade() async {
     setState(() => _isProcessing = true);
-    await Future.delayed(const Duration(milliseconds: 700));
+    await Future.delayed(const Duration(milliseconds: 600));
 
     final selected = _plans[_selectedPlanIndex];
     ref.read(authNotifierProvider.notifier).updateSubscription(
           isSubscribed: true,
           plan: selected['title'],
-          expiry: 'Sep 13, 2027',
+          expiry: 'Sep 15, 2027',
         );
 
     if (mounted) {
@@ -78,7 +78,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: AppColors.surfaceLight,
+          backgroundColor: AppColors.cardLight,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Row(
             children: [
@@ -91,13 +91,13 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
             ],
           ),
           content: const Text(
-            'Your GetnextIn Pro Candidate subscription is now active. Your verified Pro badge is unlocked across your profile and drawer.',
-            style: TextStyle(color: AppColors.textSecondaryDark, fontSize: 14),
+            'Your GetNextIn Pro subscription is now active. Your verified Pro badge is unlocked across your profile and drawer.',
+            style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 14),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Awesome'),
+              child: const Text('Awesome', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -109,12 +109,12 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceLight,
+        backgroundColor: AppColors.cardLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Cancel Subscription?'),
         content: const Text(
-          'Are you sure you want to revert to the Free Candidate tier? You will lose Pro recruiter visibility and your verified badge.',
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondaryDark),
+          'Are you sure you want to revert to the Free tier? You will lose Pro recruiter visibility and your verified badge.',
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondaryLight),
         ),
         actions: [
           TextButton(
@@ -130,10 +130,10 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
                     expiry: null,
                   );
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Subscription downgraded to Free Candidate')),
+                const SnackBar(content: Text('Subscription downgraded to Free tier')),
               );
             },
-            child: const Text('Confirm', style: TextStyle(color: AppColors.error)),
+            child: const Text('Confirm', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -149,18 +149,18 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
-        title: const Text('GetnextIn Premium'),
+        title: const Text('GetNextIn Pro', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Hero Banner
+              // Hero Banner with blue-to-purple gradient
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
                   gradient: isSubscribed
                       ? const LinearGradient(
@@ -168,13 +168,13 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         )
-                      : AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(16),
+                      : AppColors.proHeroGradient,
+                  borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
                       color: isSubscribed
-                          ? const Color(0xFFD97706).withOpacity(0.2)
-                          : AppColors.primary.withOpacity(0.25),
+                          ? const Color(0xFFD97706).withValues(alpha: 0.15)
+                          : const Color(0xFF4338CA).withValues(alpha: 0.25),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -191,7 +191,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
                           decoration: BoxDecoration(
                             color: isSubscribed
                                 ? const Color(0xFFD97706)
-                                : Colors.white.withOpacity(0.2),
+                                : Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -206,7 +206,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
                               Text(
                                 isSubscribed ? 'ACTIVE SUBSCRIPTION' : 'PRO CANDIDATE',
                                 style: const TextStyle(
-                                  fontSize: 11,
+                                  fontSize: 10.5,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                   letterSpacing: 0.5,
@@ -236,129 +236,91 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
                     const SizedBox(height: 14),
                     Text(
                       isSubscribed
-                          ? user?.subscriptionPlan ?? 'GetnextIn Pro'
+                          ? user?.subscriptionPlan ?? 'GetNextIn Pro'
                           : 'Accelerate Your Job Hunt with Pro',
                       style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
                         color: isSubscribed ? const Color(0xFF78350F) : Colors.white,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       isSubscribed
-                          ? 'Renews on ${user?.subscriptionExpiry ?? "Sep 13, 2027"} • Full Recruiter Visibility'
+                          ? 'Renews on ${user?.subscriptionExpiry ?? "Sep 15, 2027"} • Full Recruiter Visibility'
                           : 'Get 4x more interview calls, autonomous auto-apply, and priority candidate indexing.',
                       style: TextStyle(
                         fontSize: 13,
-                        color: isSubscribed ? const Color(0xFF92400E) : Colors.white70,
+                        color: isSubscribed ? const Color(0xFF92400E) : Colors.white.withValues(alpha: 0.8),
+                        height: 1.4,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              if (isSubscribed) ...[
-                // Active Subscription Status Details
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.borderLight),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Membership Benefits Active',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimaryDark,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ..._features.map((f) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.check_circle, color: AppColors.success, size: 18),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    f['title'] as String,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.textPrimaryDark,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                CustomButton(
-                  text: 'Cancel / Downgrade Plan',
-                  variant: ButtonVariant.outline,
-                  onPressed: _handleCancel,
-                ),
-              ] else ...[
-                // Plan Selector
+              if (!isSubscribed) ...[
+                // Clear Monthly / Annual Selection
                 const Text(
-                  'Select a Membership Plan',
+                  'Choose Your Plan',
                   style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimaryDark,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimaryLight,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Row(
                   children: List.generate(_plans.length, (idx) {
                     final plan = _plans[idx];
                     final isSelected = _selectedPlanIndex == idx;
+
                     return Expanded(
                       child: GestureDetector(
                         onTap: () => setState(() => _selectedPlanIndex = idx),
                         child: Container(
-                          margin: EdgeInsets.only(left: idx == 0 ? 0 : 8, right: idx == 1 ? 0 : 8),
-                          padding: const EdgeInsets.all(14),
+                          margin: EdgeInsets.only(left: idx == 0 ? 0 : 5, right: idx == 1 ? 0 : 5),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFFEFF6FF) : AppColors.surfaceLight,
-                            borderRadius: BorderRadius.circular(14),
+                            color: AppColors.cardLight,
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isSelected ? AppColors.primary : AppColors.borderLight,
                               width: isSelected ? 2 : 1,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: isSelected
+                                    ? AppColors.primary.withValues(alpha: 0.08)
+                                    : Colors.black.withValues(alpha: 0.01),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               if (plan['isPopular'] == true)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   margin: const EdgeInsets.only(bottom: 6),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary,
-                                    borderRadius: BorderRadius.circular(6),
+                                    color: const Color(0xFFEFF6FF),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: const Text(
-                                    'BEST VALUE',
-                                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
+                                    'SAVE 33%',
+                                    style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.primary),
                                   ),
                                 ),
                               Text(
-                                plan['title'] as String,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimaryDark,
+                                plan['title'],
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: isSelected ? AppColors.primary : AppColors.textPrimaryLight,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -367,29 +329,23 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
                                 textBaseline: TextBaseline.alphabetic,
                                 children: [
                                   Text(
-                                    plan['price'] as String,
+                                    plan['price'],
                                     style: const TextStyle(
                                       fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimaryDark,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.textPrimaryLight,
                                     ),
                                   ),
                                   Text(
-                                    plan['period'] as String,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textSecondaryDark,
-                                    ),
+                                    plan['period'],
+                                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                plan['billing'] as String,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: AppColors.textSecondaryDark,
-                                ),
+                                plan['billing'],
+                                style: const TextStyle(fontSize: 10.5, color: AppColors.textMutedDark),
                               ),
                             ],
                           ),
@@ -399,73 +355,81 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
                   }),
                 ),
                 const SizedBox(height: 24),
+              ],
 
-                // Features List
-                const Text(
-                  'What You Get with Pro',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimaryDark,
-                  ),
+              // Features List
+              const Text(
+                'Pro Benefits',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimaryLight,
                 ),
-                const SizedBox(height: 12),
-                ..._features.map((f) => Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceLight,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderLight),
+              ),
+              const SizedBox(height: 10),
+              ..._features.map((f) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardLight,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.borderLight),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(f['icon'] as IconData, color: AppColors.primary, size: 20),
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEFF6FF),
-                              borderRadius: BorderRadius.circular(10),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              f['title'],
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimaryLight,
+                              ),
                             ),
-                            child: Icon(f['icon'] as IconData, color: AppColors.primary, size: 20),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  f['title'] as String,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimaryDark,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  f['desc'] as String,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.textSecondaryDark,
-                                  ),
-                                ),
-                              ],
+                            const SizedBox(height: 2),
+                            Text(
+                              f['desc'],
+                              style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    )),
-                const SizedBox(height: 20),
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 24),
 
-                // CTA Button
+              // CTA Action
+              if (isSubscribed) ...[
                 CustomButton(
-                  text: 'Upgrade to Pro Now',
-                  icon: Icons.workspace_premium,
+                  text: 'Cancel Subscription',
+                  variant: ButtonVariant.outline,
+                  onPressed: _handleCancel,
+                ),
+              ] else ...[
+                CustomButton(
+                  text: 'Upgrade to Pro',
+                  variant: ButtonVariant.primary,
                   isLoading: _isProcessing,
                   onPressed: _handleUpgrade,
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
             ],
           ),
         ),

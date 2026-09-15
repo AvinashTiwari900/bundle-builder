@@ -16,11 +16,11 @@ class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
-        title: const Text('Candidate Dashboard'),
+        title: const Text('Candidate Dashboard', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -28,9 +28,16 @@ class DashboardScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceLight,
+                  color: AppColors.cardLight,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.borderLight),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -39,11 +46,12 @@ class DashboardScreen extends ConsumerWidget {
                       height: 44,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
+                        color: Colors.black,
                       ),
                       clipBehavior: Clip.antiAlias,
-                      child: Image.asset('assets/icon.png', fit: BoxFit.contain),
+                      child: Image.asset('assets/logo.png', fit: BoxFit.cover),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,15 +59,15 @@ class DashboardScreen extends ConsumerWidget {
                           Text(
                             'Hi, ${user?.name ?? "Candidate"} 👋',
                             style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimaryDark,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimaryLight,
                             ),
                           ),
                           const SizedBox(height: 2),
                           const Text(
-                            'Welcome to your candidate cockpit & recruitment metrics',
-                            style: TextStyle(fontSize: 12, color: AppColors.textSecondaryDark),
+                            'Welcome to your candidate cockpit',
+                            style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
                           ),
                         ],
                       ),
@@ -67,19 +75,19 @@ class DashboardScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
               // Profile Strength Card
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   gradient: AppColors.primaryGradient,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
+                      color: AppColors.primary.withValues(alpha: 0.25),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -92,22 +100,22 @@ class DashboardScreen extends ConsumerWidget {
                         const Text(
                           'Profile Strength',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
                             color: Colors.white,
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Text(
                             '85% Complete',
                             style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
                           ),
@@ -119,7 +127,7 @@ class DashboardScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: 0.85,
-                        backgroundColor: Colors.white.withOpacity(0.25),
+                        backgroundColor: Colors.white.withValues(alpha: 0.25),
                         valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                         minHeight: 6,
                       ),
@@ -137,7 +145,7 @@ class DashboardScreen extends ConsumerWidget {
                           child: const Text(
                             'Add Project →',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 12.5,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
@@ -148,7 +156,7 @@ class DashboardScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               // KPI Grid (2x2)
               Row(
@@ -159,11 +167,11 @@ class DashboardScreen extends ConsumerWidget {
                       value: '12',
                       subtitle: '3 in interview stage',
                       icon: Icons.assignment_outlined,
-                      color: AppColors.primaryLight,
+                      color: AppColors.primary,
                       onTap: () => context.push('/applications'),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: _kpiCard(
                       title: 'Shortlisted',
@@ -176,7 +184,7 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
@@ -189,7 +197,7 @@ class DashboardScreen extends ConsumerWidget {
                       onTap: () => context.push('/meetings'),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: _kpiCard(
                       title: 'Auto Applied',
@@ -202,35 +210,35 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Quick Module Shortcuts
+              // Quick Actions
               const Text(
-                'Candidate Cockpit Shortcuts',
+                'Quick Actions',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimaryDark,
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimaryLight,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               SizedBox(
-                height: 90,
+                height: 84,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
                     _moduleShortcut(
-                      icon: Icons.bolt,
+                      icon: Icons.bolt_rounded,
                       label: 'Auto Apply',
                       onTap: () => context.push('/auto-apply'),
                     ),
                     _moduleShortcut(
-                      icon: Icons.folder_shared_outlined,
+                      icon: Icons.folder_outlined,
                       label: 'Projects',
                       onTap: () => context.push('/projects'),
                     ),
                     _moduleShortcut(
-                      icon: Icons.menu_book_outlined,
+                      icon: Icons.article_outlined,
                       label: 'Case Studies',
                       onTap: () => context.push('/case-studies'),
                     ),
@@ -242,12 +250,12 @@ class DashboardScreen extends ConsumerWidget {
                     _moduleShortcut(
                       icon: Icons.description_outlined,
                       label: 'Documents',
-                      onTap: () => context.go('/profile'),
+                      onTap: () => context.push('/documents'),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 22),
 
               // Recommended Jobs Section
               Row(
@@ -256,9 +264,9 @@ class DashboardScreen extends ConsumerWidget {
                   const Text(
                     'Recommended For You',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimaryDark,
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimaryLight,
                     ),
                   ),
                   GestureDetector(
@@ -266,15 +274,15 @@ class DashboardScreen extends ConsumerWidget {
                     child: const Text(
                       'View All',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.primaryLight,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 12.5,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
               _jobRecommendationCard(
                 title: 'Senior Flutter Developer',
@@ -285,7 +293,7 @@ class DashboardScreen extends ConsumerWidget {
                 tags: ['Flutter', 'Riverpod', 'Dio'],
                 onTap: () => context.push('/jobs/job-1'),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
               _jobRecommendationCard(
                 title: 'Full Stack App Developer',
@@ -315,11 +323,18 @@ class DashboardScreen extends ConsumerWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.surfaceLight,
+          color: AppColors.cardLight,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.borderLight),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.015),
+              blurRadius: 8,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,8 +346,8 @@ class DashboardScreen extends ConsumerWidget {
                   child: Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondaryDark,
+                      fontSize: 11.5,
+                      color: AppColors.textSecondaryLight,
                       fontWeight: FontWeight.w500,
                     ),
                     maxLines: 1,
@@ -346,16 +361,16 @@ class DashboardScreen extends ConsumerWidget {
             Text(
               value,
               style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimaryDark,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimaryLight,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               subtitle,
               style: const TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 color: AppColors.textMutedDark,
               ),
             ),
@@ -373,25 +388,32 @@ class DashboardScreen extends ConsumerWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 86,
-        margin: const EdgeInsets.only(right: 12),
+        width: 84,
+        margin: const EdgeInsets.only(right: 10),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: AppColors.surfaceLight,
+          color: AppColors.cardLight,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppColors.borderLight),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.015),
+              blurRadius: 6,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: AppColors.primary, size: 24),
+            Icon(icon, color: AppColors.primary, size: 22),
             const SizedBox(height: 6),
             Text(
               label,
               style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimaryDark,
+                color: AppColors.textPrimaryLight,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,
@@ -417,9 +439,16 @@ class DashboardScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surfaceLight,
+          color: AppColors.cardLight,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.borderLight),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -428,67 +457,49 @@ class DashboardScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimaryDark,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        company,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondaryDark,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimaryLight,
+                    ),
                   ),
                 ),
                 MatchScoreChip(score: matchScore),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 3),
+            Text(
+              '$company • $location',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+            ),
+            const SizedBox(height: 8),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMutedDark),
-                const SizedBox(width: 4),
-                Text(location, style: const TextStyle(fontSize: 12, color: AppColors.textMutedDark)),
-                const Spacer(),
                 Text(
                   salary,
                   style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.success,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: tags
-                  .map(
-                    (tag) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                Wrap(
+                  spacing: 4,
+                  children: tags.map((t) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: AppColors.elevatedLight,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(
-                        tag,
-                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryDark),
-                      ),
-                    ),
-                  )
-                  .toList(),
+                      child: Text(t, style: const TextStyle(fontSize: 10.5, color: AppColors.textPrimaryLight)),
+                    );
+                  }).toList(),
+                ),
+              ],
             ),
           ],
         ),

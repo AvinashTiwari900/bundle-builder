@@ -315,7 +315,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     if (mounted) {
       setState(() {
         _uploadProgress = 0.95;
-        _uploadStatusMessage = 'Finalizing post on GetnextIn...';
+        _uploadStatusMessage = 'Finalizing post on GetNextIn...';
       });
     }
 
@@ -403,38 +403,43 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
-        title: const Text('Create Post'),
+        leading: IconButton(
+          icon: const Icon(Icons.close, size: 22),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text('Create a Post', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
         actions: [
           // Preview Mode Toggle Button
           IconButton(
             icon: Icon(
               _isPreviewMode ? Icons.edit_note : Icons.visibility_outlined,
-              color: AppColors.primary,
+              color: AppColors.textPrimaryLight,
             ),
             tooltip: _isPreviewMode ? 'Back to Editor' : 'Preview Post',
             onPressed: () => setState(() => _isPreviewMode = !_isPreviewMode),
           ),
           Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: TextButton(
+            padding: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
+            child: ElevatedButton(
               onPressed: _canPublish ? _publishPost : null,
-              style: TextButton.styleFrom(
+              style: ElevatedButton.styleFrom(
                 backgroundColor: _canPublish ? AppColors.primary : AppColors.borderLight,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                elevation: 0,
               ),
               child: _isPublishing
                   ? const SizedBox(
-                      width: 16,
-                      height: 16,
+                      width: 14,
+                      height: 14,
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                     )
                   : Text(
-                      'Publish',
+                      'Post',
                       style: TextStyle(
                         color: _canPublish ? Colors.white : AppColors.textMutedDark,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13.5,
                       ),
                     ),
             ),
@@ -876,7 +881,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               ListTile(
                 leading: const Icon(Icons.public, color: AppColors.primary),
                 title: const Text('Public'),
-                subtitle: const Text('Anyone on or off GetnextIn'),
+                subtitle: const Text('Anyone on or off GetNextIn'),
                 trailing: _selectedVisibility == 'public' ? const Icon(Icons.check, color: AppColors.primary) : null,
                 onTap: () {
                   setState(() => _selectedVisibility = 'public');

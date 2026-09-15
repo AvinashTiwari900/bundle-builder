@@ -15,7 +15,7 @@ class ApplicationDetailsScreen extends StatelessWidget {
     this.item,
   });
 
-  static const List<String> pipelineStages = [
+  static const List<String> standardStages = [
     'Applied',
     'Resume Screening',
     'AI Screening',
@@ -23,10 +23,6 @@ class ApplicationDetailsScreen extends StatelessWidget {
     'Interview Scheduled',
     'Interview Completed',
     'Under Review',
-    'Pending Employer Response',
-    'Selected',
-    'Rejected',
-    'On Hold',
   ];
 
   @override
@@ -43,205 +39,276 @@ class ApplicationDetailsScreen extends StatelessWidget {
         );
 
     final currentIndex = app.stageIndex;
+    final isFinalOutcome = app.currentStage.toLowerCase().contains('select') ||
+        app.currentStage.toLowerCase().contains('reject') ||
+        app.currentStage.toLowerCase().contains('hold');
+
+    // Build timeline stages dynamically to avoid mutually exclusive linear sequences
+    final List<String> activePipeline = List.from(standardStages);
+    if (isFinalOutcome) {
+      activePipeline.add(app.currentStage);
+    } else {
+      activePipeline.add('Final Decision / Outcome');
+    }
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
-        title: const Text('Application Timeline'),
+        title: const Text('Application Timeline', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Card
+              // Top Job Summary Card
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceDark,
+                  color: AppColors.cardLight,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderDark),
+                  border: Border.all(color: AppColors.borderLight),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Text(
-                            app.jobTitle,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimaryDark,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                app.jobTitle,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimaryLight,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                app.company,
+                                style: const TextStyle(fontSize: 14, color: AppColors.primary, fontWeight: FontWeight.w600),
+                              ),
+                            ],
                           ),
                         ),
                         StatusBadge(status: app.currentStage),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      app.company,
-                      style: const TextStyle(fontSize: 14, color: AppColors.primaryLight),
-                    ),
+                    const SizedBox(height: 14),
+                    const Divider(height: 1, color: AppColors.borderLight),
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(Icons.calendar_today_outlined,
-                            size: 14, color: AppColors.textMutedDark),
+                        const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textSecondaryLight),
                         const SizedBox(width: 6),
                         Text(
                           'Applied on ${app.appliedDate}',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryDark),
+                          style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondaryLight),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Visual 11-Stage Pipeline
-              const Text(
-                '11-Stage Recruitment Pipeline',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimaryDark,
-                ),
-              ),
-              const SizedBox(height: 16),
-
+              // Recruitment Pipeline Card
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceDark,
+                  color: AppColors.cardLight,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderDark),
+                  border: Border.all(color: AppColors.borderLight),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.015),
+                      blurRadius: 8,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: pipelineStages.length,
-                  itemBuilder: (context, idx) {
-                    final stageName = pipelineStages[idx];
-                    final isPassed = idx < currentIndex;
-                    final isCurrent = idx == currentIndex;
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Recruitment Pipeline',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimaryLight,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Live progression through the candidate evaluation process',
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+                    ),
+                    const SizedBox(height: 20),
 
-                    Color dotColor = AppColors.borderDark;
-                    if (isPassed) dotColor = AppColors.success;
-                    if (isCurrent) dotColor = AppColors.primaryLight;
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: activePipeline.length,
+                      itemBuilder: (context, idx) {
+                        final stageName = activePipeline[idx];
+                        final isPassed = idx < currentIndex;
+                        final isCurrent = idx == currentIndex;
+                        final isLast = idx == activePipeline.length - 1;
 
-                    return IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Left Indicator & Connecting line
-                          Column(
+                        Color circleColor;
+                        Widget circleChild;
+
+                        if (isPassed) {
+                          circleColor = AppColors.success;
+                          circleChild = const Icon(Icons.check, size: 13, color: Colors.white);
+                        } else if (isCurrent) {
+                          circleColor = AppColors.primary;
+                          circleChild = Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                          );
+                        } else {
+                          circleColor = AppColors.borderLight;
+                          circleChild = const SizedBox.shrink();
+                        }
+
+                        return IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 22,
-                                height: 22,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: isPassed
-                                      ? AppColors.success
-                                      : isCurrent
-                                          ? AppColors.primary
-                                          : AppColors.cardDark,
-                                  border: Border.all(color: dotColor, width: 2),
-                                ),
-                                child: Center(
-                                  child: isPassed
-                                      ? const Icon(Icons.check, size: 13, color: Colors.white)
-                                      : isCurrent
-                                          ? Container(
-                                              width: 8,
-                                              height: 8,
-                                              decoration: const BoxDecoration(
-                                                color: Colors.white,
-                                                shape: BoxShape.circle,
-                                              ),
-                                            )
-                                          : null,
-                                ),
-                              ),
-                              if (idx < pipelineStages.length - 1)
-                                Expanded(
-                                  child: Container(
-                                    width: 2,
-                                    color: isPassed ? AppColors.success : AppColors.borderDark,
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(width: 14),
-
-                          // Right content
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              // Left Timeline Node & Connecting Line
+                              Column(
                                 children: [
-                                  Text(
-                                    stageName,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: isCurrent
-                                          ? FontWeight.bold
-                                          : isPassed
-                                              ? FontWeight.w600
-                                              : FontWeight.normal,
-                                      color: isCurrent
-                                          ? AppColors.primaryLight
-                                          : isPassed
-                                              ? AppColors.textPrimaryDark
-                                              : AppColors.textMutedDark,
-                                    ),
-                                  ),
-                                  if (isCurrent && app.nextStepNotice != null) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      app.nextStepNotice!,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textSecondaryDark,
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: circleColor,
+                                      border: Border.all(
+                                        color: isCurrent
+                                            ? const Color(0xFFBFDBFE)
+                                            : circleColor,
+                                        width: isCurrent ? 3 : 1,
                                       ),
                                     ),
-                                  ],
+                                    alignment: Alignment.center,
+                                    child: circleChild,
+                                  ),
+                                  if (!isLast)
+                                    Expanded(
+                                      child: Container(
+                                        width: 2,
+                                        margin: const EdgeInsets.symmetric(vertical: 2),
+                                        color: isPassed ? AppColors.success : AppColors.borderLight,
+                                      ),
+                                    ),
                                 ],
                               ),
-                            ),
+                              const SizedBox(width: 14),
+
+                              // Right Content
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 22),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        stageName,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: isCurrent
+                                              ? FontWeight.w700
+                                              : (isPassed ? FontWeight.w600 : FontWeight.w500),
+                                          color: isCurrent
+                                              ? AppColors.primary
+                                              : (isPassed
+                                                  ? AppColors.textPrimaryLight
+                                                  : AppColors.textSecondaryLight),
+                                        ),
+                                      ),
+                                      if (isCurrent && app.nextStepNotice != null) ...[
+                                        const SizedBox(height: 8),
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFEFF6FF),
+                                            borderRadius: BorderRadius.circular(10),
+                                            border: Border.all(color: const Color(0xFFBFDBFE)),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  const Icon(Icons.info_outline, size: 15, color: AppColors.primary),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      app.nextStepNotice!,
+                                                      style: const TextStyle(
+                                                        fontSize: 12.5,
+                                                        color: AppColors.textPrimaryLight,
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              if (app.currentStage.toLowerCase().contains('interview')) ...[
+                                                const SizedBox(height: 10),
+                                                SizedBox(
+                                                  width: double.infinity,
+                                                  height: 38,
+                                                  child: ElevatedButton.icon(
+                                                    onPressed: () => context.push('/meetings'),
+                                                    icon: const Icon(Icons.video_call_rounded, size: 18, color: Colors.white),
+                                                    label: const Text(
+                                                      'Join Recruiter Meeting',
+                                                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white),
+                                                    ),
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: AppColors.primary,
+                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                      elevation: 0,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                  },
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Action Buttons
-              if (app.currentStage.contains('Interview')) ...[
-                CustomButton(
-                  text: 'Join Recruiter Meeting',
-                  icon: Icons.video_camera_front,
-                  onPressed: () => context.push('/meetings'),
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              CustomButton(
-                text: 'View Job Details',
-                variant: ButtonVariant.outline,
-                icon: Icons.work_outline,
-                onPressed: () => context.push('/jobs/${app.id}'),
-              ),
-              const SizedBox(height: 20),
             ],
           ),
         ),

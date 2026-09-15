@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/match_score_chip.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -165,8 +165,8 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
           height: 40,
           margin: const EdgeInsets.only(right: 16),
           decoration: BoxDecoration(
-            color: AppColors.elevatedLight,
-            borderRadius: BorderRadius.circular(10),
+            color: AppColors.searchBackground,
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.borderLight),
           ),
           child: TextField(
@@ -175,10 +175,11 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
             onChanged: (val) => setState(() => _query = val.trim()),
             decoration: InputDecoration(
               hintText: 'Search people, posts, jobs...',
-              prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.textSecondaryLight),
+              hintStyle: const TextStyle(fontSize: 13, color: AppColors.textMutedDark),
+              prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.textSecondaryLight),
               suffixIcon: _query.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18),
+                      icon: const Icon(Icons.clear, size: 16, color: AppColors.textSecondaryLight),
                       onPressed: () {
                         _searchController.clear();
                         setState(() => _query = '');
@@ -195,10 +196,19 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
         ),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.primary,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicator: BoxDecoration(
+            color: AppColors.navActive,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          labelColor: Colors.white,
           unselectedLabelColor: AppColors.textSecondaryLight,
-          indicatorColor: AppColors.primary,
-          indicatorWeight: 2.5,
+          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12.5),
+          dividerColor: Colors.transparent,
           tabs: [
             Tab(text: 'All ($totalCount)'),
             Tab(text: 'People (${people.length})'),
@@ -272,9 +282,9 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
           Text(
             title,
             style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimaryDark,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimaryLight,
             ),
           ),
           GestureDetector(
@@ -291,22 +301,35 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
 
   Widget _buildPersonCard(Map<String, dynamic> person) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.cardLight,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.015),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: const Color(0xFFEFF6FF),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFFEFF6FF),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            alignment: Alignment.center,
             child: Text(
               (person['name'] as String).substring(0, 1),
-              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 16),
             ),
           ),
           const SizedBox(width: 12),
@@ -314,42 +337,53 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  person['name'] as String,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimaryDark,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        person['name'] as String,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimaryLight,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.check_circle, size: 13, color: AppColors.primary),
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
                   person['headline'] as String,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryDark),
-                  maxLines: 2,
+                  style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight),
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
-                  '${person['college']} • ${person['mutual']} mutual connections',
-                  style: const TextStyle(fontSize: 11, color: AppColors.textMutedDark),
+                  '${person['college']} • ${person['mutual']} mutuals',
+                  style: const TextStyle(fontSize: 10.5, color: AppColors.textMutedDark),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 8),
-          OutlinedButton(
+          ElevatedButton(
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Connection request sent to ${person['name']}')),
               );
             },
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(80, 32),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(68, 32),
               padding: const EdgeInsets.symmetric(horizontal: 10),
-              side: const BorderSide(color: AppColors.primary),
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 0,
             ),
-            child: const Text('Connect', style: TextStyle(fontSize: 12, color: AppColors.primary)),
+            child: const Text('Connect', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white)),
           ),
         ],
       ),
@@ -358,36 +392,48 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
 
   Widget _buildPostCard(Map<String, dynamic> post) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.cardLight,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.015),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: const Color(0xFFF1F5F9),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0xFFEFF6FF),
+                ),
+                alignment: Alignment.center,
                 child: Text(
                   (post['author'] as String).substring(0, 1),
-                  style: const TextStyle(fontSize: 12, color: AppColors.textPrimaryDark),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   post['author'] as String,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
                 ),
               ),
               Text(
                 post['time'] as String,
-                style: const TextStyle(fontSize: 11, color: AppColors.textMutedDark),
+                style: const TextStyle(fontSize: 10.5, color: AppColors.textMutedDark),
               ),
             ],
           ),
@@ -396,14 +442,14 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
             post['title'] as String,
             style: const TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimaryDark,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimaryLight,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             post['snippet'] as String,
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryDark),
+            style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -414,16 +460,36 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
 
   Widget _buildJobCard(Map<String, dynamic> job) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.cardLight,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.015),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              (job['company'] as String).substring(0, 1),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary),
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,60 +497,52 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                 Text(
                   job['title'] as String,
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimaryDark,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimaryLight,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  job['company'] as String,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryDark),
+                  '${job['company']} • ${job['location']}',
+                  style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
-                  '${job['location']} • ${job['salary']}',
-                  style: const TextStyle(fontSize: 11, color: AppColors.textMutedDark),
+                  job['salary'] as String,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.success),
                 ),
               ],
             ),
           ),
-          ElevatedButton(
-            onPressed: () => context.push('/jobs/${job['id']}'),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(70, 32),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              backgroundColor: AppColors.primary,
-            ),
-            child: const Text('View', style: TextStyle(fontSize: 12, color: Colors.white)),
-          ),
+          const SizedBox(width: 8),
+          MatchScoreChip(score: job['match'] as int),
         ],
       ),
     );
   }
 
   Widget _buildEmptyState() {
-    return Container(
-      padding: const EdgeInsets.all(40),
-      alignment: Alignment.center,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.search_off, size: 48, color: AppColors.textMutedDark),
-          const SizedBox(height: 12),
-          const Text(
-            'No matching results found',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimaryDark),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _query.isEmpty
-                ? 'Type keywords to search across people, posts, and jobs'
-                : 'Try different terms or search across All tabs',
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryDark),
-            textAlign: TextAlign.center,
-          ),
-        ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.search_off_rounded, size: 48, color: AppColors.textMutedDark),
+            const SizedBox(height: 12),
+            const Text(
+              'No results found',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.textPrimaryLight),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _query.isEmpty ? 'Type in the search bar above to find people, posts, or jobs' : 'No matches found for "$_query"',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondaryLight),
+            ),
+          ],
+        ),
       ),
     );
   }
